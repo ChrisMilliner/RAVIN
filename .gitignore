@@ -1,0 +1,54 @@
+# Environment and secrets
+.env
+.env.*
+!.env.example
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+.venv/
+venv/
+env/
+.pytest_cache/
+.coverage
+htmlcov/
+
+# Node / JavaScript
+node_modules/
+dist/
+build/
+coverage/
+
+# IDE / editor
+.vscode/
+.idea/
+
+# Operating system
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+logs/
+
+# Local application data
+data/
+tmp/
+
+# Model / vector artefacts
+models/
+vector_store/
+embeddings/
+
+# Credentials and keys
+*.pem
+*.key
+*.crt
+credentials.*
+secrets.*
+
+# Local databases
+*.db
+*.sqlite
+*.sqlite3
