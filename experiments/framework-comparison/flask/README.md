@@ -79,6 +79,35 @@ python -m pytest -v
 |Expected JSON contract returned|PASS|
 |Automated health test|PASS|
 |Paid/external service required|NO|
+|Whitespace-only question rejection|PASS|
+|Missing JSON body rejection|PASS|
+
+The experiment also evaluates request validation through:
+
+`POST /questions/validate`
+
+Valid request:
+
+```json
+{
+  "question": "What is the special consideration policy?"
+}
+```
+
+Expected successful response:
+
+```json
+{
+  "valid": true,
+  "question": "What is the special consideration policy?"
+}
+```
+
+Empty, whitespace-only or missing request content is rejected with:
+
+`HTTP 422`
+
+
 
 ## Technical Observations
 Flask provided a compact implementation of the required health endpoint.
