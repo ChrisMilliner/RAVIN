@@ -1,6 +1,7 @@
 from backend.evaluation.experiment_models import (
     DatasetValidationStatus,
     ExperimentDirection,
+    ExperimentSelectionDecision,
     MetricComparison,
     QuestionRankChange,
     RetrievalExperimentComparison,
@@ -31,6 +32,37 @@ def _compare_direction(
         return ExperimentDirection.REGRESSED
 
     return ExperimentDirection.UNCHANGED
+
+def _selection_decision(
+    direction: ExperimentDirection,
+    quality_gate_passed: bool,
+    dataset_status: DatasetValidationStatus,
+) -> ExperimentSelectionDecision:
+    if not quality_gate_passed:
+        return (
+            ExperimentSelectionDecision
+            .REJECT_BELOW_THRESHOLD
+        )
+
+    if (
+        dataset_status
+        != DatasetValidationStatus.HUMAN_VALIDATED
+    ):
+        return (
+            ExperimentSelectionDecision
+            .REQUIRES_VALIDATED_EVALUATION
+        )
+
+    if direction != ExperimentDirection.IMPROVED:
+        return (
+            ExperimentSelectionDecision
+            .REJECT_NOT_IMPROVED
+        )
+
+    return (
+        ExperimentSelectionDecision
+        .ELIGIBLE_FOR_SELECTION
+    )
 
 def compare_retrieval_experiments(
     baseline: EvaluationRunResult,
@@ -90,6 +122,17 @@ def compare_retrieval_experiments(
         == DatasetValidationStatus.HUMAN_VALIDATED
     )
 
+    direction = _compare_direction(
+        baseline,
+        candidate,
+    )
+
+    selection_decision = _selection_decision(
+        direction=direction,
+        quality_gate_passed=quality_gate_passed,
+        dataset_status=config.dataset_status,
+    )
+
     return RetrievalExperimentComparison(
         config=config,
         top_1=MetricComparison(
@@ -107,9 +150,9 @@ def compare_retrieval_experiments(
         question_rank_changes=(
             question_rank_changes
         ),
-        direction=_compare_direction(
-            baseline,
-            candidate,
+        direction=direction,
+        selection_decision=(
+            selection_decision
         ),
         quality_gate_passed=(
             quality_gate_passed

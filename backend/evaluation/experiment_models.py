@@ -10,6 +10,20 @@ class ExperimentDirection(str, Enum):
     REGRESSED = "regressed"
     UNCHANGED = "unchanged"
 
+class ExperimentSelectionDecision(str, Enum):
+    REJECT_BELOW_THRESHOLD = (
+        "reject-below-threshold"
+    )
+    REQUIRES_VALIDATED_EVALUATION = (
+        "requires-validated-evaluation"
+    )
+    REJECT_NOT_IMPROVED = (
+        "reject-not-improved"
+    )
+    ELIGIBLE_FOR_SELECTION = (
+        "eligible-for-selection"
+    )
+
 @dataclass(frozen=True)
 class RetrievalExperimentConfig:
     experiment_name: str
@@ -96,5 +110,6 @@ class RetrievalExperimentComparison:
     mrr: MetricComparison
     question_rank_changes: tuple[QuestionRankChange, ...]
     direction: ExperimentDirection
+    selection_decision: ExperimentSelectionDecision
     quality_gate_passed: bool
     validated_dataset_gate_passed: bool
