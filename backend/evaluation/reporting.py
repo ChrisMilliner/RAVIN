@@ -1,7 +1,7 @@
 import hashlib
 import json
+import subprocess
 from pathlib import Path
-
 from backend.evaluation.experiment_models import (
     ExperimentSelectionDecision,
     RetrievalExperimentComparison,
@@ -63,6 +63,46 @@ def calculate_corpus_sha256(
 
     return hasher.hexdigest()
 
+def ensure_clean_git_working_tree() -> None:
+    result = subprocess.run(
+        [
+            "git",
+            "status",
+            "--porcelain",
+        ],
+        capture_output=True,
+        text=True,
+        check=True,
+    )
+
+    if result.stdout.strip():
+        raise RuntimeError(
+            "Experiment records require a clean "
+            "Git working tree."
+        )
+
+
+def get_repository_commit() -> str:
+    result = subprocess.run(
+        [
+            "git",
+            "rev-parse",
+            "HEAD",
+        ],
+        capture_output=True,
+        text=True,
+        check=True,
+    )
+
+    commit = result.stdout.strip()
+
+    if not commit:
+        raise RuntimeError(
+            "Could not determine repository commit."
+        )
+
+    return commit
+
 def build_experiment_record(
     comparison: RetrievalExperimentComparison,
     policy_ids: tuple[str, ...],
@@ -72,6 +112,9 @@ def build_experiment_record(
     corpus_sha256: str,
     repository_commit: str,
     generated_at_utc: str,
+    embedding_model: str,
+    semantic_weight: float,
+    lexical_weight: float,
 ) -> dict[str, object]:
     if not policy_ids:
         raise ValueError(
@@ -109,6 +152,30 @@ def build_experiment_record(
             "Experiment timestamp cannot be empty."
         )
 
+    if not embedding_model.strip():
+        raise ValueError(
+            "Embedding model cannot be empty."
+        )
+
+    if not 0.0 <= semantic_weight <= 1.0:
+        raise ValueError(
+            "Semantic weight must be between 0 and 1."
+        )
+
+    if not 0.0 <= lexical_weight <= 1.0:
+        raise ValueError(
+            "Lexical weight must be between 0 and 1."
+        )
+
+    if abs(
+        semantic_weight
+        + lexical_weight
+        - 1.0
+    ) > 1e-9:
+        raise ValueError(
+            "Retrieval weights must sum to 1."
+        )
+
     config = comparison.config
 
     candidate_eligible = (
@@ -127,6 +194,25 @@ def build_experiment_record(
             "quality_threshold": (
                 config.quality_threshold
             ),
+        },
+        "retrieval_configuration": {
+            "embedding_model": embedding_model,
+            "baseline": {
+                "strategy": "semantic",
+                "semantic_weight": 1.0,
+                "lexical_weight": 0.0,
+            },
+            "candidate": {
+                "strategy": (
+                    "hybrid-semantic-lexical"
+                ),
+                "semantic_weight": (
+                    semantic_weight
+                ),
+                "lexical_weight": (
+                    lexical_weight
+                ),
+            },
         },
         "dataset": {
             "name": config.dataset_name,

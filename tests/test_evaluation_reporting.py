@@ -1,5 +1,6 @@
 import hashlib
 import json
+import subprocess
 import pytest
 from backend.evaluation.experiment_models import (
     DatasetValidationStatus,
@@ -14,10 +15,18 @@ from backend.evaluation.reporting import (
     build_experiment_record,
     calculate_corpus_sha256,
     calculate_file_sha256,
+    ensure_clean_git_working_tree,
+    get_repository_commit,
     write_experiment_record,
 )
 from backend.ingestion.models import PolicyChunk
 from backend.retrieval.models import IndexedPolicyChunk
+
+EMBEDDING_MODEL = (
+    "sentence-transformers/all-MiniLM-L6-v2"
+)
+SEMANTIC_WEIGHT = 0.85
+LEXICAL_WEIGHT = 0.15
 
 def make_indexed_chunk(
     policy_id: str = "208",
@@ -196,6 +205,9 @@ def test_experiment_record_preserves_accuracy_decision():
         generated_at_utc=(
             "2026-08-15T02:00:00+00:00"
         ),
+        embedding_model=EMBEDDING_MODEL,
+        semantic_weight=SEMANTIC_WEIGHT,
+        lexical_weight=LEXICAL_WEIGHT,
     )
 
     assert record["schema_version"] == 1
@@ -244,6 +256,9 @@ def test_experiment_record_marks_eligible_decision():
         generated_at_utc=(
             "2026-08-15T02:00:00+00:00"
         ),
+        embedding_model=EMBEDDING_MODEL,
+        semantic_weight=SEMANTIC_WEIGHT,
+        lexical_weight=LEXICAL_WEIGHT,
     )
 
     assert (
@@ -268,6 +283,9 @@ def test_experiment_record_preserves_provenance():
         generated_at_utc=(
             "2026-08-15T02:00:00+00:00"
         ),
+        embedding_model=EMBEDDING_MODEL,
+        semantic_weight=SEMANTIC_WEIGHT,
+        lexical_weight=LEXICAL_WEIGHT,
     )
 
     assert record["dataset"]["sha256"] == (
@@ -313,3 +331,148 @@ def test_write_experiment_record_creates_json_file(
     )
 
     assert loaded == record
+
+def test_experiment_record_preserves_retrieval_configuration():
+    comparison = make_comparison()
+
+    record = build_experiment_record(
+        comparison=comparison,
+        policy_ids=("208",),
+        chunk_count=1,
+        dataset_path=(
+            "evaluation/retrieval_baseline.json"
+        ),
+        dataset_sha256="dataset-hash",
+        corpus_sha256="corpus-hash",
+        repository_commit="abc1234",
+        generated_at_utc=(
+            "2026-08-15T02:00:00+00:00"
+        ),
+        embedding_model=EMBEDDING_MODEL,
+        semantic_weight=SEMANTIC_WEIGHT,
+        lexical_weight=LEXICAL_WEIGHT,
+    )
+
+    configuration = (
+        record["retrieval_configuration"]
+    )
+
+    assert (
+        configuration["embedding_model"]
+        == EMBEDDING_MODEL
+    )
+
+    assert (
+        configuration["baseline"][
+            "strategy"
+        ]
+        == "semantic"
+    )
+
+    assert (
+        configuration["baseline"][
+            "semantic_weight"
+        ]
+        == pytest.approx(1.0)
+    )
+
+    assert (
+        configuration["candidate"][
+            "strategy"
+        ]
+        == "hybrid-semantic-lexical"
+    )
+
+    assert (
+        configuration["candidate"][
+            "semantic_weight"
+        ]
+        == pytest.approx(0.85)
+    )
+
+    assert (
+        configuration["candidate"][
+            "lexical_weight"
+        ]
+        == pytest.approx(0.15)
+    )
+
+def test_clean_git_working_tree_accepts_clean_status(
+    monkeypatch,
+):
+    def fake_run(
+        *args,
+        **kwargs,
+    ):
+        return subprocess.CompletedProcess(
+            args=args[0],
+            returncode=0,
+            stdout="",
+            stderr="",
+        )
+
+    monkeypatch.setattr(
+        "backend.evaluation.reporting."
+        "subprocess.run",
+        fake_run,
+    )
+
+    ensure_clean_git_working_tree()
+
+def test_clean_git_working_tree_rejects_dirty_status(
+    monkeypatch,
+):
+    def fake_run(
+        *args,
+        **kwargs,
+    ):
+        return subprocess.CompletedProcess(
+            args=args[0],
+            returncode=0,
+            stdout=(
+                " M backend/retrieval/hybrid.py\n"
+                "?? temporary_file.txt\n"
+            ),
+            stderr="",
+        )
+
+    monkeypatch.setattr(
+        "backend.evaluation.reporting."
+        "subprocess.run",
+        fake_run,
+    )
+
+    with pytest.raises(
+        RuntimeError,
+        match=(
+            "Experiment records require a clean "
+            "Git working tree."
+        ),
+    ):
+        ensure_clean_git_working_tree()
+
+def test_repository_commit_returns_current_head(
+    monkeypatch,
+):
+    def fake_run(
+        *args,
+        **kwargs,
+    ):
+        return subprocess.CompletedProcess(
+            args=args[0],
+            returncode=0,
+            stdout="b127e21abcdef1234567890\n",
+            stderr="",
+        )
+
+    monkeypatch.setattr(
+        "backend.evaluation.reporting."
+        "subprocess.run",
+        fake_run,
+    )
+
+    commit = get_repository_commit()
+
+    assert commit == (
+        "b127e21abcdef1234567890"
+    )
