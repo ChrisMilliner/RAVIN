@@ -1,5 +1,5 @@
 {
-  "name": "COPF-221 Preliminary Retrieval Baseline",
+  "name": "RAVIN Preliminary Retrieval Development Baseline v1",
   "status": "preliminary-not-gold-standard",
   "questions": [
     {
@@ -48,7 +48,406 @@
           ]
         }
       ],
-      "notes": "Retains the known baseline ranking weakness where a Definitions chunk ranked above Entry Criteria."
+      "notes": "Retains the known baseline ranking weakness where less relevant admissions content may rank above Entry Criteria."
+    },
+    {
+      "question_id": "RB004",
+      "question": "Where are the academic dress requirements for a newly approved award course recorded?",
+      "expected_evidence": [
+        {
+          "policy_id": "208",
+          "heading_path": [
+            "Section 6 - Procedures",
+            "Part C - Recording of Academic Dress Requirements"
+          ]
+        }
+      ],
+      "notes": "Tests retrieval of an operational recording requirement."
+    },
+    {
+      "question_id": "RB005",
+      "question": "Can Aboriginal or Torres Strait Islander graduates wear an additional stole with their academic dress?",
+      "expected_evidence": [
+        {
+          "policy_id": "208",
+          "heading_path": [
+            "Section 6 - Procedures",
+            "Part D - Graduands and Graduates of Aboriginal or Torres Strait Islander Descent"
+          ]
+        }
+      ],
+      "notes": "Natural-language question about an optional academic dress provision."
+    },
+    {
+      "question_id": "RB006",
+      "question": "Which shoulder is the silk of an academic hood normally exposed on?",
+      "expected_evidence": [
+        {
+          "policy_id": "208",
+          "heading_path": [
+            "Section 6 - Procedures",
+            "Part A - Dress and Colour Protocols"
+          ]
+        }
+      ],
+      "notes": "Specific factual retrieval question."
+    },
+    {
+      "question_id": "RB007",
+      "question": "What is required when requesting a change to the University's approved academic dress?",
+      "expected_evidence": [
+        {
+          "policy_id": "208",
+          "heading_path": [
+            "Section 6 - Procedures",
+            "Part B - Requests for Changes or Additions to Academic Dress"
+          ]
+        }
+      ],
+      "notes": "Tests retrieval where approval process and supporting requirements appear together."
+    },
+    {
+      "question_id": "RB008",
+      "question": "What happens if a student passes every subject in which they are enrolled?",
+      "expected_evidence": [
+        {
+          "policy_id": "220",
+          "heading_path": [
+            "Section 6 - Procedures",
+            "Part A - Monitoring and Determining Academic Progression"
+          ]
+        },
+        {
+          "policy_id": "220",
+          "heading_path": [
+            "Section 6 - Procedures",
+            "Part B - Details of Academic Progression Stages",
+            "Table One – Summary of Thresholds and Interventions"
+          ]
+        }
+      ],
+      "notes": "Two locations contain answer-bearing evidence for students who pass all enrolled subjects."
+    },
+    {
+      "question_id": "RB009",
+      "question": "How long does a student at Academic Progression Stage Three have to submit a show cause response?",
+      "expected_evidence": [
+        {
+          "policy_id": "220",
+          "heading_path": [
+            "Section 6 - Procedures",
+            "Part B - Details of Academic Progression Stages",
+            "Academic Progression Stage Three – Show Cause and Course Exclusion",
+            "Show Cause"
+          ]
+        }
+      ],
+      "notes": "Uses the specific Show Cause subsection rather than accepting every child of the Stage Three section."
+    },
+    {
+      "question_id": "RB010",
+      "question": "What is the maximum enrolment load normally applied to a student at Academic Progression Stage Two?",
+      "expected_evidence": [
+        {
+          "policy_id": "220",
+          "heading_path": [
+            "Section 6 - Procedures",
+            "Part B - Details of Academic Progression Stages",
+            "Academic Stage Two – Support and Sanction"
+          ]
+        }
+      ],
+      "notes": "Tests retrieval of an academic progression sanction."
+    },
+    {
+      "question_id": "RB011",
+      "question": "If a student transfers to another course while an enrolment sanction is still active, what happens to the sanction?",
+      "expected_evidence": [
+        {
+          "policy_id": "220",
+          "heading_path": [
+            "Section 6 - Procedures",
+            "Part B - Details of Academic Progression Stages",
+            "Course Transfers and New Courses"
+          ]
+        }
+      ],
+      "notes": "More complex natural-language progression question involving course transfer."
+    },
+    {
+      "question_id": "RB012",
+      "question": "Can fixed-term academic staff apply for promotion, and does a promotion extend their fixed-term appointment?",
+      "expected_evidence": [
+        {
+          "policy_id": "76",
+          "heading_path": [
+            "Section 3 - Scope"
+          ]
+        }
+      ],
+      "notes": "Tests retrieval from policy scope rather than procedures."
+    },
+    {
+      "question_id": "RB013",
+      "question": "What three domains of academic work are considered for promotion?",
+      "expected_evidence": [
+        {
+          "policy_id": "76",
+          "heading_path": [
+            "Section 6 - Procedures",
+            "Part A - Domains of Academic Work"
+          ]
+        }
+      ],
+      "notes": "Direct retrieval of promotion assessment domains."
+    },
+    {
+      "question_id": "RB014",
+      "question": "What qualification is normally required when applying for academic promotion?",
+      "expected_evidence": [
+        {
+          "policy_id": "76",
+          "heading_path": [
+            "Section 6 - Procedures",
+            "Part B - Basis for Promotion",
+            "Qualifications and/or Relevant Experience"
+          ]
+        }
+      ],
+      "notes": "Tests retrieval of qualifications and equivalent experience requirements."
+    },
+    {
+      "question_id": "RB015",
+      "question": "What referee and external assessor requirements apply to a Level D promotion application?",
+      "expected_evidence": [
+        {
+          "policy_id": "76",
+          "heading_path": [
+            "Section 6 - Procedures",
+            "Part C - Referee and External Assessor Reports",
+            "Table 1: Summary of Referee and Assessor Requirements, by Academic Level"
+          ]
+        },
+        {
+          "policy_id": "76",
+          "heading_path": [
+            "Section 6 - Procedures",
+            "Part C - Referee and External Assessor Reports",
+            "Independent External Assessors for Applications to Level D and E Only"
+          ]
+        }
+      ],
+      "notes": "Accepts the Level D requirements table or the specific external assessor subsection."
+    },
+    {
+      "question_id": "RB016",
+      "question": "How long does an unsuccessful promotion applicant have to request reconsideration?",
+      "expected_evidence": [
+        {
+          "policy_id": "76",
+          "heading_path": [
+            "Section 6 - Procedures",
+            "Part E - Outcomes",
+            "Reconsideration"
+          ]
+        }
+      ],
+      "notes": "Tests retrieval of a procedural deadline."
+    },
+    {
+      "question_id": "RB017",
+      "question": "Who does the Academic Staff Qualifications Policy apply to?",
+      "expected_evidence": [
+        {
+          "policy_id": "420",
+          "heading_path": [
+            "Section 3 - Scope"
+          ]
+        }
+      ],
+      "notes": "Tests scope retrieval for teaching staff."
+    },
+    {
+      "question_id": "RB018",
+      "question": "What arrangements are required for teaching staff who do not yet meet Professional Equivalence?",
+      "expected_evidence": [
+        {
+          "policy_id": "420",
+          "heading_path": [
+            "Section 5 - Policy Statement"
+          ],
+          "text_contains": "professional development plans and appropriate supervision arrangements are established"
+        }
+      ],
+      "notes": "Tests retrieval of safeguards applying before Professional Equivalence is reached."
+    },
+    {
+      "question_id": "RB019",
+      "question": "What records must the University maintain about staff qualifications and Professional Equivalence?",
+      "expected_evidence": [
+        {
+          "policy_id": "420",
+          "heading_path": [
+            "Section 5 - Policy Statement"
+          ],
+          "text_contains": "robust records of all staff qualifications"
+        }
+      ],
+      "notes": "Tests retrieval of record-keeping requirements."
+    },
+    {
+      "question_id": "RB020",
+      "question": "What scholarly activities are academic teaching staff expected to engage in?",
+      "expected_evidence": [
+        {
+          "policy_id": "420",
+          "heading_path": [
+            "Section 5 - Policy Statement"
+          ],
+          "text_contains": "maintain and advance disciplinary knowledge"
+        }
+      ],
+      "notes": "Tests semantic retrieval using scholarship terminology."
+    },
+    {
+      "question_id": "RB021",
+      "question": "What does Professional Equivalence mean for academic teaching staff?",
+      "expected_evidence": [
+        {
+          "policy_id": "420",
+          "heading_path": [
+            "Section 7 - Definitions"
+          ]
+        }
+      ],
+      "notes": "Definition retrieval case deliberately distinct from procedural questions."
+    },
+    {
+      "question_id": "RB022",
+      "question": "Does the Admissions Policy cover applicants for higher degrees by research?",
+      "expected_evidence": [
+        {
+          "policy_id": "169",
+          "heading_path": [
+            "Section 3 - Scope"
+          ]
+        }
+      ],
+      "notes": "Tests retrieval of a scope exclusion and referral."
+    },
+    {
+      "question_id": "RB023",
+      "question": "If an applicant meets all course entry requirements, are they guaranteed an offer?",
+      "expected_evidence": [
+        {
+          "policy_id": "169",
+          "heading_path": [
+            "Section 5 - Policy Statement"
+          ],
+          "text_contains": "are eligible to be considered for entry to the course but are not guaranteed an offer"
+        }
+      ],
+      "notes": "Natural applicant question requiring distinction between eligibility and competitive selection."
+    },
+    {
+      "question_id": "RB024",
+      "question": "Who has general oversight of the Admissions Policy?",
+      "expected_evidence": [
+        {
+          "policy_id": "169",
+          "heading_path": [
+            "Section 4 - Key Decisions"
+          ]
+        }
+      ],
+      "notes": "Governance retrieval case."
+    },
+    {
+      "question_id": "RB025",
+      "question": "What admissions information should be available to prospective students before they apply or accept an offer?",
+      "expected_evidence": [
+        {
+          "policy_id": "169",
+          "heading_path": [
+            "Section 5 - Policy Statement"
+          ],
+          "text_contains": "made available and easily accessible to prospective students"
+        }
+      ],
+      "notes": "Broad natural-language question about transparency requirements."
+    },
+    {
+      "question_id": "RB026",
+      "question": "How does La Trobe support admission for people who have experienced disadvantage or are underrepresented in higher education?",
+      "expected_evidence": [
+        {
+          "policy_id": "169",
+          "heading_path": [
+            "Section 5 - Policy Statement"
+          ],
+          "text_contains": "encourages and supports participation from persons who have experienced disadvantage"
+        }
+      ],
+      "notes": "Tests retrieval using user-oriented wording rather than exact policy terminology."
+    },
+    {
+      "question_id": "RB027",
+      "question": "Can an international student on a student visa enrol in a Single Subject?",
+      "expected_evidence": [
+        {
+          "policy_id": "340",
+          "heading_path": [
+            "Section 6 - Procedures",
+            "Part A - Entry Criteria",
+            "Single Subjects"
+          ]
+        }
+      ],
+      "notes": "Specific admission eligibility question."
+    },
+    {
+      "question_id": "RB028",
+      "question": "What types of disadvantage can be considered for Special Entry Access Scheme adjustments?",
+      "expected_evidence": [
+        {
+          "policy_id": "340",
+          "heading_path": [
+            "Section 6 - Procedures",
+            "Part B - Special Entry Access Scheme (SEAS) Adjustments"
+          ]
+        }
+      ],
+      "notes": "Tests retrieval across several adjustment categories."
+    },
+    {
+      "question_id": "RB029",
+      "question": "How long can an applicant normally defer an offer to study at La Trobe?",
+      "expected_evidence": [
+        {
+          "policy_id": "340",
+          "heading_path": [
+            "Section 6 - Procedures",
+            "Part D - Offers and Acceptance",
+            "Deferment",
+            "General"
+          ]
+        }
+      ],
+      "notes": "Uses the specific general deferment provision."
+    },
+    {
+      "question_id": "RB030",
+      "question": "How soon should a student be advised of the outcome of a course transfer application?",
+      "expected_evidence": [
+        {
+          "policy_id": "340",
+          "heading_path": [
+            "Section 6 - Procedures",
+            "Part F - Transfers"
+          ]
+        }
+      ],
+      "notes": "Tests retrieval of a course transfer processing timeframe."
     }
   ]
 }
