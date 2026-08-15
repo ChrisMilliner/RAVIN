@@ -15,6 +15,13 @@ def _parse_expected_evidence(
 
     policy_id = raw_evidence.get("policy_id")
     heading_path = raw_evidence.get("heading_path")
+    allow_descendants = raw_evidence.get(
+        "allow_descendants",
+        False,
+    )
+    text_contains = raw_evidence.get(
+        "text_contains"
+    )
 
     if not isinstance(policy_id, str):
         raise ValueError(
@@ -34,9 +41,24 @@ def _parse_expected_evidence(
             "Expected evidence heading path must contain strings."
         )
 
+    if not isinstance(allow_descendants, bool):
+        raise ValueError(
+            "Expected evidence allow_descendants must be a boolean."
+        )
+
+    if (
+        text_contains is not None
+        and not isinstance(text_contains, str)
+    ):
+        raise ValueError(
+            "Expected evidence text_contains must be a string."
+        )
+
     return ExpectedEvidence(
         policy_id=policy_id,
         heading_path=tuple(heading_path),
+        allow_descendants=allow_descendants,
+        text_contains=text_contains,
     )
 
 def _parse_question(
