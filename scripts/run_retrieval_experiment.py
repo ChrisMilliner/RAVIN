@@ -267,7 +267,7 @@ def main() -> None:
             ),
             dataset_name=(
                 "RAVIN Preliminary Retrieval "
-                "Development Baseline v1"
+                "Development Baseline v1.1"
             ),
             dataset_status=(
                 DatasetValidationStatus.PRELIMINARY
@@ -508,10 +508,11 @@ def main() -> None:
     )
 
     output_path = (
-        f"{EXPERIMENT_OUTPUT_DIRECTORY}/"
-        "hybrid-semantic-lexical-v1-"
-        f"{timestamp_for_filename}.json"
-    )
+    f"{EXPERIMENT_OUTPUT_DIRECTORY}/"
+    "hybrid-semantic-lexical-v1-"
+    "dataset-v1-1-"
+    f"{timestamp_for_filename}.json"
+)
 
     write_experiment_record(
         experiment_record,
