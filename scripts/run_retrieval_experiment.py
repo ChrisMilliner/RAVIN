@@ -1,3 +1,4 @@
+from datetime import datetime, timezone
 from backend.evaluation.dataset import (
     load_evaluation_questions,
 )
@@ -29,7 +30,16 @@ from backend.retrieval.index import (
     search_semantic_index,
 )
 from backend.retrieval.sentence_transformer_provider import (
+    DEFAULT_EMBEDDING_MODEL,
     SentenceTransformerEmbeddingProvider,
+)
+from backend.evaluation.reporting import (
+    build_experiment_record,
+    calculate_corpus_sha256,
+    calculate_file_sha256,
+    ensure_clean_git_working_tree,
+    get_repository_commit,
+    write_experiment_record,
 )
 
 POLICIES = (
@@ -42,6 +52,9 @@ POLICIES = (
 )
 DATASET_PATH = (
     "evaluation/retrieval_baseline.json"
+)
+EXPERIMENT_OUTPUT_DIRECTORY = (
+    "evaluation/experiments"
 )
 SEMANTIC_WEIGHT = 0.85
 LEXICAL_WEIGHT = 0.15
@@ -83,6 +96,12 @@ def print_evaluation_metrics(
     )
 
 def main() -> None:
+    ensure_clean_git_working_tree()
+
+    repository_commit = (
+        get_repository_commit()
+    )
+
     print(
         "=== RAVIN RETRIEVAL EXPERIMENT ==="
     )
@@ -90,6 +109,12 @@ def main() -> None:
 
     questions = load_evaluation_questions(
         DATASET_PATH
+    )
+
+    dataset_sha256 = (
+        calculate_file_sha256(
+            DATASET_PATH
+        )
     )
 
     print(
@@ -147,6 +172,12 @@ def main() -> None:
     semantic_index = build_semantic_index(
         tuple(all_chunks),
         embedding_provider,
+    )
+
+    corpus_sha256 = (
+        calculate_corpus_sha256(
+            semantic_index
+        )
     )
 
     print(
@@ -425,6 +456,89 @@ def main() -> None:
         "preliminary development dataset. "
         "It cannot support a validated "
         "overall accuracy claim."
+    )
+
+        generated_at = datetime.now(
+        timezone.utc
+    )
+
+    generated_at_utc = (
+        generated_at.isoformat()
+    )
+
+    timestamp_for_filename = (
+        generated_at.strftime(
+            "%Y%m%dT%H%M%SZ"
+        )
+    )
+
+    policy_ids = tuple(
+        policy_id
+        for policy_id, _ in POLICIES
+    )
+
+    experiment_record = (
+        build_experiment_record(
+            comparison=comparison,
+            policy_ids=policy_ids,
+            chunk_count=len(semantic_index),
+            dataset_path=DATASET_PATH,
+            dataset_sha256=(
+                dataset_sha256
+            ),
+            corpus_sha256=(
+                corpus_sha256
+            ),
+            repository_commit=(
+                repository_commit
+            ),
+            generated_at_utc=(
+                generated_at_utc
+            ),
+            embedding_model=(
+                DEFAULT_EMBEDDING_MODEL
+            ),
+            semantic_weight=(
+                SEMANTIC_WEIGHT
+            ),
+            lexical_weight=(
+                LEXICAL_WEIGHT
+            ),
+        )
+    )
+
+    output_path = (
+        f"{EXPERIMENT_OUTPUT_DIRECTORY}/"
+        "hybrid-semantic-lexical-v1-"
+        f"{timestamp_for_filename}.json"
+    )
+
+    write_experiment_record(
+        experiment_record,
+        output_path,
+    )
+
+    print()
+    print("=== EXPERIMENT EVIDENCE ===")
+    print(
+        "Repository commit:",
+        repository_commit,
+    )
+    print(
+        "Dataset SHA-256:",
+        dataset_sha256,
+    )
+    print(
+        "Corpus SHA-256:",
+        corpus_sha256,
+    )
+    print(
+        "Embedding model:",
+        DEFAULT_EMBEDDING_MODEL,
+    )
+    print(
+        "Experiment record:",
+        output_path,
     )
 
 
