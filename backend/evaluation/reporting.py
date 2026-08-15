@@ -115,6 +115,14 @@ def build_experiment_record(
     embedding_model: str,
     semantic_weight: float,
     lexical_weight: float,
+    baseline_strategy: str = "semantic",
+    baseline_semantic_weight: float = 1.0,
+    baseline_lexical_weight: float = 0.0,
+    candidate_strategy: str = (
+        "hybrid-semantic-lexical"
+    ),
+    reranker_model: str | None = None,
+    rerank_depth: int | None = None,
 ) -> dict[str, object]:
     if not policy_ids:
         raise ValueError(
@@ -155,6 +163,70 @@ def build_experiment_record(
     if not embedding_model.strip():
         raise ValueError(
             "Embedding model cannot be empty."
+        )
+
+    if not baseline_strategy.strip():
+        raise ValueError(
+            "Baseline strategy cannot be empty."
+        )
+
+    if not candidate_strategy.strip():
+        raise ValueError(
+            "Candidate strategy cannot be empty."
+        )
+
+    if not 0.0 <= baseline_semantic_weight <= 1.0:
+        raise ValueError(
+            "Baseline semantic weight must be "
+            "between 0 and 1."
+        )
+
+    if not 0.0 <= baseline_lexical_weight <= 1.0:
+        raise ValueError(
+            "Baseline lexical weight must be "
+            "between 0 and 1."
+        )
+
+    if abs(
+        baseline_semantic_weight
+        + baseline_lexical_weight
+        - 1.0
+    ) > 1e-9:
+        raise ValueError(
+            "Baseline retrieval weights must "
+            "sum to 1."
+        )
+
+    if (
+        reranker_model is None
+        and rerank_depth is not None
+    ):
+        raise ValueError(
+            "Rerank depth requires a reranker model."
+        )
+
+    if (
+        reranker_model is not None
+        and not reranker_model.strip()
+    ):
+        raise ValueError(
+            "Reranker model cannot be empty."
+        )
+
+    if (
+        reranker_model is not None
+        and rerank_depth is None
+    ):
+        raise ValueError(
+            "Reranker model requires a rerank depth."
+        )
+
+    if (
+        rerank_depth is not None
+        and rerank_depth <= 0
+    ):
+        raise ValueError(
+            "Rerank depth must be greater than zero."
         )
 
     if not 0.0 <= semantic_weight <= 1.0:
@@ -198,20 +270,24 @@ def build_experiment_record(
         "retrieval_configuration": {
             "embedding_model": embedding_model,
             "baseline": {
-                "strategy": "semantic",
-                "semantic_weight": 1.0,
-                "lexical_weight": 0.0,
+                "strategy": baseline_strategy,
+                "semantic_weight": (
+                    baseline_semantic_weight
+                ),
+                "lexical_weight": (
+                    baseline_lexical_weight
+                ),
             },
             "candidate": {
-                "strategy": (
-                    "hybrid-semantic-lexical"
-                ),
+                "strategy": candidate_strategy,
                 "semantic_weight": (
                     semantic_weight
                 ),
                 "lexical_weight": (
                     lexical_weight
                 ),
+                "reranker_model": reranker_model,
+                "rerank_depth": rerank_depth,
             },
         },
         "dataset": {
