@@ -458,7 +458,7 @@ def main() -> None:
         "overall accuracy claim."
     )
 
-        generated_at = datetime.now(
+    generated_at = datetime.now(
         timezone.utc
     )
 
