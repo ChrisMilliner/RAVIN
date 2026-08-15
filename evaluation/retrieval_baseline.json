@@ -1,5 +1,5 @@
 {
-  "name": "RAVIN Preliminary Retrieval Development Baseline v1",
+  "name": "RAVIN Preliminary Retrieval Development Baseline v1.1",
   "status": "preliminary-not-gold-standard",
   "questions": [
     {
@@ -88,6 +88,15 @@
             "Section 6 - Procedures",
             "Part A - Dress and Colour Protocols"
           ]
+        },
+        {
+          "policy_id": "208",
+          "heading_path": [
+            "Section 6 - Procedures",
+            "Part E - Specific Academic Dress Requirements",
+            "Graduands/Graduates and Other Award Recipients"
+          ],
+          "text_contains": "hood’s silk exposed on the right shoulder"
         }
       ],
       "notes": "Specific factual retrieval question."
