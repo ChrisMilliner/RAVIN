@@ -2,6 +2,7 @@ import pytest
 from backend.evaluation.experiment_models import (
     DatasetValidationStatus,
     ExperimentDirection,
+    ExperimentSelectionDecision,
     RetrievalExperimentConfig,
 )
 from backend.evaluation.experiments import (
@@ -148,6 +149,10 @@ def test_preliminary_dataset_cannot_satisfy_validated_gate():
 
     assert comparison.quality_gate_passed
     assert not comparison.validated_dataset_gate_passed
+    assert (
+    comparison.selection_decision
+    == ExperimentSelectionDecision.REQUIRES_VALIDATED_EVALUATION
+    )
 
 def test_human_validated_dataset_can_satisfy_validated_gate():
     baseline = make_run(
@@ -174,6 +179,14 @@ def test_human_validated_dataset_can_satisfy_validated_gate():
 
     assert comparison.quality_gate_passed
     assert comparison.validated_dataset_gate_passed
+    assert (
+        comparison.direction
+        == ExperimentDirection.IMPROVED
+    )
+    assert (
+        comparison.selection_decision
+        == ExperimentSelectionDecision.ELIGIBLE_FOR_SELECTION
+    )
 
 def test_candidate_below_95_percent_fails_quality_gate():
     baseline = make_run(
@@ -200,6 +213,14 @@ def test_candidate_below_95_percent_fails_quality_gate():
 
     assert not comparison.quality_gate_passed
     assert not comparison.validated_dataset_gate_passed
+    assert (
+    comparison.direction
+    == ExperimentDirection.IMPROVED
+    )
+    assert (
+        comparison.selection_decision
+        == ExperimentSelectionDecision.REJECT_BELOW_THRESHOLD
+    )
 
 def test_top_1_regression_marks_experiment_as_regressed():
     baseline = make_run(
@@ -308,3 +329,39 @@ def test_comparison_requires_same_questions():
             candidate,
             make_config(),
         )
+
+def test_validated_candidate_is_rejected_when_not_improved():
+    baseline = make_run(
+        ranks=(1,),
+        top_1=1.0,
+        hit_at_k=1.0,
+        mrr=1.0,
+    )
+
+    candidate = make_run(
+        ranks=(1,),
+        top_1=0.95,
+        hit_at_k=1.0,
+        mrr=0.95,
+    )
+
+    comparison = compare_retrieval_experiments(
+        baseline,
+        candidate,
+        make_config(
+            DatasetValidationStatus.HUMAN_VALIDATED
+        ),
+    )
+
+    assert comparison.quality_gate_passed
+    assert comparison.validated_dataset_gate_passed
+
+    assert (
+        comparison.direction
+        == ExperimentDirection.REGRESSED
+    )
+
+    assert (
+        comparison.selection_decision
+        == ExperimentSelectionDecision.REJECT_NOT_IMPROVED
+    )

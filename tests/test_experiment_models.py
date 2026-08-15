@@ -1,7 +1,7 @@
 import pytest
-
 from backend.evaluation.experiment_models import (
     DatasetValidationStatus,
+    ExperimentSelectionDecision,
     MetricComparison,
     QuestionRankChange,
     RetrievalExperimentConfig,
@@ -46,6 +46,27 @@ def test_dataset_status_distinguishes_preliminary_from_validated():
     assert (
         DatasetValidationStatus.PRELIMINARY
         != DatasetValidationStatus.HUMAN_VALIDATED
+    )
+
+def test_selection_decision_defines_accuracy_gate_outcomes():
+    assert (
+        ExperimentSelectionDecision.REJECT_BELOW_THRESHOLD.value
+        == "reject-below-threshold"
+    )
+
+    assert (
+        ExperimentSelectionDecision.REQUIRES_VALIDATED_EVALUATION.value
+        == "requires-validated-evaluation"
+    )
+
+    assert (
+        ExperimentSelectionDecision.REJECT_NOT_IMPROVED.value
+        == "reject-not-improved"
+    )
+
+    assert (
+        ExperimentSelectionDecision.ELIGIBLE_FOR_SELECTION.value
+        == "eligible-for-selection"
     )
 
 def test_metric_comparison_calculates_positive_delta():
