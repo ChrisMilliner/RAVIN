@@ -101,3 +101,35 @@ def test_evaluation_question_requires_expected_evidence():
             question="Who approves changes to academic dress?",
             expected_evidence=(),
         )
+
+def test_expected_evidence_preserves_matching_controls():
+    expected = ExpectedEvidence(
+        policy_id="208",
+        heading_path=(
+            "Section 6 - Procedures",
+        ),
+        allow_descendants=True,
+        text_contains="answer-bearing evidence",
+    )
+
+    assert expected.allow_descendants is True
+    assert (
+        expected.text_contains
+        == "answer-bearing evidence"
+    )
+
+def test_expected_evidence_rejects_empty_text_fragment():
+    with pytest.raises(
+        ValueError,
+        match=(
+            "Expected evidence text fragment "
+            "cannot be empty."
+        ),
+    ):
+        ExpectedEvidence(
+            policy_id="208",
+            heading_path=(
+                "Section 6 - Procedures",
+            ),
+            text_contains="   ",
+        )

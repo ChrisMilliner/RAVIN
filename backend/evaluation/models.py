@@ -8,6 +8,8 @@ DEFAULT_TOP_1_PASS_THRESHOLD = 0.95
 class ExpectedEvidence:
     policy_id: str
     heading_path: tuple[str, ...]
+    allow_descendants: bool = False
+    text_contains: str | None = None
 
     def __post_init__(self) -> None:
         if not self.policy_id.strip():
@@ -18,6 +20,14 @@ class ExpectedEvidence:
         if not self.heading_path:
             raise ValueError(
                 "Expected evidence heading path cannot be empty."
+            )
+
+        if (
+            self.text_contains is not None
+            and not self.text_contains.strip()
+        ):
+            raise ValueError(
+                "Expected evidence text fragment cannot be empty."
             )
 
 @dataclass(frozen=True)
