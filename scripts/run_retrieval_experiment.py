@@ -30,6 +30,8 @@ from backend.retrieval.cross_encoder_provider import (
     CrossEncoderRerankerProvider,
 )
 from backend.retrieval.index import (
+    BODY_ONLY_EMBEDDING,
+    RETRIEVAL_TEXT_EMBEDDING,
     build_semantic_index,
     search_semantic_index,
 )
@@ -169,27 +171,73 @@ def main() -> None:
 
     print()
     print(
-        "=== BUILDING SHARED SEMANTIC INDEX ==="
+        "=== BUILDING RETRIEVAL-TEXT "
+        "SEMANTIC INDEX ==="
     )
 
     embedding_provider = (
         SentenceTransformerEmbeddingProvider()
     )
 
-    semantic_index = build_semantic_index(
-        tuple(all_chunks),
-        embedding_provider,
-    )
-
-    corpus_sha256 = (
-        calculate_corpus_sha256(
-            semantic_index
+    retrieval_text_index = (
+        build_semantic_index(
+            tuple(all_chunks),
+            embedding_provider,
+            embedding_text_strategy=(
+                RETRIEVAL_TEXT_EMBEDDING
+            ),
         )
     )
 
     print(
-        "Indexed chunks:",
-        len(semantic_index),
+        "Retrieval-text indexed chunks:",
+        len(retrieval_text_index),
+    )
+
+    print()
+    print(
+        "=== BUILDING BODY-ONLY "
+        "SEMANTIC INDEX ==="
+    )
+
+    body_only_index = (
+        build_semantic_index(
+            tuple(all_chunks),
+            embedding_provider,
+            embedding_text_strategy=(
+                BODY_ONLY_EMBEDDING
+            ),
+        )
+    )
+
+    print(
+        "Body-only indexed chunks:",
+        len(body_only_index),
+    )
+
+    retrieval_text_corpus_sha256 = (
+        calculate_corpus_sha256(
+            retrieval_text_index
+        )
+    )
+
+    body_only_corpus_sha256 = (
+        calculate_corpus_sha256(
+            body_only_index
+        )
+    )
+
+    if (
+        retrieval_text_corpus_sha256
+        != body_only_corpus_sha256
+    ):
+        raise RuntimeError(
+            "Embedding strategy changed the "
+            "underlying retrieval corpus."
+        )
+
+    corpus_sha256 = (
+        retrieval_text_corpus_sha256
     )
 
     evaluation_config = EvaluationConfig()
@@ -216,7 +264,7 @@ def main() -> None:
         top_k: int,
     ):
         return search_semantic_index(
-            semantic_index,
+            retrieval_text_index,
             query=question,
             embedding_provider=(
                 embedding_provider
@@ -229,7 +277,7 @@ def main() -> None:
         top_k: int,
     ):
         return search_hybrid_index(
-            semantic_index,
+            retrieval_text_index,
             query=question,
             embedding_provider=(
                 embedding_provider
@@ -240,11 +288,34 @@ def main() -> None:
         )
 
     def retrieve_candidate_v2(
-    question: str,
-    top_k: int,
+        question: str,
+        top_k: int,
     ):
         hybrid_results = search_hybrid_index(
-            semantic_index,
+            retrieval_text_index,
+            query=question,
+            embedding_provider=(
+                embedding_provider
+            ),
+            top_k=top_k,
+            semantic_weight=SEMANTIC_WEIGHT,
+            lexical_weight=LEXICAL_WEIGHT,
+        )
+
+        return rerank_results(
+            query=question,
+            results=hybrid_results,
+            reranker_provider=(
+                reranker_provider
+            ),
+        )
+
+    def retrieve_candidate_v3(
+        question: str,
+        top_k: int,
+    ):
+        hybrid_results = search_hybrid_index(
+            body_only_index,
             query=question,
             embedding_provider=(
                 embedding_provider
@@ -323,55 +394,85 @@ def main() -> None:
         "Candidate v2 evaluation complete."
     )
 
+    print()
+    print(
+        "=== RUNNING BODY-ONLY "
+        "EMBEDDING CANDIDATE V3 ==="
+    )
+    print(
+        "Embedding text strategy:",
+        BODY_ONLY_EMBEDDING,
+    )
+    print(
+        "Hybrid retrieval depth:",
+        evaluation_config.top_k,
+    )
+    print(
+        "Reranker model:",
+        DEFAULT_RERANKER_MODEL,
+    )
+
+    candidate_v3 = run_retrieval_evaluation(
+        questions,
+        retrieve_candidate_v3,
+        evaluation_config,
+    )
+
+    print(
+        "Candidate v3 evaluation complete."
+    )
+
     experiment_config = (
-            RetrievalExperimentConfig(
-                experiment_name=(
-                    "Cross-encoder reranking v2"
-                ),
-                baseline_name=(
-                    "MiniLM + lexical token "
-                    "coverage 85/15 v1"
-                ),
-                candidate_name=(
-                    "Hybrid 85/15 + MS MARCO "
-                    "MiniLM-L6-v2 reranking v2"
-                ),
-                dataset_name=(
-                    "RAVIN Preliminary Retrieval "
-                    "Development Baseline v1.2"
-                ),
-                dataset_status=(
-                    DatasetValidationStatus.PRELIMINARY
-                ),
-                top_k=evaluation_config.top_k,
-                quality_threshold=(
-                    evaluation_config
-                    .top_1_pass_threshold
-                ),
-            )
+        RetrievalExperimentConfig(
+            experiment_name=(
+                "Body-only semantic embeddings v3"
+            ),
+            baseline_name=(
+                "Hybrid 85/15 + MS MARCO "
+                "MiniLM-L6-v2 reranking v2"
+            ),
+            candidate_name=(
+                "Body-only MiniLM embeddings + "
+                "Hybrid 85/15 + MS MARCO "
+                "MiniLM-L6-v2 reranking v3"
+            ),
+            dataset_name=(
+                "RAVIN Preliminary Retrieval "
+                "Development Baseline v1.2"
+            ),
+            dataset_status=(
+                DatasetValidationStatus.PRELIMINARY
+            ),
+            top_k=evaluation_config.top_k,
+            quality_threshold=(
+                evaluation_config
+                .top_1_pass_threshold
+            ),
         )
+    )
 
     comparison = (
         compare_retrieval_experiments(
-            candidate_v1,
             candidate_v2,
+            candidate_v3,
             experiment_config,
         )
     )
 
     print_evaluation_metrics(
-        "CANDIDATE V1 - HYBRID 85/15",
-        candidate_v1,
+        "BASELINE V2 - HYBRID + RERANKER",
+        candidate_v2,
     )
 
     print_evaluation_metrics(
-        "CANDIDATE V2 - HYBRID + RERANKER",
-        candidate_v2,
+        "CANDIDATE V3 - BODY-ONLY + "
+        "HYBRID + RERANKER",
+        candidate_v3,
     )
 
     print()
     print(
-        "=== V1 -> V2 METRIC COMPARISON ==="
+        "=== V2 -> V3 METRIC COMPARISON ==="
     )
     print(
         "Top-1 delta:",
@@ -554,7 +655,7 @@ def main() -> None:
             build_experiment_record(
                 comparison=comparison,
                 policy_ids=policy_ids,
-                chunk_count=len(semantic_index),
+                chunk_count=len(retrieval_text_index),
                 dataset_path=DATASET_PATH,
                 dataset_sha256=(
                     dataset_sha256
@@ -578,7 +679,11 @@ def main() -> None:
                     LEXICAL_WEIGHT
                 ),
                 baseline_strategy=(
-                    "hybrid-semantic-lexical"
+                    "hybrid-semantic-lexical-"
+                    "cross-encoder"
+                ),
+                baseline_embedding_text_strategy=(
+                    RETRIEVAL_TEXT_EMBEDDING
                 ),
                 baseline_semantic_weight=(
                     SEMANTIC_WEIGHT
@@ -586,9 +691,18 @@ def main() -> None:
                 baseline_lexical_weight=(
                     LEXICAL_WEIGHT
                 ),
+                baseline_reranker_model=(
+                    DEFAULT_RERANKER_MODEL
+                ),
+                baseline_rerank_depth=(
+                    evaluation_config.top_k
+                ),
                 candidate_strategy=(
                     "hybrid-semantic-lexical-"
                     "cross-encoder"
+                ),
+                candidate_embedding_text_strategy=(
+                    BODY_ONLY_EMBEDDING
                 ),
                 reranker_model=(
                     DEFAULT_RERANKER_MODEL
@@ -601,7 +715,7 @@ def main() -> None:
 
     output_path = (
         f"{EXPERIMENT_OUTPUT_DIRECTORY}/"
-        "hybrid-cross-encoder-v2-"
+        "body-only-cross-encoder-v3-"
         "dataset-v1-2-"
         f"{timestamp_for_filename}.json"
     )
@@ -640,6 +754,14 @@ def main() -> None:
     print(
         "Experiment record:",
         output_path,
+    )
+    print(
+        "Baseline embedding text strategy:",
+        RETRIEVAL_TEXT_EMBEDDING,
+    )
+    print(
+        "Candidate embedding text strategy:",
+        BODY_ONLY_EMBEDDING,
     )
 
 
