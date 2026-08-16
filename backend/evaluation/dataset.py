@@ -1,6 +1,7 @@
 import json
 from pathlib import Path
 from backend.evaluation.models import (
+    EvaluationBehavior,
     EvaluationQuestion,
     ExpectedEvidence,
 )
@@ -76,6 +77,11 @@ def _parse_question(
     )
     notes = raw_question.get("notes")
 
+    raw_behavior = raw_question.get(
+        "behavior",
+        EvaluationBehavior.DIRECT_ANSWER.value,
+    )
+
     if not isinstance(question_id, str):
         raise ValueError(
             "Evaluation question ID must be a string."
@@ -99,6 +105,25 @@ def _parse_question(
             "Evaluation question notes must be a string."
         )
 
+    if not isinstance(
+        raw_behavior,
+        str,
+    ):
+        raise ValueError(
+            "Evaluation question behavior must be a string."
+        )
+
+    try:
+        behavior = EvaluationBehavior(
+            raw_behavior
+        )
+    except ValueError as exc:
+        raise ValueError(
+            "Evaluation question behavior must be one of: "
+            "direct_answer, grounded_overview, clarify, "
+            "no_grounded_answer."
+        ) from exc
+
     expected_evidence = tuple(
         _parse_expected_evidence(item)
         for item in raw_expected
@@ -109,6 +134,7 @@ def _parse_question(
         question=question,
         expected_evidence=expected_evidence,
         notes=notes,
+        behavior=behavior,
     )
 
 def load_evaluation_questions(
