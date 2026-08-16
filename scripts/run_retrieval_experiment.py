@@ -32,6 +32,7 @@ from backend.retrieval.cross_encoder_provider import (
 from backend.retrieval.index import (
     BODY_ONLY_EMBEDDING,
     RETRIEVAL_TEXT_EMBEDDING,
+    TITLE_BODY_EMBEDDING,
     build_semantic_index,
     search_semantic_index,
 )
@@ -215,6 +216,27 @@ def main() -> None:
         len(body_only_index),
     )
 
+    print()
+    print(
+        "=== BUILDING TITLE-BODY "
+        "SEMANTIC INDEX ==="
+    )
+
+    title_body_index = (
+        build_semantic_index(
+            tuple(all_chunks),
+            embedding_provider,
+            embedding_text_strategy=(
+                TITLE_BODY_EMBEDDING
+            ),
+        )
+    )
+
+    print(
+        "Title-body indexed chunks:",
+        len(title_body_index),
+    )
+
     retrieval_text_corpus_sha256 = (
         calculate_corpus_sha256(
             retrieval_text_index
@@ -227,9 +249,16 @@ def main() -> None:
         )
     )
 
-    if (
+    title_body_corpus_sha256 = (
+        calculate_corpus_sha256(
+            title_body_index
+        )
+    )
+
+    if not (
         retrieval_text_corpus_sha256
-        != body_only_corpus_sha256
+        == body_only_corpus_sha256
+        == title_body_corpus_sha256
     ):
         raise RuntimeError(
             "Embedding strategy changed the "
@@ -316,6 +345,29 @@ def main() -> None:
     ):
         hybrid_results = search_hybrid_index(
             body_only_index,
+            query=question,
+            embedding_provider=(
+                embedding_provider
+            ),
+            top_k=top_k,
+            semantic_weight=SEMANTIC_WEIGHT,
+            lexical_weight=LEXICAL_WEIGHT,
+        )
+
+        return rerank_results(
+            query=question,
+            results=hybrid_results,
+            reranker_provider=(
+                reranker_provider
+            ),
+        )
+
+    def retrieve_candidate_v4(
+        question: str,
+        top_k: int,
+    ):
+        hybrid_results = search_hybrid_index(
+            title_body_index,
             query=question,
             embedding_provider=(
                 embedding_provider
@@ -422,19 +474,48 @@ def main() -> None:
         "Candidate v3 evaluation complete."
     )
 
+    print()
+    print(
+        "=== RUNNING TITLE-BODY "
+        "EMBEDDING CANDIDATE V4 ==="
+    )
+    print(
+        "Embedding text strategy:",
+        TITLE_BODY_EMBEDDING,
+    )
+    print(
+        "Hybrid retrieval depth:",
+        evaluation_config.top_k,
+    )
+    print(
+        "Reranker model:",
+        DEFAULT_RERANKER_MODEL,
+    )
+
+    candidate_v4 = run_retrieval_evaluation(
+        questions,
+        retrieve_candidate_v4,
+        evaluation_config,
+    )
+
+    print(
+        "Candidate v4 evaluation complete."
+    )
+
     experiment_config = (
         RetrievalExperimentConfig(
             experiment_name=(
-                "Body-only semantic embeddings v3"
+                "Title-body semantic embeddings v4"
             ),
             baseline_name=(
-                "Hybrid 85/15 + MS MARCO "
-                "MiniLM-L6-v2 reranking v2"
-            ),
-            candidate_name=(
                 "Body-only MiniLM embeddings + "
                 "Hybrid 85/15 + MS MARCO "
                 "MiniLM-L6-v2 reranking v3"
+            ),
+            candidate_name=(
+                "Title-body MiniLM embeddings + "
+                "Hybrid 85/15 + MS MARCO "
+                "MiniLM-L6-v2 reranking v4"
             ),
             dataset_name=(
                 "RAVIN Preliminary Retrieval "
@@ -453,26 +534,27 @@ def main() -> None:
 
     comparison = (
         compare_retrieval_experiments(
-            candidate_v2,
             candidate_v3,
+            candidate_v4,
             experiment_config,
         )
     )
 
     print_evaluation_metrics(
-        "BASELINE V2 - HYBRID + RERANKER",
-        candidate_v2,
-    )
-
-    print_evaluation_metrics(
-        "CANDIDATE V3 - BODY-ONLY + "
+        "BASELINE V3 - BODY-ONLY + "
         "HYBRID + RERANKER",
         candidate_v3,
     )
 
+    print_evaluation_metrics(
+        "CANDIDATE V4 - TITLE-BODY + "
+        "HYBRID + RERANKER",
+        candidate_v4,
+    )
+
     print()
     print(
-        "=== V2 -> V3 METRIC COMPARISON ==="
+        "=== V3 -> V4 METRIC COMPARISON ==="
     )
     print(
         "Top-1 delta:",
@@ -683,7 +765,7 @@ def main() -> None:
                     "cross-encoder"
                 ),
                 baseline_embedding_text_strategy=(
-                    RETRIEVAL_TEXT_EMBEDDING
+                    BODY_ONLY_EMBEDDING
                 ),
                 baseline_semantic_weight=(
                     SEMANTIC_WEIGHT
@@ -702,7 +784,7 @@ def main() -> None:
                     "cross-encoder"
                 ),
                 candidate_embedding_text_strategy=(
-                    BODY_ONLY_EMBEDDING
+                    TITLE_BODY_EMBEDDING
                 ),
                 reranker_model=(
                     DEFAULT_RERANKER_MODEL
@@ -715,7 +797,7 @@ def main() -> None:
 
     output_path = (
         f"{EXPERIMENT_OUTPUT_DIRECTORY}/"
-        "body-only-cross-encoder-v3-"
+        "title-body-cross-encoder-v4-"
         "dataset-v1-2-"
         f"{timestamp_for_filename}.json"
     )
@@ -757,11 +839,11 @@ def main() -> None:
     )
     print(
         "Baseline embedding text strategy:",
-        RETRIEVAL_TEXT_EMBEDDING,
+        BODY_ONLY_EMBEDDING,
     )
     print(
         "Candidate embedding text strategy:",
-        BODY_ONLY_EMBEDDING,
+        TITLE_BODY_EMBEDDING,
     )
 
 
