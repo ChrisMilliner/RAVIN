@@ -620,10 +620,6 @@ def main() -> None:
         "=== V3 -> V5 METRIC COMPARISON ==="
     )
 
-    print()
-    print(
-        "=== V3 -> V4 METRIC COMPARISON ==="
-    )
     print(
         "Top-1 delta:",
         f"{comparison.top_1.delta:+.2%}",
@@ -898,7 +894,7 @@ def main() -> None:
         DEFAULT_RERANKER_MODEL,
     )
     print(
-        "Rerank depth:",
+        "Evaluation Top-K:",
         evaluation_config.top_k,
     )
     print(
