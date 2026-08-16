@@ -143,6 +143,68 @@ def test_evaluation_question_requires_expected_evidence():
             expected_evidence=(),
         )
 
+def test_no_grounded_answer_allows_empty_expected_evidence():
+    question = EvaluationQuestion(
+        question_id="Q099",
+        question="What is the university president's favourite restaurant?",
+        expected_evidence=(),
+        behavior=(
+            EvaluationBehavior.NO_GROUNDED_ANSWER
+        ),
+    )
+
+    assert question.expected_evidence == ()
+    assert (
+        question.behavior
+        == EvaluationBehavior.NO_GROUNDED_ANSWER
+    )
+
+
+def test_no_grounded_answer_rejects_expected_evidence():
+    with pytest.raises(
+        ValueError,
+        match=(
+            "No-grounded-answer questions "
+            "must not define expected evidence."
+        ),
+    ):
+        EvaluationQuestion(
+            question_id="Q099",
+            question="Unsupported question",
+            expected_evidence=(
+                make_expected_evidence(),
+            ),
+            behavior=(
+                EvaluationBehavior.NO_GROUNDED_ANSWER
+            ),
+        )
+
+
+@pytest.mark.parametrize(
+    "behavior",
+    (
+        EvaluationBehavior.DIRECT_ANSWER,
+        EvaluationBehavior.GROUNDED_OVERVIEW,
+        EvaluationBehavior.CLARIFY,
+    ),
+)
+def test_grounded_behaviors_require_expected_evidence(
+    behavior,
+):
+    with pytest.raises(
+        ValueError,
+        match=(
+            "Evaluation question must define "
+            "expected evidence."
+        ),
+    ):
+        EvaluationQuestion(
+            question_id="Q001",
+            question="Test question",
+            expected_evidence=(),
+            behavior=behavior,
+        )
+
 def test_expected_evidence_preserves_matching_controls():
     expected = ExpectedEvidence(
         policy_id="208",
@@ -173,4 +235,21 @@ def test_expected_evidence_rejects_empty_text_fragment():
                 "Section 6 - Procedures",
             ),
             text_contains="   ",
+        )
+
+def test_evaluation_question_rejects_invalid_behavior_type():
+    with pytest.raises(
+        ValueError,
+        match=(
+            "Evaluation question behavior must be "
+            "an EvaluationBehavior."
+        ),
+    ):
+        EvaluationQuestion(
+            question_id="Q001",
+            question="Test question",
+            expected_evidence=(
+                make_expected_evidence(),
+            ),
+            behavior="clarify",  # type: ignore[arg-type]
         )
