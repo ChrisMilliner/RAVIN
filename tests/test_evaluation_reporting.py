@@ -469,6 +469,20 @@ def test_experiment_record_preserves_reranker_configuration():
     )
 
     assert (
+        configuration["baseline"][
+            "reranker_model"
+        ]
+        is None
+    )
+
+    assert (
+        configuration["baseline"][
+            "rerank_depth"
+        ]
+        is None
+    )
+
+    assert (
         configuration["baseline"]["strategy"]
         == "hybrid-semantic-lexical"
     )
@@ -743,3 +757,134 @@ def test_repository_commit_returns_current_head(
     assert commit == (
         "b127e21abcdef1234567890"
     )
+
+def test_experiment_record_preserves_baseline_reranker_configuration():
+    comparison = make_comparison()
+
+    record = build_experiment_record(
+        comparison=comparison,
+        policy_ids=("208",),
+        chunk_count=1,
+        dataset_path=(
+            "evaluation/retrieval_baseline.json"
+        ),
+        dataset_sha256="dataset-hash",
+        corpus_sha256="corpus-hash",
+        repository_commit="abc1234",
+        generated_at_utc=(
+            "2026-08-16T02:00:00+00:00"
+        ),
+        embedding_model=EMBEDDING_MODEL,
+        semantic_weight=SEMANTIC_WEIGHT,
+        lexical_weight=LEXICAL_WEIGHT,
+        baseline_strategy=(
+            "hybrid-semantic-lexical-"
+            "cross-encoder"
+        ),
+        baseline_semantic_weight=(
+            SEMANTIC_WEIGHT
+        ),
+        baseline_lexical_weight=(
+            LEXICAL_WEIGHT
+        ),
+        baseline_reranker_model=(
+            RERANKER_MODEL
+        ),
+        baseline_rerank_depth=5,
+        candidate_strategy=(
+            "hybrid-semantic-lexical-"
+            "cross-encoder"
+        ),
+        reranker_model=(
+            RERANKER_MODEL
+        ),
+        rerank_depth=5,
+    )
+
+    configuration = (
+        record["retrieval_configuration"]
+    )
+
+    assert (
+        configuration["baseline"][
+            "reranker_model"
+        ]
+        == RERANKER_MODEL
+    )
+
+    assert (
+        configuration["baseline"][
+            "rerank_depth"
+        ]
+        == 5
+    )
+
+    assert (
+        configuration["candidate"][
+            "reranker_model"
+        ]
+        == RERANKER_MODEL
+    )
+
+    assert (
+        configuration["candidate"][
+            "rerank_depth"
+        ]
+        == 5
+    )
+
+def test_experiment_record_requires_depth_for_baseline_reranker():
+    comparison = make_comparison()
+
+    with pytest.raises(
+        ValueError,
+        match=(
+            "Baseline reranker model requires "
+            "a baseline rerank depth."
+        ),
+    ):
+        build_experiment_record(
+            comparison=comparison,
+            policy_ids=("208",),
+            chunk_count=1,
+            dataset_path="evaluation/test.json",
+            dataset_sha256="dataset-hash",
+            corpus_sha256="corpus-hash",
+            repository_commit="abc1234",
+            generated_at_utc=(
+                "2026-08-16T02:00:00+00:00"
+            ),
+            embedding_model=EMBEDDING_MODEL,
+            semantic_weight=SEMANTIC_WEIGHT,
+            lexical_weight=LEXICAL_WEIGHT,
+            baseline_reranker_model=(
+                RERANKER_MODEL
+            ),
+        )
+
+def test_experiment_record_requires_model_for_baseline_rerank_depth():
+    comparison = make_comparison()
+
+    with pytest.raises(
+        ValueError,
+        match=(
+            "Baseline rerank depth requires "
+            "a baseline reranker model."
+        ),
+    ):
+        build_experiment_record(
+            comparison=comparison,
+            policy_ids=("208",),
+            chunk_count=1,
+            dataset_path="evaluation/test.json",
+            dataset_sha256="dataset-hash",
+            corpus_sha256="corpus-hash",
+            repository_commit="abc1234",
+            generated_at_utc=(
+                "2026-08-16T02:00:00+00:00"
+            ),
+            embedding_model=EMBEDDING_MODEL,
+            semantic_weight=SEMANTIC_WEIGHT,
+            lexical_weight=LEXICAL_WEIGHT,
+            baseline_rerank_depth=5,
+        )
