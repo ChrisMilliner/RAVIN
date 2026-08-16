@@ -338,7 +338,7 @@ def main() -> None:
                 ),
                 dataset_name=(
                     "RAVIN Preliminary Retrieval "
-                    "Development Baseline v1.1"
+                    "Development Baseline v1.2"
                 ),
                 dataset_status=(
                     DatasetValidationStatus.PRELIMINARY
@@ -602,7 +602,7 @@ def main() -> None:
     output_path = (
         f"{EXPERIMENT_OUTPUT_DIRECTORY}/"
         "hybrid-cross-encoder-v2-"
-        "dataset-v1-1-"
+        "dataset-v1-2-"
         f"{timestamp_for_filename}.json"
     )
 

@@ -1,5 +1,5 @@
 {
-  "name": "RAVIN Preliminary Retrieval Development Baseline v1.1",
+  "name": "RAVIN Preliminary Retrieval Development Baseline v1.2",
   "status": "preliminary-not-gold-standard",
   "questions": [
     {
@@ -381,9 +381,16 @@
             "Section 5 - Policy Statement"
           ],
           "text_contains": "made available and easily accessible to prospective students"
+        },
+        {
+          "policy_id": "169",
+          "heading_path": [
+            "Section 5 - Policy Statement"
+          ],
+          "text_contains": "students are informed of their rights and obligations before accepting or declining their offer"
         }
       ],
-      "notes": "Broad natural-language question about transparency requirements."
+      "notes": "Broad natural-language question about transparency requirements. Accepts two independently answer-bearing fragments under the stable Policy Statement heading so evaluation is not tied to structural chunk boundaries."
     },
     {
       "question_id": "RB026",
