@@ -25,9 +25,16 @@ from backend.ingestion.processor import process_policy
 from backend.retrieval.hybrid import (
     search_hybrid_index,
 )
+from backend.retrieval.cross_encoder_provider import (
+    DEFAULT_RERANKER_MODEL,
+    CrossEncoderRerankerProvider,
+)
 from backend.retrieval.index import (
     build_semantic_index,
     search_semantic_index,
+)
+from backend.retrieval.reranking import (
+    rerank_results,
 )
 from backend.retrieval.sentence_transformer_provider import (
     DEFAULT_EMBEDDING_MODEL,
@@ -187,6 +194,23 @@ def main() -> None:
 
     evaluation_config = EvaluationConfig()
 
+    print()
+    print(
+        "=== LOADING CROSS-ENCODER RERANKER ==="
+    )
+    print(
+        "Reranker model:",
+        DEFAULT_RERANKER_MODEL,
+    )
+
+    reranker_provider = (
+        CrossEncoderRerankerProvider()
+    )
+
+    print(
+        "Cross-encoder reranker loaded."
+    )
+
     def retrieve_baseline(
         question: str,
         top_k: int,
@@ -213,6 +237,29 @@ def main() -> None:
             top_k=top_k,
             semantic_weight=SEMANTIC_WEIGHT,
             lexical_weight=LEXICAL_WEIGHT,
+        )
+
+    def retrieve_candidate_v2(
+    question: str,
+    top_k: int,
+    ):
+        hybrid_results = search_hybrid_index(
+            semantic_index,
+            query=question,
+            embedding_provider=(
+                embedding_provider
+            ),
+            top_k=top_k,
+            semantic_weight=SEMANTIC_WEIGHT,
+            lexical_weight=LEXICAL_WEIGHT,
+        )
+
+        return rerank_results(
+            query=question,
+            results=hybrid_results,
+            reranker_provider=(
+                reranker_provider
+            ),
         )
 
     print()
@@ -243,63 +290,89 @@ def main() -> None:
         f"{LEXICAL_WEIGHT:.0%}",
     )
 
-    candidate = run_retrieval_evaluation(
+    candidate_v1 = run_retrieval_evaluation(
         questions,
         retrieve_candidate,
         evaluation_config,
     )
 
     print(
-        "Candidate evaluation complete."
+        "Candidate v1 evaluation complete."
+    )
+
+    print()
+    print(
+        "=== RUNNING RERANKED CANDIDATE V2 ==="
+    )
+    print(
+        "Hybrid retrieval depth:",
+        evaluation_config.top_k,
+    )
+    print(
+        "Reranker model:",
+        DEFAULT_RERANKER_MODEL,
+    )
+
+    candidate_v2 = run_retrieval_evaluation(
+        questions,
+        retrieve_candidate_v2,
+        evaluation_config,
+    )
+
+    print(
+        "Candidate v2 evaluation complete."
     )
 
     experiment_config = (
-        RetrievalExperimentConfig(
-            experiment_name=(
-                "Hybrid semantic lexical v1"
-            ),
-            baseline_name=(
-                "MiniLM semantic baseline"
-            ),
-            candidate_name=(
-                "MiniLM + lexical token "
-                "coverage 85/15 v1"
-            ),
-            dataset_name=(
-                "RAVIN Preliminary Retrieval "
-                "Development Baseline v1.1"
-            ),
-            dataset_status=(
-                DatasetValidationStatus.PRELIMINARY
-            ),
-            top_k=evaluation_config.top_k,
-            quality_threshold=(
-                evaluation_config
-                .top_1_pass_threshold
-            ),
+            RetrievalExperimentConfig(
+                experiment_name=(
+                    "Cross-encoder reranking v2"
+                ),
+                baseline_name=(
+                    "MiniLM + lexical token "
+                    "coverage 85/15 v1"
+                ),
+                candidate_name=(
+                    "Hybrid 85/15 + MS MARCO "
+                    "MiniLM-L6-v2 reranking v2"
+                ),
+                dataset_name=(
+                    "RAVIN Preliminary Retrieval "
+                    "Development Baseline v1.1"
+                ),
+                dataset_status=(
+                    DatasetValidationStatus.PRELIMINARY
+                ),
+                top_k=evaluation_config.top_k,
+                quality_threshold=(
+                    evaluation_config
+                    .top_1_pass_threshold
+                ),
+            )
         )
-    )
 
     comparison = (
         compare_retrieval_experiments(
-            baseline,
-            candidate,
+            candidate_v1,
+            candidate_v2,
             experiment_config,
         )
     )
 
     print_evaluation_metrics(
-        "BASELINE - MINILM SEMANTIC",
-        baseline,
+        "CANDIDATE V1 - HYBRID 85/15",
+        candidate_v1,
     )
 
     print_evaluation_metrics(
-        "CANDIDATE - HYBRID 85/15",
-        candidate,
+        "CANDIDATE V2 - HYBRID + RERANKER",
+        candidate_v2,
     )
 
     print()
-    print("=== METRIC COMPARISON ===")
+    print(
+        "=== V1 -> V2 METRIC COMPARISON ==="
+    )
     print(
         "Top-1 delta:",
         f"{comparison.top_1.delta:+.2%}",
@@ -478,41 +551,60 @@ def main() -> None:
     )
 
     experiment_record = (
-        build_experiment_record(
-            comparison=comparison,
-            policy_ids=policy_ids,
-            chunk_count=len(semantic_index),
-            dataset_path=DATASET_PATH,
-            dataset_sha256=(
-                dataset_sha256
-            ),
-            corpus_sha256=(
-                corpus_sha256
-            ),
-            repository_commit=(
-                repository_commit
-            ),
-            generated_at_utc=(
-                generated_at_utc
-            ),
-            embedding_model=(
-                DEFAULT_EMBEDDING_MODEL
-            ),
-            semantic_weight=(
-                SEMANTIC_WEIGHT
-            ),
-            lexical_weight=(
-                LEXICAL_WEIGHT
-            ),
-        )
-    )
+            build_experiment_record(
+                comparison=comparison,
+                policy_ids=policy_ids,
+                chunk_count=len(semantic_index),
+                dataset_path=DATASET_PATH,
+                dataset_sha256=(
+                    dataset_sha256
+                ),
+                corpus_sha256=(
+                    corpus_sha256
+                ),
+                repository_commit=(
+                    repository_commit
+                ),
+                generated_at_utc=(
+                    generated_at_utc
+                ),
+                embedding_model=(
+                    DEFAULT_EMBEDDING_MODEL
+                ),
+                semantic_weight=(
+                    SEMANTIC_WEIGHT
+                ),
+                lexical_weight=(
+                    LEXICAL_WEIGHT
+                ),
+                baseline_strategy=(
+                    "hybrid-semantic-lexical"
+                ),
+                baseline_semantic_weight=(
+                    SEMANTIC_WEIGHT
+                ),
+                baseline_lexical_weight=(
+                    LEXICAL_WEIGHT
+                ),
+                candidate_strategy=(
+                    "hybrid-semantic-lexical-"
+                    "cross-encoder"
+                ),
+                reranker_model=(
+                    DEFAULT_RERANKER_MODEL
+                ),
+                rerank_depth=(
+                    evaluation_config.top_k
+                ),
+            )
+        )  
 
     output_path = (
-    f"{EXPERIMENT_OUTPUT_DIRECTORY}/"
-    "hybrid-semantic-lexical-v1-"
-    "dataset-v1-1-"
-    f"{timestamp_for_filename}.json"
-)
+        f"{EXPERIMENT_OUTPUT_DIRECTORY}/"
+        "hybrid-cross-encoder-v2-"
+        "dataset-v1-1-"
+        f"{timestamp_for_filename}.json"
+    )
 
     write_experiment_record(
         experiment_record,
@@ -536,6 +628,14 @@ def main() -> None:
     print(
         "Embedding model:",
         DEFAULT_EMBEDDING_MODEL,
+    )
+    print(
+        "Reranker model:",
+        DEFAULT_RERANKER_MODEL,
+    )
+    print(
+        "Rerank depth:",
+        evaluation_config.top_k,
     )
     print(
         "Experiment record:",
