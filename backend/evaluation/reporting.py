@@ -128,6 +128,8 @@ def build_experiment_record(
     candidate_embedding_text_strategy: str = (
         "retrieval-text"
     ),
+    baseline_reranker_model: str | None = None,
+    baseline_rerank_depth: int | None = None,
     reranker_model: str | None = None,
     rerank_depth: int | None = None,
 ) -> dict[str, Any]:
@@ -217,6 +219,41 @@ def build_experiment_record(
         )
 
     if (
+        baseline_reranker_model is None
+        and baseline_rerank_depth is not None
+    ):
+        raise ValueError(
+            "Baseline rerank depth requires "
+            "a baseline reranker model."
+        )
+
+    if (
+        baseline_reranker_model is not None
+        and not baseline_reranker_model.strip()
+    ):
+        raise ValueError(
+            "Baseline reranker model cannot be empty."
+        )
+
+    if (
+        baseline_reranker_model is not None
+        and baseline_rerank_depth is None
+    ):
+        raise ValueError(
+            "Baseline reranker model requires "
+            "a baseline rerank depth."
+        )
+
+    if (
+        baseline_rerank_depth is not None
+        and baseline_rerank_depth <= 0
+    ):
+        raise ValueError(
+            "Baseline rerank depth must be "
+            "greater than zero."
+        )
+
+    if (
         reranker_model is None
         and rerank_depth is not None
     ):
@@ -298,6 +335,12 @@ def build_experiment_record(
                 ),
                 "lexical_weight": (
                     baseline_lexical_weight
+                ),
+                "reranker_model": (
+                    baseline_reranker_model
+                ),
+                "rerank_depth": (
+                    baseline_rerank_depth
                 ),
             },
             "candidate": {
