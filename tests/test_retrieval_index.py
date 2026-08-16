@@ -1,5 +1,6 @@
 from backend.ingestion.models import PolicyChunk
 from backend.retrieval.index import (
+    TITLE_BODY_EMBEDDING,
     build_semantic_index,
     cosine_similarity,
     search_semantic_index,
@@ -134,6 +135,43 @@ def test_build_semantic_index_can_embed_body_only():
     assert (
         index[0].embedding
         == (0.0, 0.0, 0.0)
+    )
+
+def test_build_semantic_index_can_embed_title_and_body_without_heading():
+    provider = FakeEmbeddingProvider()
+
+    chunk = make_chunk(
+        policy_id="208",
+        title="Academic Dress Policy",
+        text="Extension requirements.",
+        heading_path=(
+            "Admission Section",
+        ),
+    )
+
+    index = build_semantic_index(
+        (chunk,),
+        provider,
+        embedding_text_strategy=(
+            TITLE_BODY_EMBEDDING
+        ),
+    )
+
+    assert len(index) == 1
+
+    assert (
+        "Academic Dress Policy"
+        in index[0].retrieval_text
+    )
+
+    assert (
+        "Admission Section"
+        in index[0].retrieval_text
+    )
+
+    assert (
+        index[0].embedding
+        == (1.0, 0.0, 1.0)
     )
 
 def test_build_semantic_index_rejects_unknown_embedding_strategy():

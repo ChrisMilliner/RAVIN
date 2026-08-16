@@ -9,6 +9,7 @@ from backend.retrieval.text import build_retrieval_text
 
 RETRIEVAL_TEXT_EMBEDDING = "retrieval-text"
 BODY_ONLY_EMBEDDING = "body-only"
+TITLE_BODY_EMBEDDING = "title-body"
 
 def cosine_similarity(
     first: tuple[float, ...],
@@ -58,6 +59,14 @@ def _build_embedding_text(
 
     if strategy == BODY_ONLY_EMBEDDING:
         return chunk.text
+
+    if strategy == TITLE_BODY_EMBEDDING:
+        return "\n".join(
+            (
+                chunk.policy_title,
+                chunk.text,
+            )
+        )
 
     raise ValueError(
         "Unsupported embedding text strategy."
