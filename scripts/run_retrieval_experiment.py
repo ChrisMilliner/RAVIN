@@ -582,7 +582,7 @@ def main() -> None:
             ),
             dataset_name=(
                 "RAVIN Preliminary Retrieval "
-                "Development Baseline v1.2"
+                "Development Baseline v1.3"
             ),
             dataset_status=(
                 DatasetValidationStatus.PRELIMINARY
@@ -862,7 +862,7 @@ def main() -> None:
     output_path = (
         f"{EXPERIMENT_OUTPUT_DIRECTORY}/"
         "body-only-rerank-depth-11-v5-"
-        "dataset-v1-2-"
+        "dataset-v1-3-"
         f"{timestamp_for_filename}.json"
     )
 
