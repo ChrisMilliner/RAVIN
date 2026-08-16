@@ -122,6 +122,12 @@ def build_experiment_record(
     candidate_strategy: str = (
         "hybrid-semantic-lexical"
     ),
+    baseline_embedding_text_strategy: str = (
+        "retrieval-text"
+    ),
+    candidate_embedding_text_strategy: str = (
+        "retrieval-text"
+    ),
     reranker_model: str | None = None,
     rerank_depth: int | None = None,
 ) -> dict[str, Any]:
@@ -174,6 +180,18 @@ def build_experiment_record(
     if not candidate_strategy.strip():
         raise ValueError(
             "Candidate strategy cannot be empty."
+        )
+
+    if not baseline_embedding_text_strategy.strip():
+        raise ValueError(
+            "Baseline embedding text strategy "
+            "cannot be empty."
+        )
+
+    if not candidate_embedding_text_strategy.strip():
+        raise ValueError(
+            "Candidate embedding text strategy "
+            "cannot be empty."
         )
 
     if not 0.0 <= baseline_semantic_weight <= 1.0:
@@ -272,6 +290,9 @@ def build_experiment_record(
             "embedding_model": embedding_model,
             "baseline": {
                 "strategy": baseline_strategy,
+                "embedding_text_strategy": (
+                    baseline_embedding_text_strategy
+                ),
                 "semantic_weight": (
                     baseline_semantic_weight
                 ),
@@ -281,6 +302,9 @@ def build_experiment_record(
             },
             "candidate": {
                 "strategy": candidate_strategy,
+                "embedding_text_strategy": (
+                    candidate_embedding_text_strategy
+                ),
                 "semantic_weight": (
                     semantic_weight
                 ),
