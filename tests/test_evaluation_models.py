@@ -3,6 +3,7 @@ import pytest
 from backend.evaluation.models import (
     DEFAULT_TOP_1_PASS_THRESHOLD,
     DEFAULT_TOP_K,
+    EvaluationBehavior,
     EvaluationConfig,
     EvaluationQuestion,
     ExpectedEvidence,
@@ -49,6 +50,46 @@ def test_evaluation_question_supports_multiple_valid_evidence_locations():
     )
 
     assert len(question.expected_evidence) == 2
+
+def test_evaluation_question_defaults_to_direct_answer_behavior():
+    question = EvaluationQuestion(
+        question_id="Q001",
+        question="Who approves changes to academic dress?",
+        expected_evidence=(
+            make_expected_evidence(),
+        ),
+    )
+
+    assert (
+        question.behavior
+        == EvaluationBehavior.DIRECT_ANSWER
+    )
+
+def test_evaluation_question_preserves_explicit_behavior():
+    question = EvaluationQuestion(
+        question_id="Q001",
+        question="What admission requirements apply to me?",
+        expected_evidence=(
+            make_expected_evidence(),
+        ),
+        behavior=EvaluationBehavior.CLARIFY,
+    )
+
+    assert (
+        question.behavior
+        == EvaluationBehavior.CLARIFY
+    )
+
+def test_evaluation_behavior_defines_supported_response_types():
+    assert {
+        behavior.value
+        for behavior in EvaluationBehavior
+    } == {
+        "direct_answer",
+        "grounded_overview",
+        "clarify",
+        "no_grounded_answer",
+    }
 
 def test_evaluation_config_uses_project_quality_gate_by_default():
     config = EvaluationConfig()

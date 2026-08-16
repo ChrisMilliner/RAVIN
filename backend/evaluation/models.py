@@ -1,8 +1,15 @@
 from dataclasses import dataclass
+from enum import Enum
 from backend.retrieval.models import RetrievalResult
 
 DEFAULT_TOP_K = 5
 DEFAULT_TOP_1_PASS_THRESHOLD = 0.95
+
+class EvaluationBehavior(str, Enum):
+    DIRECT_ANSWER = "direct_answer"
+    GROUNDED_OVERVIEW = "grounded_overview"
+    CLARIFY = "clarify"
+    NO_GROUNDED_ANSWER = "no_grounded_answer"
 
 @dataclass(frozen=True)
 class ExpectedEvidence:
@@ -36,6 +43,9 @@ class EvaluationQuestion:
     question: str
     expected_evidence: tuple[ExpectedEvidence, ...]
     notes: str | None = None
+    behavior: EvaluationBehavior = (
+        EvaluationBehavior.DIRECT_ANSWER
+    )
 
     def __post_init__(self) -> None:
         if not self.question_id.strip():
