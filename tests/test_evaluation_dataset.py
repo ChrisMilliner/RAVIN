@@ -375,3 +375,73 @@ def test_loader_rejects_invalid_text_contains(
         load_evaluation_questions(
             dataset_path
         )
+
+def test_loader_loads_no_grounded_answer_without_evidence(
+    tmp_path,
+):
+    dataset_path = tmp_path / "questions.json"
+
+    dataset_path.write_text(
+        """
+        {
+          "questions": [
+            {
+              "question_id": "Q099",
+              "question": "Unsupported question",
+              "behavior": "no_grounded_answer",
+              "expected_evidence": []
+            }
+          ]
+        }
+        """,
+        encoding="utf-8",
+    )
+
+    questions = load_evaluation_questions(
+        dataset_path
+    )
+
+    assert (
+        questions[0].behavior
+        == EvaluationBehavior.NO_GROUNDED_ANSWER
+    )
+    assert questions[0].expected_evidence == ()
+
+def test_loader_rejects_no_grounded_answer_with_evidence(
+    tmp_path,
+):
+    dataset_path = tmp_path / "questions.json"
+
+    dataset_path.write_text(
+        """
+        {
+          "questions": [
+            {
+              "question_id": "Q099",
+              "question": "Unsupported question",
+              "behavior": "no_grounded_answer",
+              "expected_evidence": [
+                {
+                  "policy_id": "208",
+                  "heading_path": [
+                    "Section 4 - Key Decisions"
+                  ]
+                }
+              ]
+            }
+          ]
+        }
+        """,
+        encoding="utf-8",
+    )
+
+    with pytest.raises(
+        ValueError,
+        match=(
+            "No-grounded-answer questions "
+            "must not define expected evidence."
+        ),
+    ):
+        load_evaluation_questions(
+            dataset_path
+        )

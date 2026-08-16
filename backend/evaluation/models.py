@@ -58,9 +58,28 @@ class EvaluationQuestion:
                 "Evaluation question cannot be empty."
             )
 
-        if not self.expected_evidence:
+        if not isinstance(
+            self.behavior,
+            EvaluationBehavior,
+        ):
             raise ValueError(
-                "Evaluation question must define expected evidence."
+                "Evaluation question behavior must be "
+                "an EvaluationBehavior."
+            )
+
+        if (
+            self.behavior
+            == EvaluationBehavior.NO_GROUNDED_ANSWER
+        ):
+            if self.expected_evidence:
+                raise ValueError(
+                    "No-grounded-answer questions "
+                    "must not define expected evidence."
+                )
+        elif not self.expected_evidence:
+            raise ValueError(
+                "Evaluation question must define "
+                "expected evidence."
             )
 
 @dataclass(frozen=True)
