@@ -1,5 +1,5 @@
 {
-  "name": "RAVIN Preliminary Retrieval Development Baseline v1.2",
+  "name": "RAVIN Preliminary Retrieval Development Baseline v1.3",
   "status": "preliminary-not-gold-standard",
   "questions": [
     {
@@ -402,9 +402,16 @@
             "Section 5 - Policy Statement"
           ],
           "text_contains": "encourages and supports participation from persons who have experienced disadvantage"
+        },
+        {
+          "policy_id": "169",
+          "heading_path": [
+            "Section 5 - Policy Statement"
+          ],
+          "text_contains": "special entry access schemes and alternative entry programs"
         }
       ],
-      "notes": "Tests retrieval using user-oriented wording rather than exact policy terminology."
+      "notes": "Broad natural-language question about how La Trobe supports participation in admission for people experiencing disadvantage or underrepresentation. Accepts both the policy statement introducing that support and the immediately following answer-bearing fragment listing the mechanisms used, so evaluation is not tied to the fixed-word chunk boundary."
     },
     {
       "question_id": "RB027",
