@@ -2,6 +2,7 @@ import hashlib
 import json
 import subprocess
 from pathlib import Path
+from typing import Any
 from backend.evaluation.experiment_models import (
     ExperimentSelectionDecision,
     RetrievalExperimentComparison,
@@ -123,7 +124,7 @@ def build_experiment_record(
     ),
     reranker_model: str | None = None,
     rerank_depth: int | None = None,
-) -> dict[str, object]:
+) -> dict[str, Any]:
     if not policy_ids:
         raise ValueError(
             "Experiment record requires policy IDs."
@@ -377,7 +378,7 @@ def build_experiment_record(
     }
 
 def write_experiment_record(
-    record: dict[str, object],
+    record: dict[str, Any],
     output_path: str | Path,
 ) -> None:
     path = Path(output_path)
