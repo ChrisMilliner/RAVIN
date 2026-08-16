@@ -2,6 +2,9 @@ import pytest
 from backend.evaluation.dataset import (
     load_evaluation_questions,
 )
+from backend.evaluation.models import (
+    EvaluationBehavior,
+)
 
 def test_loader_loads_structured_evaluation_questions(
     tmp_path,
@@ -50,6 +53,156 @@ def test_loader_loads_structured_evaluation_questions(
         .text_contains
         is None
     )
+
+def test_loader_defaults_missing_behavior_to_direct_answer(
+    tmp_path,
+):
+    dataset_path = tmp_path / "questions.json"
+
+    dataset_path.write_text(
+        """
+        {
+          "questions": [
+            {
+              "question_id": "Q001",
+              "question": "Who approves academic dress changes?",
+              "expected_evidence": [
+                {
+                  "policy_id": "208",
+                  "heading_path": [
+                    "Section 4 - Key Decisions"
+                  ]
+                }
+              ]
+            }
+          ]
+        }
+        """,
+        encoding="utf-8",
+    )
+
+    questions = load_evaluation_questions(
+        dataset_path
+    )
+
+    assert (
+        questions[0].behavior
+        == EvaluationBehavior.DIRECT_ANSWER
+    )
+
+def test_loader_loads_explicit_evaluation_behavior(
+    tmp_path,
+):
+    dataset_path = tmp_path / "questions.json"
+
+    dataset_path.write_text(
+        """
+        {
+          "questions": [
+            {
+              "question_id": "Q001",
+              "question": "What admission requirements apply to me?",
+              "behavior": "clarify",
+              "expected_evidence": [
+                {
+                  "policy_id": "340",
+                  "heading_path": [
+                    "Section 6 - Procedures",
+                    "Part A - Entry Criteria"
+                  ]
+                }
+              ]
+            }
+          ]
+        }
+        """,
+        encoding="utf-8",
+    )
+
+    questions = load_evaluation_questions(
+        dataset_path
+    )
+
+    assert (
+        questions[0].behavior
+        == EvaluationBehavior.CLARIFY
+    )
+
+def test_loader_rejects_unknown_evaluation_behavior(
+    tmp_path,
+):
+    dataset_path = tmp_path / "questions.json"
+
+    dataset_path.write_text(
+        """
+        {
+          "questions": [
+            {
+              "question_id": "Q001",
+              "question": "Test question",
+              "behavior": "guess_answer",
+              "expected_evidence": [
+                {
+                  "policy_id": "208",
+                  "heading_path": [
+                    "Section 4 - Key Decisions"
+                  ]
+                }
+              ]
+            }
+          ]
+        }
+        """,
+        encoding="utf-8",
+    )
+
+    with pytest.raises(
+        ValueError,
+        match=(
+            "Evaluation question behavior must be one of:"
+        ),
+    ):
+        load_evaluation_questions(
+            dataset_path
+        )
+
+def test_loader_rejects_non_string_evaluation_behavior(
+    tmp_path,
+):
+    dataset_path = tmp_path / "questions.json"
+
+    dataset_path.write_text(
+        """
+        {
+          "questions": [
+            {
+              "question_id": "Q001",
+              "question": "Test question",
+              "behavior": 123,
+              "expected_evidence": [
+                {
+                  "policy_id": "208",
+                  "heading_path": [
+                    "Section 4 - Key Decisions"
+                  ]
+                }
+              ]
+            }
+          ]
+        }
+        """,
+        encoding="utf-8",
+    )
+
+    with pytest.raises(
+        ValueError,
+        match=(
+            "Evaluation question behavior must be a string."
+        ),
+    ):
+        load_evaluation_questions(
+            dataset_path
+        )
 
 def test_loader_rejects_empty_question_set(
     tmp_path,
