@@ -68,6 +68,8 @@ EXPERIMENT_OUTPUT_DIRECTORY = (
 )
 SEMANTIC_WEIGHT = 0.85
 LEXICAL_WEIGHT = 0.15
+BASELINE_RERANK_DEPTH = 5
+CANDIDATE_RERANK_DEPTH = 11
 
 def format_rank(
     rank: int | None,
@@ -349,18 +351,45 @@ def main() -> None:
             embedding_provider=(
                 embedding_provider
             ),
-            top_k=top_k,
+            top_k=BASELINE_RERANK_DEPTH,
             semantic_weight=SEMANTIC_WEIGHT,
             lexical_weight=LEXICAL_WEIGHT,
         )
 
-        return rerank_results(
+        reranked_results = rerank_results(
             query=question,
             results=hybrid_results,
             reranker_provider=(
                 reranker_provider
             ),
         )
+
+        return reranked_results[:top_k]
+
+    def retrieve_candidate_v5(
+        question: str,
+        top_k: int,
+    ):
+        hybrid_results = search_hybrid_index(
+            body_only_index,
+            query=question,
+            embedding_provider=(
+                embedding_provider
+            ),
+            top_k=CANDIDATE_RERANK_DEPTH,
+            semantic_weight=SEMANTIC_WEIGHT,
+            lexical_weight=LEXICAL_WEIGHT,
+        )
+
+        reranked_results = rerank_results(
+            query=question,
+            results=hybrid_results,
+            reranker_provider=(
+                reranker_provider
+            ),
+        )
+
+        return reranked_results[:top_k]
 
     def retrieve_candidate_v4(
         question: str,
@@ -502,20 +531,54 @@ def main() -> None:
         "Candidate v4 evaluation complete."
     )
 
+    print()
+    print(
+        "=== RUNNING INCREASED RERANK "
+        "DEPTH CANDIDATE V5 ==="
+    )
+    print(
+        "Embedding text strategy:",
+        BODY_ONLY_EMBEDDING,
+    )
+    print(
+        "Baseline rerank depth:",
+        BASELINE_RERANK_DEPTH,
+    )
+    print(
+        "Candidate rerank depth:",
+        CANDIDATE_RERANK_DEPTH,
+    )
+    print(
+        "Reranker model:",
+        DEFAULT_RERANKER_MODEL,
+    )
+
+    candidate_v5 = run_retrieval_evaluation(
+        questions,
+        retrieve_candidate_v5,
+        evaluation_config,
+    )
+
+    print(
+        "Candidate v5 evaluation complete."
+    )
+
     experiment_config = (
         RetrievalExperimentConfig(
             experiment_name=(
-                "Title-body semantic embeddings v4"
+                "Cross-encoder rerank depth 11 v5"
             ),
             baseline_name=(
                 "Body-only MiniLM embeddings + "
                 "Hybrid 85/15 + MS MARCO "
-                "MiniLM-L6-v2 reranking v3"
+                "MiniLM-L6-v2 reranking "
+                "depth 5 v3"
             ),
             candidate_name=(
-                "Title-body MiniLM embeddings + "
+                "Body-only MiniLM embeddings + "
                 "Hybrid 85/15 + MS MARCO "
-                "MiniLM-L6-v2 reranking v4"
+                "MiniLM-L6-v2 reranking "
+                "depth 11 v5"
             ),
             dataset_name=(
                 "RAVIN Preliminary Retrieval "
@@ -535,21 +598,26 @@ def main() -> None:
     comparison = (
         compare_retrieval_experiments(
             candidate_v3,
-            candidate_v4,
+            candidate_v5,
             experiment_config,
         )
     )
 
     print_evaluation_metrics(
         "BASELINE V3 - BODY-ONLY + "
-        "HYBRID + RERANKER",
+        "RERANK DEPTH 5",
         candidate_v3,
     )
 
     print_evaluation_metrics(
-        "CANDIDATE V4 - TITLE-BODY + "
-        "HYBRID + RERANKER",
-        candidate_v4,
+        "CANDIDATE V5 - BODY-ONLY + "
+        "RERANK DEPTH 11",
+        candidate_v5,
+    )
+
+    print()
+    print(
+        "=== V3 -> V5 METRIC COMPARISON ==="
     )
 
     print()
@@ -777,27 +845,27 @@ def main() -> None:
                     DEFAULT_RERANKER_MODEL
                 ),
                 baseline_rerank_depth=(
-                    evaluation_config.top_k
+                    BASELINE_RERANK_DEPTH
                 ),
                 candidate_strategy=(
                     "hybrid-semantic-lexical-"
                     "cross-encoder"
                 ),
                 candidate_embedding_text_strategy=(
-                    TITLE_BODY_EMBEDDING
+                    BODY_ONLY_EMBEDDING
                 ),
                 reranker_model=(
                     DEFAULT_RERANKER_MODEL
                 ),
                 rerank_depth=(
-                    evaluation_config.top_k
+                    CANDIDATE_RERANK_DEPTH
                 ),
             )
         )  
 
     output_path = (
         f"{EXPERIMENT_OUTPUT_DIRECTORY}/"
-        "title-body-cross-encoder-v4-"
+        "body-only-rerank-depth-11-v5-"
         "dataset-v1-2-"
         f"{timestamp_for_filename}.json"
     )
@@ -843,7 +911,15 @@ def main() -> None:
     )
     print(
         "Candidate embedding text strategy:",
-        TITLE_BODY_EMBEDDING,
+        BODY_ONLY_EMBEDDING,
+    )
+    print(
+        "Baseline rerank depth:",
+        BASELINE_RERANK_DEPTH,
+    )
+    print(
+        "Candidate rerank depth:",
+        CANDIDATE_RERANK_DEPTH,
     )
 
 
