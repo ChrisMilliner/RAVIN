@@ -31,6 +31,7 @@ def make_run(
     hit_at_k: float,
     mrr: float,
     top_k: int = 5,
+    population: EvaluationPopulation | None = None,
 ) -> EvaluationRunResult:
     question_results = tuple(
         make_question_result(
@@ -43,6 +44,15 @@ def make_run(
         )
     )
 
+    if population is None:
+        population = EvaluationPopulation(
+            dataset_questions=len(ranks),
+            direct_answer_questions=len(ranks),
+            grounded_overview_questions=0,
+            clarify_questions=0,
+            no_grounded_answer_questions=0,
+        )
+
     return EvaluationRunResult(
         question_results=question_results,
         top_1_accuracy=top_1,
@@ -51,13 +61,7 @@ def make_run(
         top_k=top_k,
         pass_threshold=0.95,
         passed=top_1 >= 0.95,
-        population=EvaluationPopulation(
-            dataset_questions=len(ranks),
-            direct_answer_questions=len(ranks),
-            grounded_overview_questions=0,
-            clarify_questions=0,
-            no_grounded_answer_questions=0,
-        ),
+        population=population,
     )
 
 def make_config(
@@ -373,3 +377,87 @@ def test_validated_candidate_is_rejected_when_not_improved():
         comparison.selection_decision
         == ExperimentSelectionDecision.REJECT_NOT_IMPROVED
     )
+
+def test_comparison_preserves_evaluation_population():
+    population = EvaluationPopulation(
+        dataset_questions=30,
+        direct_answer_questions=26,
+        grounded_overview_questions=4,
+        clarify_questions=0,
+        no_grounded_answer_questions=0,
+    )
+
+    baseline = make_run(
+        ranks=(1, 2),
+        top_1=0.5,
+        hit_at_k=1.0,
+        mrr=0.75,
+        population=population,
+    )
+
+    candidate = make_run(
+        ranks=(1, 1),
+        top_1=1.0,
+        hit_at_k=1.0,
+        mrr=1.0,
+        population=population,
+    )
+
+    comparison = compare_retrieval_experiments(
+        baseline,
+        candidate,
+        make_config(),
+    )
+
+    assert comparison.population == population
+    assert comparison.population.dataset_questions == 30
+    assert (
+        comparison.population.direct_answer_questions
+        == 26
+    )
+    assert (
+        comparison.population.grounded_overview_questions
+        == 4
+    )
+
+def test_comparison_rejects_different_evaluation_populations():
+    baseline = make_run(
+        ranks=(1, 1),
+        top_1=1.0,
+        hit_at_k=1.0,
+        mrr=1.0,
+        population=EvaluationPopulation(
+            dataset_questions=30,
+            direct_answer_questions=26,
+            grounded_overview_questions=4,
+            clarify_questions=0,
+            no_grounded_answer_questions=0,
+        ),
+    )
+
+    candidate = make_run(
+        ranks=(1, 1),
+        top_1=1.0,
+        hit_at_k=1.0,
+        mrr=1.0,
+        population=EvaluationPopulation(
+            dataset_questions=29,
+            direct_answer_questions=26,
+            grounded_overview_questions=3,
+            clarify_questions=0,
+            no_grounded_answer_questions=0,
+        ),
+    )
+
+    with pytest.raises(
+        ValueError,
+        match=(
+            "Baseline and candidate must use the "
+            "same evaluation population."
+        ),
+    ):
+        compare_retrieval_experiments(
+            baseline,
+            candidate,
+            make_config(),
+        )

@@ -1,5 +1,8 @@
 from dataclasses import dataclass
 from enum import Enum
+from backend.evaluation.models import (
+    EvaluationPopulation,
+)
 
 class DatasetValidationStatus(str, Enum):
     PRELIMINARY = "preliminary"
@@ -113,3 +116,4 @@ class RetrievalExperimentComparison:
     selection_decision: ExperimentSelectionDecision
     quality_gate_passed: bool
     validated_dataset_gate_passed: bool
+    population: EvaluationPopulation

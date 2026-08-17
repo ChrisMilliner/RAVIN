@@ -94,6 +94,12 @@ def compare_retrieval_experiments(
             "Baseline and candidate must evaluate the same questions."
         )
 
+    if baseline.population != candidate.population:
+        raise ValueError(
+            "Baseline and candidate must use the "
+            "same evaluation population."
+        )
+
     question_rank_changes = tuple(
         QuestionRankChange(
             question_id=question_id,
@@ -160,4 +166,5 @@ def compare_retrieval_experiments(
         validated_dataset_gate_passed=(
             validated_dataset_gate_passed
         ),
+        population=baseline.population,
     )
