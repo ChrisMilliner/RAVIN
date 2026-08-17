@@ -107,6 +107,42 @@ class QuestionEvaluationResult:
     first_relevant_rank: int | None
     retrieved_results: tuple[RetrievalResult, ...]
 
+@dataclass(frozen=True)
+class EvaluationPopulation:
+    dataset_questions: int
+    direct_answer_questions: int
+    grounded_overview_questions: int
+    clarify_questions: int
+    no_grounded_answer_questions: int
+
+    def __post_init__(self) -> None:
+        counts = (
+            self.direct_answer_questions,
+            self.grounded_overview_questions,
+            self.clarify_questions,
+            self.no_grounded_answer_questions,
+        )
+
+        if self.dataset_questions <= 0:
+            raise ValueError(
+                "Evaluation population must contain "
+                "at least one dataset question."
+            )
+
+        if any(
+            count < 0
+            for count in counts
+        ):
+            raise ValueError(
+                "Evaluation population counts "
+                "cannot be negative."
+            )
+
+        if sum(counts) != self.dataset_questions:
+            raise ValueError(
+                "Evaluation population behavior counts "
+                "must equal the dataset question count."
+            )
 
 @dataclass(frozen=True)
 class EvaluationRunResult:
@@ -117,3 +153,4 @@ class EvaluationRunResult:
     top_k: int
     pass_threshold: float
     passed: bool
+    population: EvaluationPopulation

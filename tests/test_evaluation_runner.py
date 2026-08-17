@@ -350,3 +350,66 @@ def test_runner_rejects_question_set_without_direct_answers():
             retrieve,
             EvaluationConfig(),
         )
+
+def test_runner_reports_behavior_population():
+    no_answer_question = EvaluationQuestion(
+        question_id="Q004",
+        question="Unsupported question",
+        expected_evidence=(),
+        behavior=(
+            EvaluationBehavior.NO_GROUNDED_ANSWER
+        ),
+    )
+
+    questions = (
+        make_question(
+            "Q001",
+            "Direct question",
+        ),
+        make_question(
+            "Q002",
+            "Overview question",
+            EvaluationBehavior.GROUNDED_OVERVIEW,
+        ),
+        make_question(
+            "Q003",
+            "Clarification question",
+            EvaluationBehavior.CLARIFY,
+        ),
+        no_answer_question,
+    )
+
+    def retrieve(
+        question: str,
+        top_k: int,
+    ) -> tuple[RetrievalResult, ...]:
+        return (
+            make_result(
+                "208",
+                ("Section 4 - Key Decisions",),
+                0.9,
+            ),
+        )
+
+    result = run_retrieval_evaluation(
+        questions,
+        retrieve,
+        EvaluationConfig(),
+    )
+
+    assert result.population.dataset_questions == 4
+    assert (
+        result.population.direct_answer_questions
+        == 1
+    )
+    assert (
+        result.population.grounded_overview_questions
+        == 1
+    )
+    assert result.population.clarify_questions == 1
+    assert (
+        result.population.no_grounded_answer_questions
+        == 1
+    )
+
+    assert len(result.question_results) == 1

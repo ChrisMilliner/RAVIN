@@ -11,6 +11,7 @@ from backend.evaluation.metrics import (
 from backend.evaluation.models import (
     EvaluationBehavior,
     EvaluationConfig,
+    EvaluationPopulation,
     EvaluationQuestion,
     EvaluationRunResult,
     ExpectedEvidence,
@@ -51,6 +52,42 @@ def run_retrieval_evaluation(
         raise ValueError(
             "Cannot evaluate an empty question set."
         )
+
+    population = EvaluationPopulation(
+        dataset_questions=len(questions),
+        direct_answer_questions=sum(
+            1
+            for question in questions
+            if (
+                question.behavior
+                == EvaluationBehavior.DIRECT_ANSWER
+            )
+        ),
+        grounded_overview_questions=sum(
+            1
+            for question in questions
+            if (
+                question.behavior
+                == EvaluationBehavior.GROUNDED_OVERVIEW
+            )
+        ),
+        clarify_questions=sum(
+            1
+            for question in questions
+            if (
+                question.behavior
+                == EvaluationBehavior.CLARIFY
+            )
+        ),
+        no_grounded_answer_questions=sum(
+            1
+            for question in questions
+            if (
+                question.behavior
+                == EvaluationBehavior.NO_GROUNDED_ANSWER
+            )
+        ),
+    )
 
     ranking_questions = tuple(
         question
@@ -137,4 +174,5 @@ def run_retrieval_evaluation(
             config.top_1_pass_threshold
         ),
         passed=passed,
+        population=population,
     )
