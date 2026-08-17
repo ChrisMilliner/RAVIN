@@ -898,3 +898,54 @@ def test_experiment_record_requires_model_for_baseline_rerank_depth():
             lexical_weight=LEXICAL_WEIGHT,
             baseline_rerank_depth=5,
         )
+
+def test_experiment_record_preserves_evaluation_population():
+    comparison = make_comparison()
+
+    record = build_experiment_record(
+        comparison=comparison,
+        policy_ids=("208",),
+        chunk_count=1,
+        dataset_path=(
+            "evaluation/retrieval_baseline.json"
+        ),
+        dataset_sha256="dataset-hash",
+        corpus_sha256="corpus-hash",
+        repository_commit="abc1234",
+        generated_at_utc=(
+            "2026-08-17T08:00:00+00:00"
+        ),
+        embedding_model=EMBEDDING_MODEL,
+        semantic_weight=SEMANTIC_WEIGHT,
+        lexical_weight=LEXICAL_WEIGHT,
+    )
+
+    population = record[
+        "evaluation_population"
+    ]
+
+    assert (
+        population["dataset_questions"]
+        == 30
+    )
+    assert (
+        population["direct_answer_questions"]
+        == 30
+    )
+    assert (
+        population[
+            "grounded_overview_questions"
+        ]
+        == 0
+    )
+    assert population["clarify_questions"] == 0
+    assert (
+        population[
+            "no_grounded_answer_questions"
+        ]
+        == 0
+    )
+    assert (
+        population["ranking_metric_scope"]
+        == "direct_answer"
+    )
