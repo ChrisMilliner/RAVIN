@@ -95,16 +95,48 @@ def print_evaluation_metrics(
     print()
     print(f"=== {name} ===")
     print(
-        "Top-1 Accuracy:",
+        "Direct Answer Top-1 Accuracy:",
         f"{evaluation.top_1_accuracy:.2%}",
     )
     print(
-        f"Hit@{evaluation.top_k}:",
+        f"Direct Answer Hit@{evaluation.top_k}:",
         f"{evaluation.hit_at_k:.2%}",
     )
     print(
-        "MRR:",
+        "Direct Answer MRR:",
         f"{evaluation.mrr:.4f}",
+    )
+
+def print_evaluation_population(
+    evaluation: EvaluationRunResult,
+) -> None:
+    population = evaluation.population
+
+    print()
+    print("=== EVALUATION POPULATION ===")
+    print(
+        "Dataset questions:",
+        population.dataset_questions,
+    )
+    print(
+        "Direct Answer questions evaluated:",
+        population.direct_answer_questions,
+    )
+    print(
+        "Grounded Overview questions excluded:",
+        population.grounded_overview_questions,
+    )
+    print(
+        "Clarify questions excluded:",
+        population.clarify_questions,
+    )
+    print(
+        "No Grounded Answer questions excluded:",
+        population.no_grounded_answer_questions,
+    )
+    print(
+        "Ranking metric scope:",
+        "DIRECT ANSWER",
     )
 
 def main() -> None:
@@ -130,7 +162,7 @@ def main() -> None:
     )
 
     print(
-        "Evaluation questions:",
+        "Dataset questions:",
         len(questions),
     )
 
@@ -563,6 +595,10 @@ def main() -> None:
         "Candidate v5 evaluation complete."
     )
 
+    print_evaluation_population(
+        candidate_v5
+    )
+
     experiment_config = (
         RetrievalExperimentConfig(
             experiment_name=(
@@ -582,7 +618,7 @@ def main() -> None:
             ),
             dataset_name=(
                 "RAVIN Preliminary Retrieval "
-                "Development Baseline v1.3"
+                "Development Baseline v1.4"
             ),
             dataset_status=(
                 DatasetValidationStatus.PRELIMINARY
@@ -617,19 +653,19 @@ def main() -> None:
 
     print()
     print(
-        "=== V3 -> V5 METRIC COMPARISON ==="
+        "=== V3 -> V5 DIRECT ANSWER METRIC COMPARISON ==="
     )
 
     print(
-        "Top-1 delta:",
+        "Direct Answer Top-1 delta:",
         f"{comparison.top_1.delta:+.2%}",
     )
     print(
-        f"Hit@{evaluation_config.top_k} delta:",
+        f"Direct Answer Hit@{evaluation_config.top_k} delta:",
         f"{comparison.hit_at_k.delta:+.2%}",
     )
     print(
-        "MRR delta:",
+        "Direct Answer MRR delta:",
         f"{comparison.mrr.delta:+.4f}",
     )
 
@@ -664,7 +700,7 @@ def main() -> None:
             unchanged.append(change)
 
     print()
-    print("=== IMPROVED QUESTIONS ===")
+    print("=== IMPROVED DIRECT ANSWER QUESTIONS ===")
 
     if not improved:
         print("None")
@@ -678,7 +714,7 @@ def main() -> None:
             )
 
     print()
-    print("=== REGRESSED QUESTIONS ===")
+    print("=== REGRESSED DIRECT ANSWER QUESTIONS ===")
 
     if not regressed:
         print("None")
@@ -692,7 +728,7 @@ def main() -> None:
             )
 
     print()
-    print("=== UNCHANGED QUESTIONS ===")
+    print("=== UNCHANGED DIRECT ANSWER QUESTIONS ===")
     print(
         "Count:",
         len(unchanged),
@@ -707,7 +743,7 @@ def main() -> None:
     )
 
     print(
-        "Top-1 quality gate:",
+        "Direct Answer Top-1 quality gate:",
         (
             "PASS"
             if comparison.quality_gate_passed
@@ -716,7 +752,7 @@ def main() -> None:
     )
 
     print(
-        "Required Top-1:",
+        "Required Direct Answer Top-1:",
         f"{experiment_config.quality_threshold:.2%}",
     )
 
@@ -765,7 +801,8 @@ def main() -> None:
     print(
         "NOTE: Relative improvement does not "
         "make a candidate acceptable. A candidate "
-        "must meet the 95% Top-1 quality threshold "
+        "must meet the 95% Direct Answer Top-1 "
+        "quality threshold "
         "and satisfy the validation requirements "
         "before it can be eligible for selection."
     )
@@ -862,7 +899,7 @@ def main() -> None:
     output_path = (
         f"{EXPERIMENT_OUTPUT_DIRECTORY}/"
         "body-only-rerank-depth-11-v5-"
-        "dataset-v1-3-"
+        "dataset-v1-4-"
         f"{timestamp_for_filename}.json"
     )
 
@@ -894,7 +931,7 @@ def main() -> None:
         DEFAULT_RERANKER_MODEL,
     )
     print(
-        "Evaluation Top-K:",
+        "Direct Answer Evaluation Top-K:",
         evaluation_config.top_k,
     )
     print(
