@@ -366,6 +366,30 @@ def build_experiment_record(
             "path": dataset_path,
             "sha256": dataset_sha256,
         },
+        "evaluation_population": {
+            "dataset_questions": (
+                comparison.population.dataset_questions
+            ),
+            "direct_answer_questions": (
+                comparison.population
+                .direct_answer_questions
+            ),
+            "grounded_overview_questions": (
+                comparison.population
+                .grounded_overview_questions
+            ),
+            "clarify_questions": (
+                comparison.population
+                .clarify_questions
+            ),
+            "no_grounded_answer_questions": (
+                comparison.population
+                .no_grounded_answer_questions
+            ),
+            "ranking_metric_scope": (
+                "direct_answer"
+            ),
+        },
         "corpus": {
             "policy_ids": list(policy_ids),
             "chunk_count": chunk_count,
