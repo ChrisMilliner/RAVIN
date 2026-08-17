@@ -1,5 +1,5 @@
 {
-  "name": "RAVIN Preliminary Retrieval Development Baseline v1.3",
+  "name": "RAVIN Preliminary Retrieval Development Baseline v1.4",
   "status": "preliminary-not-gold-standard",
   "questions": [
     {
@@ -20,7 +20,8 @@
           ]
         }
       ],
-      "notes": "Two locations contain direct answer-bearing evidence."
+      "notes": "Two locations contain direct answer-bearing evidence.",
+      "behavior": "direct_answer"
     },
     {
       "question_id": "RB002",
@@ -34,7 +35,8 @@
           ]
         }
       ],
-      "notes": "Preliminary expected evidence based on manual review."
+      "notes": "Preliminary expected evidence based on manual review.",
+      "behavior": "grounded_overview"
     },
     {
       "question_id": "RB003",
@@ -48,7 +50,8 @@
           ]
         }
       ],
-      "notes": "Retains the known baseline ranking weakness where less relevant admissions content may rank above Entry Criteria."
+      "notes": "Retains the known baseline ranking weakness where less relevant admissions content may rank above Entry Criteria.",
+      "behavior": "grounded_overview"
     },
     {
       "question_id": "RB004",
@@ -62,7 +65,8 @@
           ]
         }
       ],
-      "notes": "Tests retrieval of an operational recording requirement."
+      "notes": "Tests retrieval of an operational recording requirement.",
+      "behavior": "direct_answer"
     },
     {
       "question_id": "RB005",
@@ -76,7 +80,8 @@
           ]
         }
       ],
-      "notes": "Natural-language question about an optional academic dress provision."
+      "notes": "Natural-language question about an optional academic dress provision.",
+      "behavior": "direct_answer"
     },
     {
       "question_id": "RB006",
@@ -99,7 +104,8 @@
           "text_contains": "hood’s silk exposed on the right shoulder"
         }
       ],
-      "notes": "Specific factual retrieval question."
+      "notes": "Specific factual retrieval question.",
+      "behavior": "direct_answer"
     },
     {
       "question_id": "RB007",
@@ -113,7 +119,8 @@
           ]
         }
       ],
-      "notes": "Tests retrieval where approval process and supporting requirements appear together."
+      "notes": "Tests retrieval where approval process and supporting requirements appear together.",
+      "behavior": "direct_answer"
     },
     {
       "question_id": "RB008",
@@ -135,7 +142,8 @@
           ]
         }
       ],
-      "notes": "Two locations contain answer-bearing evidence for students who pass all enrolled subjects."
+      "notes": "Two locations contain answer-bearing evidence for students who pass all enrolled subjects.",
+      "behavior": "direct_answer"
     },
     {
       "question_id": "RB009",
@@ -151,7 +159,8 @@
           ]
         }
       ],
-      "notes": "Uses the specific Show Cause subsection rather than accepting every child of the Stage Three section."
+      "notes": "Uses the specific Show Cause subsection rather than accepting every child of the Stage Three section.",
+      "behavior": "direct_answer"
     },
     {
       "question_id": "RB010",
@@ -166,7 +175,8 @@
           ]
         }
       ],
-      "notes": "Tests retrieval of an academic progression sanction."
+      "notes": "Tests retrieval of an academic progression sanction.",
+      "behavior": "direct_answer"
     },
     {
       "question_id": "RB011",
@@ -181,7 +191,8 @@
           ]
         }
       ],
-      "notes": "More complex natural-language progression question involving course transfer."
+      "notes": "More complex natural-language progression question involving course transfer.",
+      "behavior": "direct_answer"
     },
     {
       "question_id": "RB012",
@@ -194,7 +205,8 @@
           ]
         }
       ],
-      "notes": "Tests retrieval from policy scope rather than procedures."
+      "notes": "Tests retrieval from policy scope rather than procedures.",
+      "behavior": "direct_answer"
     },
     {
       "question_id": "RB013",
@@ -208,7 +220,8 @@
           ]
         }
       ],
-      "notes": "Direct retrieval of promotion assessment domains."
+      "notes": "Direct retrieval of promotion assessment domains.",
+      "behavior": "direct_answer"
     },
     {
       "question_id": "RB014",
@@ -223,7 +236,8 @@
           ]
         }
       ],
-      "notes": "Tests retrieval of qualifications and equivalent experience requirements."
+      "notes": "Tests retrieval of qualifications and equivalent experience requirements.",
+      "behavior": "direct_answer"
     },
     {
       "question_id": "RB015",
@@ -246,7 +260,8 @@
           ]
         }
       ],
-      "notes": "Accepts the Level D requirements table or the specific external assessor subsection."
+      "notes": "Accepts the Level D requirements table or the specific external assessor subsection.",
+      "behavior": "direct_answer"
     },
     {
       "question_id": "RB016",
@@ -261,7 +276,8 @@
           ]
         }
       ],
-      "notes": "Tests retrieval of a procedural deadline."
+      "notes": "Tests retrieval of a procedural deadline.",
+      "behavior": "direct_answer"
     },
     {
       "question_id": "RB017",
@@ -274,7 +290,8 @@
           ]
         }
       ],
-      "notes": "Tests scope retrieval for teaching staff."
+      "notes": "Tests scope retrieval for teaching staff.",
+      "behavior": "direct_answer"
     },
     {
       "question_id": "RB018",
@@ -288,7 +305,8 @@
           "text_contains": "professional development plans and appropriate supervision arrangements are established"
         }
       ],
-      "notes": "Tests retrieval of safeguards applying before Professional Equivalence is reached."
+      "notes": "Tests retrieval of safeguards applying before Professional Equivalence is reached.",
+      "behavior": "direct_answer"
     },
     {
       "question_id": "RB019",
@@ -302,7 +320,8 @@
           "text_contains": "robust records of all staff qualifications"
         }
       ],
-      "notes": "Tests retrieval of record-keeping requirements."
+      "notes": "Tests retrieval of record-keeping requirements.",
+      "behavior": "direct_answer"
     },
     {
       "question_id": "RB020",
@@ -316,7 +335,8 @@
           "text_contains": "maintain and advance disciplinary knowledge"
         }
       ],
-      "notes": "Tests semantic retrieval using scholarship terminology."
+      "notes": "Tests semantic retrieval using scholarship terminology.",
+      "behavior": "direct_answer"
     },
     {
       "question_id": "RB021",
@@ -329,7 +349,8 @@
           ]
         }
       ],
-      "notes": "Definition retrieval case deliberately distinct from procedural questions."
+      "notes": "Definition retrieval case deliberately distinct from procedural questions.",
+      "behavior": "direct_answer"
     },
     {
       "question_id": "RB022",
@@ -342,7 +363,8 @@
           ]
         }
       ],
-      "notes": "Tests retrieval of a scope exclusion and referral."
+      "notes": "Tests retrieval of a scope exclusion and referral.",
+      "behavior": "direct_answer"
     },
     {
       "question_id": "RB023",
@@ -356,7 +378,8 @@
           "text_contains": "are eligible to be considered for entry to the course but are not guaranteed an offer"
         }
       ],
-      "notes": "Natural applicant question requiring distinction between eligibility and competitive selection."
+      "notes": "Natural applicant question requiring distinction between eligibility and competitive selection.",
+      "behavior": "direct_answer"
     },
     {
       "question_id": "RB024",
@@ -369,7 +392,8 @@
           ]
         }
       ],
-      "notes": "Governance retrieval case."
+      "notes": "Governance retrieval case.",
+      "behavior": "direct_answer"
     },
     {
       "question_id": "RB025",
@@ -390,7 +414,8 @@
           "text_contains": "students are informed of their rights and obligations before accepting or declining their offer"
         }
       ],
-      "notes": "Broad natural-language question about transparency requirements. Accepts two independently answer-bearing fragments under the stable Policy Statement heading so evaluation is not tied to structural chunk boundaries."
+      "notes": "Broad natural-language question about transparency requirements. Accepts two independently answer-bearing fragments under the stable Policy Statement heading so evaluation is not tied to structural chunk boundaries.",
+      "behavior": "grounded_overview"
     },
     {
       "question_id": "RB026",
@@ -411,7 +436,8 @@
           "text_contains": "special entry access schemes and alternative entry programs"
         }
       ],
-      "notes": "Broad natural-language question about how La Trobe supports participation in admission for people experiencing disadvantage or underrepresentation. Accepts both the policy statement introducing that support and the immediately following answer-bearing fragment listing the mechanisms used, so evaluation is not tied to the fixed-word chunk boundary."
+      "notes": "Broad natural-language question about how La Trobe supports participation in admission for people experiencing disadvantage or underrepresentation. Accepts both the policy statement introducing that support and the immediately following answer-bearing fragment listing the mechanisms used, so evaluation is not tied to the fixed-word chunk boundary.",
+      "behavior": "grounded_overview"
     },
     {
       "question_id": "RB027",
@@ -426,7 +452,8 @@
           ]
         }
       ],
-      "notes": "Specific admission eligibility question."
+      "notes": "Specific admission eligibility question.",
+      "behavior": "direct_answer"
     },
     {
       "question_id": "RB028",
@@ -440,7 +467,8 @@
           ]
         }
       ],
-      "notes": "Tests retrieval across several adjustment categories."
+      "notes": "Tests retrieval across several adjustment categories.",
+      "behavior": "direct_answer"
     },
     {
       "question_id": "RB029",
@@ -456,7 +484,8 @@
           ]
         }
       ],
-      "notes": "Uses the specific general deferment provision."
+      "notes": "Uses the specific general deferment provision.",
+      "behavior": "direct_answer"
     },
     {
       "question_id": "RB030",
@@ -470,7 +499,8 @@
           ]
         }
       ],
-      "notes": "Tests retrieval of a course transfer processing timeframe."
+      "notes": "Tests retrieval of a course transfer processing timeframe.",
+      "behavior": "direct_answer"
     }
   ]
 }
