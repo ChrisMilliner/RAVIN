@@ -8,6 +8,7 @@ from backend.evaluation.models import (
     EvaluationQuestion,
     ExpectedEvidence,
     EvaluationPopulation,
+    ExpectedEvidenceGroup,
 )
 
 def make_expected_evidence() -> ExpectedEvidence:
@@ -300,4 +301,87 @@ def test_evaluation_population_rejects_negative_counts():
             grounded_overview_questions=4,
             clarify_questions=-1,
             no_grounded_answer_questions=0,
+        )
+
+def test_expected_evidence_group_preserves_alternatives():
+    evidence = make_expected_evidence()
+
+    group = ExpectedEvidenceGroup(
+        group_id="support_mechanisms",
+        description=(
+            "Mechanisms used to support participation."
+        ),
+        alternatives=(evidence,),
+    )
+
+    assert group.group_id == "support_mechanisms"
+    assert (
+        group.description
+        == "Mechanisms used to support participation."
+    )
+    assert group.alternatives == (evidence,)
+
+
+def test_expected_evidence_group_rejects_empty_id():
+    with pytest.raises(
+        ValueError,
+        match=(
+            "Expected evidence group ID "
+            "cannot be empty."
+        ),
+    ):
+        ExpectedEvidenceGroup(
+            group_id="   ",
+            description="Test concept.",
+            alternatives=(
+                make_expected_evidence(),
+            ),
+        )
+
+
+def test_expected_evidence_group_rejects_empty_description():
+    with pytest.raises(
+        ValueError,
+        match=(
+            "Expected evidence group description "
+            "cannot be empty."
+        ),
+    ):
+        ExpectedEvidenceGroup(
+            group_id="concept_one",
+            description="   ",
+            alternatives=(
+                make_expected_evidence(),
+            ),
+        )
+
+
+def test_expected_evidence_group_requires_alternative():
+    with pytest.raises(
+        ValueError,
+        match=(
+            "Expected evidence group must define "
+            "at least one evidence alternative."
+        ),
+    ):
+        ExpectedEvidenceGroup(
+            group_id="concept_one",
+            description="Test concept.",
+            alternatives=(),
+        )
+
+def test_expected_evidence_group_rejects_invalid_alternative_type():
+    with pytest.raises(
+        ValueError,
+        match=(
+            "Expected evidence group alternatives "
+            "must be ExpectedEvidence values."
+        ),
+    ):
+        ExpectedEvidenceGroup(
+            group_id="concept_one",
+            description="Test concept.",
+            alternatives=(
+                "invalid",  # type: ignore[arg-type]
+            ),
         )
