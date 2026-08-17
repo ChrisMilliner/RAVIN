@@ -4,6 +4,7 @@ from backend.evaluation.models import (
     EvaluationBehavior,
     EvaluationQuestion,
     ExpectedEvidence,
+    ExpectedEvidenceGroup,
 )
 
 def _parse_expected_evidence(
@@ -62,6 +63,61 @@ def _parse_expected_evidence(
         text_contains=text_contains,
     )
 
+def _parse_expected_evidence_group(
+    raw_group: object,
+) -> ExpectedEvidenceGroup:
+    if not isinstance(
+        raw_group,
+        dict,
+    ):
+        raise ValueError(
+            "Expected evidence group must be an object."
+        )
+
+    group_id = raw_group.get("group_id")
+    description = raw_group.get("description")
+    raw_alternatives = raw_group.get(
+        "alternatives"
+    )
+
+    if not isinstance(
+        group_id,
+        str,
+    ):
+        raise ValueError(
+            "Expected evidence group ID "
+            "must be a string."
+        )
+
+    if not isinstance(
+        description,
+        str,
+    ):
+        raise ValueError(
+            "Expected evidence group description "
+            "must be a string."
+        )
+
+    if not isinstance(
+        raw_alternatives,
+        list,
+    ):
+        raise ValueError(
+            "Expected evidence group alternatives "
+            "must be a list."
+        )
+
+    alternatives = tuple(
+        _parse_expected_evidence(item)
+        for item in raw_alternatives
+    )
+
+    return ExpectedEvidenceGroup(
+        group_id=group_id,
+        description=description,
+        alternatives=alternatives,
+    )
+
 def _parse_question(
     raw_question: object,
 ) -> EvaluationQuestion:
@@ -74,6 +130,10 @@ def _parse_question(
     question = raw_question.get("question")
     raw_expected = raw_question.get(
         "expected_evidence"
+    )
+    raw_expected_groups = raw_question.get(
+        "expected_evidence_groups",
+        [],
     )
     notes = raw_question.get("notes")
 
@@ -113,6 +173,15 @@ def _parse_question(
             "Evaluation question behavior must be a string."
         )
 
+    if not isinstance(
+        raw_expected_groups,
+        list,
+    ):
+        raise ValueError(
+            "Evaluation question expected evidence "
+            "groups must be a list."
+        )
+
     try:
         behavior = EvaluationBehavior(
             raw_behavior
@@ -129,12 +198,20 @@ def _parse_question(
         for item in raw_expected
     )
 
+    expected_evidence_groups = tuple(
+        _parse_expected_evidence_group(item)
+        for item in raw_expected_groups
+    )
+
     return EvaluationQuestion(
         question_id=question_id,
         question=question,
         expected_evidence=expected_evidence,
         notes=notes,
         behavior=behavior,
+        expected_evidence_groups=(
+            expected_evidence_groups
+        ),
     )
 
 def load_evaluation_questions(

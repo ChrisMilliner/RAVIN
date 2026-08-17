@@ -83,6 +83,10 @@ class EvaluationQuestion:
     behavior: EvaluationBehavior = (
         EvaluationBehavior.DIRECT_ANSWER
     )
+    expected_evidence_groups: tuple[
+        ExpectedEvidenceGroup,
+        ...
+    ] = ()
 
     def __post_init__(self) -> None:
         if not self.question_id.strip():
@@ -117,6 +121,18 @@ class EvaluationQuestion:
             raise ValueError(
                 "Evaluation question must define "
                 "expected evidence."
+            )
+
+        if any(
+            not isinstance(
+                group,
+                ExpectedEvidenceGroup,
+            )
+            for group in self.expected_evidence_groups
+        ):
+            raise ValueError(
+                "Evaluation question evidence groups "
+                "must be ExpectedEvidenceGroup values."
             )
 
 @dataclass(frozen=True)
