@@ -1,5 +1,6 @@
 import pytest
 from backend.evaluation.models import (
+    EvaluationBehavior,
     EvaluationConfig,
     EvaluationQuestion,
     ExpectedEvidence,
@@ -46,6 +47,9 @@ def make_result(
 def make_question(
     question_id: str,
     question: str,
+    behavior: EvaluationBehavior = (
+        EvaluationBehavior.DIRECT_ANSWER
+    ),
 ) -> EvaluationQuestion:
     return EvaluationQuestion(
         question_id=question_id,
@@ -58,6 +62,7 @@ def make_question(
                 ),
             ),
         ),
+        behavior=behavior,
     )
 
 def test_find_first_relevant_rank_returns_first_match():
@@ -253,6 +258,95 @@ def test_runner_rejects_empty_question_set():
     ):
         run_retrieval_evaluation(
             (),
+            retrieve,
+            EvaluationConfig(),
+        )
+
+def test_runner_evaluates_only_direct_answer_questions():
+    questions = (
+        make_question(
+            "Q001",
+            "Direct question",
+        ),
+        make_question(
+            "Q002",
+            "Overview question",
+            EvaluationBehavior.GROUNDED_OVERVIEW,
+        ),
+        make_question(
+            "Q003",
+            "Clarification question",
+            EvaluationBehavior.CLARIFY,
+        ),
+    )
+
+    retrieved_questions: list[str] = []
+
+    def retrieve(
+        question: str,
+        top_k: int,
+    ) -> tuple[RetrievalResult, ...]:
+        retrieved_questions.append(question)
+
+        return (
+            make_result(
+                "208",
+                ("Section 4 - Key Decisions",),
+                0.9,
+            ),
+        )
+
+    result = run_retrieval_evaluation(
+        questions,
+        retrieve,
+        EvaluationConfig(),
+    )
+
+    assert retrieved_questions == [
+        "Direct question",
+    ]
+
+    assert len(result.question_results) == 1
+
+    assert (
+        result.question_results[0].question_id
+        == "Q001"
+    )
+
+    assert result.top_1_accuracy == 1.0
+    assert result.hit_at_k == 1.0
+    assert result.mrr == 1.0
+    assert result.passed
+
+def test_runner_rejects_question_set_without_direct_answers():
+    questions = (
+        make_question(
+            "Q001",
+            "Overview question",
+            EvaluationBehavior.GROUNDED_OVERVIEW,
+        ),
+        make_question(
+            "Q002",
+            "Clarification question",
+            EvaluationBehavior.CLARIFY,
+        ),
+    )
+
+    def retrieve(
+        question: str,
+        top_k: int,
+    ) -> tuple[RetrievalResult, ...]:
+        return ()
+
+    with pytest.raises(
+        ValueError,
+        match=(
+            "Retrieval ranking evaluation requires "
+            "at least one Direct Answer question."
+        ),
+    ):
+        run_retrieval_evaluation(
+            questions,
             retrieve,
             EvaluationConfig(),
         )

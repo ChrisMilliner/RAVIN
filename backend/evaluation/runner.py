@@ -9,6 +9,7 @@ from backend.evaluation.metrics import (
     meets_top_1_quality_gate,
 )
 from backend.evaluation.models import (
+    EvaluationBehavior,
     EvaluationConfig,
     EvaluationQuestion,
     EvaluationRunResult,
@@ -51,13 +52,28 @@ def run_retrieval_evaluation(
             "Cannot evaluate an empty question set."
         )
 
+    ranking_questions = tuple(
+        question
+        for question in questions
+        if (
+            question.behavior
+            == EvaluationBehavior.DIRECT_ANSWER
+        )
+    )
+
+    if not ranking_questions:
+        raise ValueError(
+            "Retrieval ranking evaluation requires "
+            "at least one Direct Answer question."
+        )
+
     question_results: list[
         QuestionEvaluationResult
     ] = []
 
     first_relevant_ranks: list[int | None] = []
 
-    for question in questions:
+    for question in ranking_questions:
         retrieved_results = retrieve(
             question.question,
             config.top_k,
