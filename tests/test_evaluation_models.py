@@ -385,3 +385,36 @@ def test_expected_evidence_group_rejects_invalid_alternative_type():
                 "invalid",  # type: ignore[arg-type]
             ),
         )
+
+def test_evaluation_question_defaults_evidence_groups_to_empty():
+    question = EvaluationQuestion(
+        question_id="Q001",
+        question="Test question",
+        expected_evidence=(
+            make_expected_evidence(),
+        ),
+    )
+
+    assert question.expected_evidence_groups == ()
+
+def test_evaluation_question_preserves_evidence_groups():
+    group = ExpectedEvidenceGroup(
+        group_id="concept_one",
+        description="Required overview concept.",
+        alternatives=(
+            make_expected_evidence(),
+        ),
+    )
+
+    question = EvaluationQuestion(
+        question_id="Q001",
+        question="Test question",
+        expected_evidence=(
+            make_expected_evidence(),
+        ),
+        expected_evidence_groups=(group,),
+    )
+
+    assert question.expected_evidence_groups == (
+        group,
+    )
