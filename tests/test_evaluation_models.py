@@ -7,6 +7,7 @@ from backend.evaluation.models import (
     EvaluationConfig,
     EvaluationQuestion,
     ExpectedEvidence,
+    EvaluationPopulation,
 )
 
 def make_expected_evidence() -> ExpectedEvidence:
@@ -252,4 +253,51 @@ def test_evaluation_question_rejects_invalid_behavior_type():
                 make_expected_evidence(),
             ),
             behavior="clarify",  # type: ignore[arg-type]
+        )
+
+def test_evaluation_population_preserves_behavior_counts():
+    population = EvaluationPopulation(
+        dataset_questions=30,
+        direct_answer_questions=26,
+        grounded_overview_questions=4,
+        clarify_questions=0,
+        no_grounded_answer_questions=0,
+    )
+
+    assert population.dataset_questions == 30
+    assert population.direct_answer_questions == 26
+    assert population.grounded_overview_questions == 4
+    assert population.clarify_questions == 0
+    assert population.no_grounded_answer_questions == 0
+
+def test_evaluation_population_rejects_mismatched_counts():
+    with pytest.raises(
+        ValueError,
+        match=(
+            "Evaluation population behavior counts "
+            "must equal the dataset question count."
+        ),
+    ):
+        EvaluationPopulation(
+            dataset_questions=30,
+            direct_answer_questions=25,
+            grounded_overview_questions=4,
+            clarify_questions=0,
+            no_grounded_answer_questions=0,
+        )
+
+def test_evaluation_population_rejects_negative_counts():
+    with pytest.raises(
+        ValueError,
+        match=(
+            "Evaluation population counts "
+            "cannot be negative."
+        ),
+    ):
+        EvaluationPopulation(
+            dataset_questions=30,
+            direct_answer_questions=27,
+            grounded_overview_questions=4,
+            clarify_questions=-1,
+            no_grounded_answer_questions=0,
         )

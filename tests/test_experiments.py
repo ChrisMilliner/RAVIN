@@ -9,6 +9,7 @@ from backend.evaluation.experiments import (
     compare_retrieval_experiments,
 )
 from backend.evaluation.models import (
+    EvaluationPopulation,
     EvaluationRunResult,
     QuestionEvaluationResult,
 )
@@ -50,6 +51,13 @@ def make_run(
         top_k=top_k,
         pass_threshold=0.95,
         passed=top_1 >= 0.95,
+        population=EvaluationPopulation(
+            dataset_questions=len(ranks),
+            direct_answer_questions=len(ranks),
+            grounded_overview_questions=0,
+            clarify_questions=0,
+            no_grounded_answer_questions=0,
+        ),
     )
 
 def make_config(
