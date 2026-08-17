@@ -38,6 +38,43 @@ class ExpectedEvidence:
             )
 
 @dataclass(frozen=True)
+class ExpectedEvidenceGroup:
+    group_id: str
+    description: str
+    alternatives: tuple[ExpectedEvidence, ...]
+
+    def __post_init__(self) -> None:
+        if not self.group_id.strip():
+            raise ValueError(
+                "Expected evidence group ID "
+                "cannot be empty."
+            )
+
+        if not self.description.strip():
+            raise ValueError(
+                "Expected evidence group description "
+                "cannot be empty."
+            )
+
+        if not self.alternatives:
+            raise ValueError(
+                "Expected evidence group must define "
+                "at least one evidence alternative."
+            )
+
+        if any(
+            not isinstance(
+                alternative,
+                ExpectedEvidence,
+            )
+            for alternative in self.alternatives
+        ):
+            raise ValueError(
+                "Expected evidence group alternatives "
+                "must be ExpectedEvidence values."
+            )
+
+@dataclass(frozen=True)
 class EvaluationQuestion:
     question_id: str
     question: str
