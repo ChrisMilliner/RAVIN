@@ -19,6 +19,9 @@ from backend.evaluation.reporting import (
     get_repository_commit,
     write_experiment_record,
 )
+from backend.evaluation.models import (
+    EvaluationPopulation,
+)
 from backend.ingestion.models import PolicyChunk
 from backend.retrieval.models import IndexedPolicyChunk
 
@@ -118,6 +121,13 @@ def make_comparison(
         ),
         quality_gate_passed=False,
         validated_dataset_gate_passed=False,
+        population=EvaluationPopulation(
+            dataset_questions=30,
+            direct_answer_questions=30,
+            grounded_overview_questions=0,
+            clarify_questions=0,
+            no_grounded_answer_questions=0,
+        ),
     )
 
 def test_file_sha256_matches_expected_digest(
