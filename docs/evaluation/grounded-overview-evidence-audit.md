@@ -301,3 +301,142 @@ Required evidence groups: **3**
 
 RB003 should pass Grounded Overview evidence coverage only when all
 three required groups are covered.
+
+---
+
+## RB025
+
+### Question
+
+What admissions information should be available to prospective students
+before they apply or accept an offer?
+
+### Behaviour
+
+`GROUNDED_OVERVIEW`
+
+### Audit decision
+
+A satisfactory overview should explain the information that must be
+available and accessible to prospective students before admission,
+explain that students must be informed of their rights and obligations
+before accepting or declining an offer, and identify the principal
+offer-related matters that this information includes.
+
+Three required evidence groups are therefore defined.
+
+### Required group 1 - pre_application_information
+
+**Concept**
+
+Prospective students must have accessible and current information about
+admission and participation requirements and related admission
+arrangements.
+
+**Required meaning**
+
+The evidence must establish that information concerning entry
+requirements, core participation requirements, other entry conditions,
+deferral and transfer procedures, pathways and credit arrangements is
+made available and easily accessible to prospective students and is
+regularly updated.
+
+**Source**
+
+Policy 169 - Admissions Policy
+
+Heading:
+
+`Section 5 - Policy Statement`
+
+Stable answer-bearing fragment:
+
+`information regarding entry requirements, core participation requirements, other conditions for entry, deferral and transfer procedures, pathways and credit arrangements`
+
+**Additional stable fragment**
+
+`made available and easily accessible to prospective students`
+
+### Required group 2 - offer_rights_and_obligations
+
+**Concept**
+
+Students must be informed of their rights and obligations before
+deciding whether to accept an offer.
+
+**Required meaning**
+
+The evidence must establish both the existence of rights and
+obligations information and that it is provided before the student
+accepts or declines the offer.
+
+**Source**
+
+Policy 169 - Admissions Policy
+
+Heading:
+
+`Section 5 - Policy Statement`
+
+Stable answer-bearing fragment:
+
+`students are informed of their rights and obligations before accepting or declining their offer`
+
+### Required group 3 - offer_information_details
+
+**Concept**
+
+The information provided before offer acceptance includes the principal
+financial and offer-management matters relevant to the student.
+
+**Required meaning**
+
+The evidence must establish that the required offer information
+includes fees and charges and rights and obligations relating to course
+acceptance, changes to offers, deferment and withdrawal.
+
+**Source**
+
+Policy 169 - Admissions Policy
+
+Heading:
+
+`Section 5 - Policy Statement`
+
+Stable answer-bearing fragment:
+
+`information about all fees and charges`
+
+**Additional stable fragment**
+
+`rights and obligations in relation to course acceptance, changes to offers, deferment and withdrawal`
+
+### Supplementary but not required evidence
+
+The following information may improve an answer but is not required for
+RB025 to achieve complete overview coverage:
+
+- the general principle that admission and selection processes are
+  transparent, equitable and clearly communicated;
+- entry requirements are equivalent for domestic and international
+  applicants and across different offerings of the same course;
+- indicative entry thresholds where admission quotas or limits apply;
+- application status and selection outcome information provided under
+  the Admissions Procedure;
+- specific contents of an individual offer letter beyond the
+  transparency requirements identified above.
+
+These matters provide useful additional context but are not necessary
+to answer the broad question about what admissions information should
+be available before application or offer acceptance.
+
+### Audit outcome
+
+Required evidence groups: **3**
+
+- `pre_application_information`
+- `offer_rights_and_obligations`
+- `offer_information_details`
+
+RB025 should pass Grounded Overview evidence coverage only when all
+three required groups are covered.
