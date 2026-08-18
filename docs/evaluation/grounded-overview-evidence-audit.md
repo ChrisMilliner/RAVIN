@@ -174,3 +174,130 @@ Required evidence groups: **3**
 
 RB002 should pass Grounded Overview evidence coverage only when all
 three required groups are covered.
+
+---
+
+## RB003
+
+### Question
+
+What are the admission requirements for university applicants?
+
+### Behaviour
+
+`GROUNDED_OVERVIEW`
+
+### Audit decision
+
+A satisfactory overview should explain that applicants to La Trobe
+award coursework courses must satisfy the University's General
+Admission Requirements, must also satisfy any course-specific entry
+requirements, and may be assessed against annually determined course
+entry scores such as ATAR, WAM, GPA or their equivalents.
+
+Three required evidence groups are therefore defined.
+
+### Required group 1 - general_admission_requirements
+
+**Concept**
+
+Applicants must satisfy the University's General Admission
+Requirements.
+
+**Required meaning**
+
+The evidence must establish that applicants to an award coursework
+course are required to meet the General Admission Requirements.
+
+**Source**
+
+Policy 340 - Admissions Procedure
+
+Heading:
+
+`Section 6 - Procedures > Part A - Entry Criteria`
+
+Stable answer-bearing fragment:
+
+`must meet the General Admission Requirements`
+
+### Required group 2 - course_specific_entry_requirements
+
+**Concept**
+
+Applicants must also satisfy requirements specific to the course for
+which they are applying.
+
+**Required meaning**
+
+The evidence must establish that the General Admission Requirements do
+not replace course-specific entry requirements and that both may apply.
+
+**Source**
+
+Policy 340 - Admissions Procedure
+
+Heading:
+
+`Section 6 - Procedures > Part A - Entry Criteria`
+
+Stable answer-bearing fragment:
+
+`in addition to any course-specific entry requirements`
+
+### Required group 3 - entry_score_basis
+
+**Concept**
+
+Course entry scores are determined annually and may use measures such
+as ATAR, WAM, GPA or their equivalents.
+
+**Required meaning**
+
+The evidence must establish that course admission may involve an
+annually determined entry score and identify the score measures or
+equivalent measures used by the University.
+
+**Source**
+
+Policy 340 - Admissions Procedure
+
+Heading:
+
+`Section 6 - Procedures > Part A - Entry Criteria`
+
+Stable answer-bearing fragment:
+
+`ATAR (Australian Tertiary Admission Rank), WAM (Weighted Average Mark), GPA (Grade Point Average), or their equivalents`
+
+### Supplementary but not required evidence
+
+The following information may improve an answer but is not required for
+RB003 to achieve complete overview coverage:
+
+- international qualifications are assessed for equivalence to
+  Australian qualifications;
+- satisfying all applicable entry requirements makes an applicant
+  eligible for consideration but does not guarantee an offer;
+- entry to courses is based on competitive selection and places may be
+  limited;
+- Australian Year 12 or equivalent applicants may be required to apply
+  through the relevant admissions centre;
+- application channels depend on the applicant, course and campus;
+- Single Subject applicants have separate prerequisite and eligibility
+  provisions.
+
+These matters are conditional, procedural, or subsequent to the core
+question of the admission requirements applying generally to award
+coursework applicants.
+
+### Audit outcome
+
+Required evidence groups: **3**
+
+- `general_admission_requirements`
+- `course_specific_entry_requirements`
+- `entry_score_basis`
+
+RB003 should pass Grounded Overview evidence coverage only when all
+three required groups are covered.
