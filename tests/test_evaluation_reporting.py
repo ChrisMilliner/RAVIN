@@ -21,6 +21,10 @@ from backend.evaluation.reporting import (
 )
 from backend.evaluation.models import (
     EvaluationPopulation,
+    GroundedOverviewEvaluationConfig,
+    GroundedOverviewEvaluationResult,
+    GroundedOverviewGroupResult,
+    GroundedOverviewQuestionResult,
 )
 from backend.ingestion.models import PolicyChunk
 from backend.retrieval.models import IndexedPolicyChunk
@@ -223,7 +227,7 @@ def test_experiment_record_preserves_accuracy_decision():
         lexical_weight=LEXICAL_WEIGHT,
     )
 
-    assert record["schema_version"] == 1
+    assert record["schema_version"] == 2
 
     assert (
         record["candidate_metrics"][
@@ -250,6 +254,40 @@ def test_experiment_record_preserves_accuracy_decision():
         record["quality_decision"][
             "candidate_eligible_for_selection"
         ]
+    )
+
+def make_grounded_overview_evaluation(
+) -> GroundedOverviewEvaluationResult:
+    return GroundedOverviewEvaluationResult(
+        question_results=(
+            GroundedOverviewQuestionResult(
+                question_id="RB002",
+                group_results=(
+                    GroundedOverviewGroupResult(
+                        group_id="group_a",
+                        covered=True,
+                    ),
+                    GroundedOverviewGroupResult(
+                        group_id="group_b",
+                        covered=True,
+                    ),
+                ),
+            ),
+            GroundedOverviewQuestionResult(
+                question_id="RB003",
+                group_results=(
+                    GroundedOverviewGroupResult(
+                        group_id="group_c",
+                        covered=True,
+                    ),
+                    GroundedOverviewGroupResult(
+                        group_id="group_d",
+                        covered=False,
+                    ),
+                ),
+            ),
+        ),
+        pass_threshold=0.95,
     )
 
 def test_experiment_record_marks_eligible_decision():
@@ -949,3 +987,154 @@ def test_experiment_record_preserves_evaluation_population():
         population["ranking_metric_scope"]
         == "direct_answer"
     )
+
+def test_experiment_record_preserves_grounded_overview_metrics():
+    comparison = make_comparison()
+
+    comparison = RetrievalExperimentComparison(
+        config=comparison.config,
+        top_1=comparison.top_1,
+        hit_at_k=comparison.hit_at_k,
+        mrr=comparison.mrr,
+        question_rank_changes=(
+            comparison.question_rank_changes
+        ),
+        direction=comparison.direction,
+        selection_decision=(
+            comparison.selection_decision
+        ),
+        quality_gate_passed=(
+            comparison.quality_gate_passed
+        ),
+        validated_dataset_gate_passed=(
+            comparison.validated_dataset_gate_passed
+        ),
+        population=EvaluationPopulation(
+            dataset_questions=30,
+            direct_answer_questions=28,
+            grounded_overview_questions=2,
+            clarify_questions=0,
+            no_grounded_answer_questions=0,
+        ),
+    )
+
+    overview = (
+        make_grounded_overview_evaluation()
+    )
+
+    record = build_experiment_record(
+        comparison=comparison,
+        policy_ids=("208",),
+        chunk_count=1,
+        dataset_path="evaluation/test.json",
+        dataset_sha256="dataset-hash",
+        corpus_sha256="corpus-hash",
+        repository_commit="abc1234",
+        generated_at_utc=(
+            "2026-08-22T02:00:00+00:00"
+        ),
+        embedding_model=EMBEDDING_MODEL,
+        semantic_weight=SEMANTIC_WEIGHT,
+        lexical_weight=LEXICAL_WEIGHT,
+        grounded_overview_config=(
+            GroundedOverviewEvaluationConfig(
+                top_k=5,
+                pass_threshold=0.95,
+            )
+        ),
+        grounded_overview_evaluation=overview,
+    )
+
+    metrics = record[
+        "grounded_overview_metrics"
+    ]
+
+    assert metrics["top_k"] == 5
+    assert metrics["total_questions"] == 2
+    assert metrics["passed_questions"] == 1
+    assert metrics[
+        "question_pass_rate"
+    ] == pytest.approx(0.5)
+
+    assert metrics[
+        "total_evidence_groups"
+    ] == 4
+
+    assert metrics[
+        "covered_evidence_groups"
+    ] == 3
+
+    assert metrics[
+        "evidence_group_coverage"
+    ] == pytest.approx(0.75)
+
+    assert not metrics[
+        "quality_gate_passed"
+    ]
+
+    assert not metrics[
+        "validated_dataset_gate_passed"
+    ]
+
+    assert len(metrics["per_question"]) == 2
+
+def test_experiment_record_requires_overview_config_and_result_together():
+    comparison = make_comparison()
+
+    with pytest.raises(
+        ValueError,
+        match=(
+            "Grounded overview configuration and "
+            "evaluation must be provided together."
+        ),
+    ):
+        build_experiment_record(
+            comparison=comparison,
+            policy_ids=("208",),
+            chunk_count=1,
+            dataset_path="evaluation/test.json",
+            dataset_sha256="dataset-hash",
+            corpus_sha256="corpus-hash",
+            repository_commit="abc1234",
+            generated_at_utc=(
+                "2026-08-22T02:00:00+00:00"
+            ),
+            embedding_model=EMBEDDING_MODEL,
+            semantic_weight=SEMANTIC_WEIGHT,
+            lexical_weight=LEXICAL_WEIGHT,
+            grounded_overview_config=(
+                GroundedOverviewEvaluationConfig()
+            ),
+        )
+
+def test_experiment_record_rejects_overview_population_mismatch():
+    comparison = make_comparison()
+
+    with pytest.raises(
+        ValueError,
+        match=(
+            "Grounded overview evaluation question "
+            "count must match the evaluation population."
+        ),
+    ):
+        build_experiment_record(
+            comparison=comparison,
+            policy_ids=("208",),
+            chunk_count=1,
+            dataset_path="evaluation/test.json",
+            dataset_sha256="dataset-hash",
+            corpus_sha256="corpus-hash",
+            repository_commit="abc1234",
+            generated_at_utc=(
+                "2026-08-22T02:00:00+00:00"
+            ),
+            embedding_model=EMBEDDING_MODEL,
+            semantic_weight=SEMANTIC_WEIGHT,
+            lexical_weight=LEXICAL_WEIGHT,
+            grounded_overview_config=(
+                GroundedOverviewEvaluationConfig()
+            ),
+            grounded_overview_evaluation=(
+                make_grounded_overview_evaluation()
+            ),
+        )

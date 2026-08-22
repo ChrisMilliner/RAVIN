@@ -4,11 +4,16 @@ import subprocess
 from pathlib import Path
 from typing import Any
 from backend.evaluation.experiment_models import (
+    DatasetValidationStatus,
     ExperimentSelectionDecision,
     RetrievalExperimentComparison,
 )
 from backend.retrieval.models import (
     IndexedPolicyChunk,
+)
+from backend.evaluation.models import (
+    GroundedOverviewEvaluationConfig,
+    GroundedOverviewEvaluationResult,
 )
 
 def calculate_file_sha256(
@@ -132,6 +137,12 @@ def build_experiment_record(
     baseline_rerank_depth: int | None = None,
     reranker_model: str | None = None,
     rerank_depth: int | None = None,
+    grounded_overview_config: (
+        GroundedOverviewEvaluationConfig | None
+    ) = None,
+    grounded_overview_evaluation: (
+        GroundedOverviewEvaluationResult | None
+    ) = None,
 ) -> dict[str, Any]:
     if not policy_ids:
         raise ValueError(
@@ -304,6 +315,38 @@ def build_experiment_record(
             "Retrieval weights must sum to 1."
         )
 
+    if (
+        (grounded_overview_config is None)
+        != (grounded_overview_evaluation is None)
+    ):
+        raise ValueError(
+            "Grounded overview configuration and "
+            "evaluation must be provided together."
+        )
+
+    if (
+        grounded_overview_config is not None
+        and grounded_overview_evaluation is not None
+    ):
+        if abs(
+            grounded_overview_config.pass_threshold
+            - grounded_overview_evaluation.pass_threshold
+        ) > 1e-12:
+            raise ValueError(
+                "Grounded overview configuration and "
+                "evaluation thresholds must match."
+            )
+
+        if (
+            grounded_overview_evaluation.total_questions
+            != comparison.population
+            .grounded_overview_questions
+        ):
+            raise ValueError(
+                "Grounded overview evaluation question "
+                "count must match the evaluation population."
+            )
+
     config = comparison.config
 
     candidate_eligible = (
@@ -312,8 +355,93 @@ def build_experiment_record(
         .ELIGIBLE_FOR_SELECTION
     )
 
+    grounded_overview_metrics = None
+
+    if (
+        grounded_overview_config is not None
+        and grounded_overview_evaluation is not None
+    ):
+        grounded_overview_metrics = {
+            "top_k": (
+                grounded_overview_config.top_k
+            ),
+            "quality_threshold": (
+                grounded_overview_evaluation
+                .pass_threshold
+            ),
+            "total_questions": (
+                grounded_overview_evaluation
+                .total_questions
+            ),
+            "passed_questions": (
+                grounded_overview_evaluation
+                .passed_questions
+            ),
+            "question_pass_rate": (
+                grounded_overview_evaluation
+                .question_pass_rate
+            ),
+            "total_evidence_groups": (
+                grounded_overview_evaluation
+                .total_groups
+            ),
+            "covered_evidence_groups": (
+                grounded_overview_evaluation
+                .covered_groups
+            ),
+            "evidence_group_coverage": (
+                grounded_overview_evaluation
+                .evidence_group_coverage
+            ),
+            "quality_gate_passed": (
+                grounded_overview_evaluation.passed
+            ),
+            "validated_dataset_gate_passed": (
+                grounded_overview_evaluation.passed
+                and comparison.config.dataset_status
+                == DatasetValidationStatus.HUMAN_VALIDATED
+            ),
+            "per_question": [
+                {
+                    "question_id": (
+                        question_result.question_id
+                    ),
+                    "total_groups": (
+                        question_result.total_groups
+                    ),
+                    "covered_groups": (
+                        question_result.covered_groups
+                    ),
+                    "evidence_coverage": (
+                        question_result
+                        .evidence_coverage
+                    ),
+                    "passed": (
+                        question_result.passed
+                    ),
+                    "groups": [
+                        {
+                            "group_id": (
+                                group_result.group_id
+                            ),
+                            "covered": (
+                                group_result.covered
+                            ),
+                        }
+                        for group_result in (
+                            question_result.group_results
+                        )
+                    ],
+                }
+                for question_result in (
+                    grounded_overview_evaluation
+                    .question_results
+                )
+            ],
+        }
+
     return {
-        "schema_version": 1,
+        "schema_version": 2,
         "experiment": {
             "name": config.experiment_name,
             "baseline": config.baseline_name,
@@ -390,6 +518,9 @@ def build_experiment_record(
                 "direct_answer"
             ),
         },
+        "grounded_overview_metrics": (
+            grounded_overview_metrics
+        ),
         "corpus": {
             "policy_ids": list(policy_ids),
             "chunk_count": chunk_count,
