@@ -4,6 +4,7 @@ from backend.retrieval.models import RetrievalResult
 
 DEFAULT_TOP_K = 5
 DEFAULT_TOP_1_PASS_THRESHOLD = 0.95
+DEFAULT_GROUNDED_OVERVIEW_PASS_THRESHOLD = 0.95
 
 class EvaluationBehavior(str, Enum):
     DIRECT_ANSWER = "direct_answer"
@@ -165,6 +166,26 @@ class GroundedOverviewQuestionResult:
             self.covered_groups
             == self.total_groups
         )
+
+@dataclass(frozen=True)
+class GroundedOverviewEvaluationConfig:
+    top_k: int = DEFAULT_TOP_K
+    pass_threshold: float = (
+        DEFAULT_GROUNDED_OVERVIEW_PASS_THRESHOLD
+    )
+
+    def __post_init__(self) -> None:
+        if self.top_k <= 0:
+            raise ValueError(
+                "Grounded overview top_k must be "
+                "greater than zero."
+            )
+
+        if not 0.0 <= self.pass_threshold <= 1.0:
+            raise ValueError(
+                "Grounded overview pass threshold "
+                "must be between 0 and 1."
+            )
 
 @dataclass(frozen=True)
 class GroundedOverviewEvaluationResult:
