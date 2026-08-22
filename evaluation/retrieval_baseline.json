@@ -1,5 +1,5 @@
 {
-  "name": "RAVIN Preliminary Retrieval Development Baseline v1.4",
+  "name": "RAVIN Preliminary Retrieval Development Baseline v1.5",
   "status": "preliminary-not-gold-standard",
   "questions": [
     {
@@ -36,7 +36,78 @@
         }
       ],
       "notes": "Preliminary expected evidence based on manual review.",
-      "behavior": "grounded_overview"
+      "behavior": "grounded_overview",
+      "expected_evidence_groups": [
+        {
+          "group_id": "progression_stages",
+          "description": "Subject failure triggers a staged academic progression process.",
+          "alternatives": [
+            {
+              "policy_id": "220",
+              "heading_path": [
+                "Section 6 - Procedures",
+                "Part A - Monitoring and Determining Academic Progression"
+              ],
+              "text_contains": "Students who experience subject failure will trigger one of three stages of academic progression"
+            }
+          ]
+        },
+        {
+          "group_id": "support_and_interventions",
+          "description": "Academic progression management includes support and interventions.",
+          "alternatives": [
+            {
+              "policy_id": "220",
+              "heading_path": [
+                "Section 5 - Policy Statement"
+              ],
+              "text_contains": "interventions at each stage of academic progression monitoring provide students with multiple avenues for academic and non-academic support"
+            },
+            {
+              "policy_id": "220",
+              "heading_path": [
+                "Section 6 - Procedures",
+                "Part A - Monitoring and Determining Academic Progression"
+              ],
+              "text_contains": "associated support and interventions"
+            }
+          ]
+        },
+        {
+          "group_id": "escalation_and_consequences",
+          "description": "Continued progression difficulties may escalate to show cause and possible course exclusion.",
+          "alternatives": [
+            {
+              "policy_id": "220",
+              "heading_path": [
+                "Section 6 - Procedures",
+                "Part A - Monitoring and Determining Academic Progression"
+              ],
+              "text_contains": "Show Cause and Course Exclusion"
+            },
+            {
+              "policy_id": "220",
+              "heading_path": [
+                "Section 6 - Procedures",
+                "Part B - Details of Academic Progression Stages",
+                "Academic Progression Stage Three - Show Cause and Course Exclusion",
+                "Show Cause"
+              ],
+              "text_contains": "show cause as to why they should not be excluded from their course"
+            },
+            {
+              "policy_id": "220",
+              "heading_path": [
+                "Section 6 - Procedures",
+                "Part B - Details of Academic Progression Stages",
+                "Academic Progression Stage Three - Show Cause and Course Exclusion",
+                "Show Cause"
+              ],
+              "text_contains": "University will take steps to exclude them from their course"
+            }
+          ]
+        }
+      ]
     },
     {
       "question_id": "RB003",
@@ -51,7 +122,51 @@
         }
       ],
       "notes": "Retains the known baseline ranking weakness where less relevant admissions content may rank above Entry Criteria.",
-      "behavior": "grounded_overview"
+      "behavior": "grounded_overview",
+      "expected_evidence_groups": [
+        {
+          "group_id": "general_admission_requirements",
+          "description": "Applicants must satisfy the University's General Admission Requirements.",
+          "alternatives": [
+            {
+              "policy_id": "340",
+              "heading_path": [
+                "Section 6 - Procedures",
+                "Part A - Entry Criteria"
+              ],
+              "text_contains": "must meet the General Admission Requirements"
+            }
+          ]
+        },
+        {
+          "group_id": "course_specific_entry_requirements",
+          "description": "Applicants must also satisfy applicable course-specific entry requirements.",
+          "alternatives": [
+            {
+              "policy_id": "340",
+              "heading_path": [
+                "Section 6 - Procedures",
+                "Part A - Entry Criteria"
+              ],
+              "text_contains": "in addition to any course-specific entry requirements"
+            }
+          ]
+        },
+        {
+          "group_id": "entry_score_basis",
+          "description": "Course entry scores may use ATAR, WAM, GPA or equivalent measures.",
+          "alternatives": [
+            {
+              "policy_id": "340",
+              "heading_path": [
+                "Section 6 - Procedures",
+                "Part A - Entry Criteria"
+              ],
+              "text_contains": "ATAR (Australian Tertiary Admission Rank), WAM (Weighted Average Mark), GPA (Grade Point Average), or their equivalents"
+            }
+          ]
+        }
+      ]
     },
     {
       "question_id": "RB004",
@@ -415,7 +530,74 @@
         }
       ],
       "notes": "Broad natural-language question about transparency requirements. Accepts two independently answer-bearing fragments under the stable Policy Statement heading so evaluation is not tied to structural chunk boundaries.",
-      "behavior": "grounded_overview"
+      "behavior": "grounded_overview",
+      "expected_evidence_groups": [
+        {
+          "group_id": "pre_application_information",
+          "description": "Prospective students must be provided with information about admission, participation and related admission arrangements.",
+          "alternatives": [
+            {
+              "policy_id": "169",
+              "heading_path": [
+                "Section 5 - Policy Statement"
+              ],
+              "text_contains": "information regarding entry requirements, core participation requirements, other conditions for entry, deferral and transfer procedures, pathways and credit arrangements"
+            }
+          ]
+        },
+        {
+          "group_id": "prospective_information_accessibility",
+          "description": "Admission information must be made available and easily accessible to prospective students.",
+          "alternatives": [
+            {
+              "policy_id": "169",
+              "heading_path": [
+                "Section 5 - Policy Statement"
+              ],
+              "text_contains": "made available and easily accessible to prospective students"
+            }
+          ]
+        },
+        {
+          "group_id": "offer_rights_and_obligations",
+          "description": "Students must be informed of their rights and obligations before accepting or declining an offer.",
+          "alternatives": [
+            {
+              "policy_id": "169",
+              "heading_path": [
+                "Section 5 - Policy Statement"
+              ],
+              "text_contains": "students are informed of their rights and obligations before accepting or declining their offer"
+            }
+          ]
+        },
+        {
+          "group_id": "fees_and_charges_information",
+          "description": "Students must receive information about fees and charges.",
+          "alternatives": [
+            {
+              "policy_id": "169",
+              "heading_path": [
+                "Section 5 - Policy Statement"
+              ],
+              "text_contains": "information about all fees and charges"
+            }
+          ]
+        },
+        {
+          "group_id": "offer_management_rights",
+          "description": "Students must receive information about offer-management rights and obligations.",
+          "alternatives": [
+            {
+              "policy_id": "169",
+              "heading_path": [
+                "Section 5 - Policy Statement"
+              ],
+              "text_contains": "rights and obligations in relation to course acceptance, changes to offers, deferment and withdrawal"
+            }
+          ]
+        }
+      ]
     },
     {
       "question_id": "RB026",
@@ -437,7 +619,35 @@
         }
       ],
       "notes": "Broad natural-language question about how La Trobe supports participation in admission for people experiencing disadvantage or underrepresentation. Accepts both the policy statement introducing that support and the immediately following answer-bearing fragment listing the mechanisms used, so evaluation is not tied to the fixed-word chunk boundary.",
-      "behavior": "grounded_overview"
+      "behavior": "grounded_overview",
+      "expected_evidence_groups": [
+        {
+          "group_id": "participation_commitment",
+          "description": "La Trobe supports participation by people who have experienced disadvantage or are underrepresented in higher education.",
+          "alternatives": [
+            {
+              "policy_id": "169",
+              "heading_path": [
+                "Section 5 - Policy Statement"
+              ],
+              "text_contains": "encourages and supports participation from persons who have experienced disadvantage"
+            }
+          ]
+        },
+        {
+          "group_id": "support_mechanisms",
+          "description": "The University provides concrete admission mechanisms to support participation.",
+          "alternatives": [
+            {
+              "policy_id": "169",
+              "heading_path": [
+                "Section 5 - Policy Statement"
+              ],
+              "text_contains": "special entry access schemes and alternative entry programs"
+            }
+          ]
+        }
+      ]
     },
     {
       "question_id": "RB027",
