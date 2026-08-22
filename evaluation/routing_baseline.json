@@ -321,6 +321,54 @@
       "expected_sufficiency": null,
       "expected_behavior": "clarify",
       "notes": "Could refer to pre-application and offer information in admissions or information communicated during another policy process."
+    },
+    {
+      "question_id": "RQ041",
+      "question": "Does Professional Equivalence permanently replace the need for an academic qualification?",
+      "expected_intent": "focused",
+      "expected_sufficiency": "insufficient",
+      "expected_behavior": "no_grounded_answer",
+      "notes": "Live corpus review found definitions and requirements for Professional Equivalence, but no evidence establishing that it permanently replaces the need for a formal qualification."
+    },
+    {
+      "question_id": "RQ042",
+      "question": "What financial assistance is guaranteed to students who are not making satisfactory academic progress?",
+      "expected_intent": "focused",
+      "expected_sufficiency": "insufficient",
+      "expected_behavior": "no_grounded_answer",
+      "notes": "The Academic Progression Review Policy identifies academic and non-academic support but does not establish guaranteed financial assistance."
+    },
+    {
+      "question_id": "RQ043",
+      "question": "What accommodation and travel support does La Trobe provide to academic staff applying for promotion?",
+      "expected_intent": "focused",
+      "expected_sufficiency": "insufficient",
+      "expected_behavior": "no_grounded_answer",
+      "notes": "The Academic Promotions Policy provides application advice and support but the inspected corpus does not establish accommodation or travel support."
+    },
+    {
+      "question_id": "RQ044",
+      "question": "What scholarships and fee discounts are guaranteed to applicants who experience disadvantage?",
+      "expected_intent": "focused",
+      "expected_sufficiency": "insufficient",
+      "expected_behavior": "no_grounded_answer",
+      "notes": "Admissions evidence establishes SEAS adjustments, alternative entry programs and targeted support, but does not establish guaranteed scholarships or fee discounts."
+    },
+    {
+      "question_id": "RQ045",
+      "question": "What employment benefits are provided to staff who achieve Professional Equivalence?",
+      "expected_intent": "focused",
+      "expected_sufficiency": "insufficient",
+      "expected_behavior": "no_grounded_answer",
+      "notes": "The Academic Staff Qualifications Policy explains Professional Equivalence and teaching-related requirements but does not establish employment benefits resulting from achieving that status."
+    },
+    {
+      "question_id": "RQ046",
+      "question": "What penalties apply when a graduate wears academic dress incorrectly?",
+      "expected_intent": "focused",
+      "expected_sufficiency": "insufficient",
+      "expected_behavior": "no_grounded_answer",
+      "notes": "The Academic Dress Policy defines required dress and how it is worn, but the inspected corpus does not establish penalties for incorrect wear."
     }
   ]
 }
