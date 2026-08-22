@@ -3,6 +3,7 @@ from backend.ingestion.models import PolicyChunk
 from backend.retrieval.context import (
     ContextAssemblyConfig,
     find_structural_neighbors,
+    merge_structural_chunk_text,
 )
 
 def make_chunk(
@@ -204,3 +205,251 @@ def test_find_structural_neighbors_rejects_negative_window():
             anchor=chunk,
             window=-1,
         )
+
+def test_merge_structural_chunk_text_removes_expected_overlap():
+    heading = (
+        "Section 5 - Policy Statement",
+    )
+
+    chunks = (
+        PolicyChunk(
+            policy_id="169",
+            policy_title="Admissions Policy",
+            source_url="https://example.invalid/169",
+            status="Current",
+            effective_date=None,
+            review_date=None,
+            chunk_index=0,
+            text="one two three four",
+            heading_path=heading,
+        ),
+        PolicyChunk(
+            policy_id="169",
+            policy_title="Admissions Policy",
+            source_url="https://example.invalid/169",
+            status="Current",
+            effective_date=None,
+            review_date=None,
+            chunk_index=1,
+            text="three four five six",
+            heading_path=heading,
+        ),
+    )
+
+    merged = merge_structural_chunk_text(
+        chunks,
+        overlap_words=2,
+    )
+
+    assert merged == (
+        "one two three four five six"
+    )
+
+def test_merge_structural_chunk_text_handles_multiple_chunks():
+    heading = (
+        "Section 5 - Policy Statement",
+    )
+
+    chunks = (
+        PolicyChunk(
+            policy_id="169",
+            policy_title="Admissions Policy",
+            source_url="https://example.invalid/169",
+            status="Current",
+            effective_date=None,
+            review_date=None,
+            chunk_index=0,
+            text="one two three four",
+            heading_path=heading,
+        ),
+        PolicyChunk(
+            policy_id="169",
+            policy_title="Admissions Policy",
+            source_url="https://example.invalid/169",
+            status="Current",
+            effective_date=None,
+            review_date=None,
+            chunk_index=1,
+            text="four five six seven",
+            heading_path=heading,
+        ),
+        PolicyChunk(
+            policy_id="169",
+            policy_title="Admissions Policy",
+            source_url="https://example.invalid/169",
+            status="Current",
+            effective_date=None,
+            review_date=None,
+            chunk_index=2,
+            text="seven eight nine ten",
+            heading_path=heading,
+        ),
+    )
+
+    merged = merge_structural_chunk_text(
+        chunks,
+        overlap_words=1,
+    )
+
+    assert merged == (
+        "one two three four five six seven "
+        "eight nine ten"
+    )
+
+def test_merge_structural_chunk_text_keeps_nonmatching_words():
+    heading = (
+        "Section 5 - Policy Statement",
+    )
+
+    chunks = (
+        PolicyChunk(
+            policy_id="169",
+            policy_title="Admissions Policy",
+            source_url="https://example.invalid/169",
+            status="Current",
+            effective_date=None,
+            review_date=None,
+            chunk_index=0,
+            text="one two three four",
+            heading_path=heading,
+        ),
+        PolicyChunk(
+            policy_id="169",
+            policy_title="Admissions Policy",
+            source_url="https://example.invalid/169",
+            status="Current",
+            effective_date=None,
+            review_date=None,
+            chunk_index=1,
+            text="four five six seven",
+            heading_path=heading,
+        ),
+    )
+
+    merged = merge_structural_chunk_text(
+        chunks,
+        overlap_words=2,
+    )
+
+    assert merged == (
+        "one two three four four five six seven"
+    )
+
+def test_merge_structural_chunk_text_zero_overlap_keeps_all_text():
+    heading = (
+        "Section 5 - Policy Statement",
+    )
+
+    chunks = (
+        make_chunk(0, heading),
+        make_chunk(1, heading),
+    )
+
+    merged = merge_structural_chunk_text(
+        chunks,
+        overlap_words=0,
+    )
+
+    assert merged == (
+        "Policy chunk 0. Policy chunk 1."
+    )
+
+def test_merge_structural_chunk_text_rejects_heading_change():
+    chunks = (
+        make_chunk(
+            0,
+            ("Section 5",),
+        ),
+        make_chunk(
+            1,
+            ("Section 6",),
+        ),
+    )
+
+    with pytest.raises(
+        ValueError,
+        match=(
+            "Context chunks must form a "
+            "consecutive structural sequence."
+        ),
+    ):
+        merge_structural_chunk_text(
+            chunks,
+            overlap_words=1,
+        )
+
+def test_merge_structural_chunk_text_rejects_nonconsecutive_chunks():
+    heading = (
+        "Section 5",
+    )
+
+    chunks = (
+        make_chunk(0, heading),
+        make_chunk(2, heading),
+    )
+
+    with pytest.raises(
+        ValueError,
+        match=(
+            "Context chunks must form a "
+            "consecutive structural sequence."
+        ),
+    ):
+        merge_structural_chunk_text(
+            chunks,
+            overlap_words=1,
+        )
+
+def test_merge_structural_chunk_text_rejects_policy_change():
+    heading = (
+        "Section 5",
+    )
+
+    chunks = (
+        make_chunk(
+            0,
+            heading,
+            policy_id="169",
+        ),
+        make_chunk(
+            1,
+            heading,
+            policy_id="340",
+        ),
+    )
+
+    with pytest.raises(
+        ValueError,
+        match=(
+            "Context chunks must form a "
+            "consecutive structural sequence."
+        ),
+    ):
+        merge_structural_chunk_text(
+            chunks,
+            overlap_words=1,
+        )
+
+def test_merge_structural_chunk_text_rejects_negative_overlap():
+    heading = (
+        "Section 5",
+    )
+
+    chunk = make_chunk(
+        0,
+        heading,
+    )
+
+    with pytest.raises(
+        ValueError,
+        match="Chunk overlap cannot be negative.",
+    ):
+        merge_structural_chunk_text(
+            (chunk,),
+            overlap_words=-1,
+        )
+
+def test_merge_structural_chunk_text_empty_input_returns_empty():
+    assert merge_structural_chunk_text(
+        (),
+    ) == ""
