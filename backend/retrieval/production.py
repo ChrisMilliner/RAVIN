@@ -1,5 +1,12 @@
 from dataclasses import dataclass
 from backend.ingestion.models import PolicyChunk
+from backend.retrieval.context import (
+    ContextAssemblyConfig,
+    GroundedContext,
+    assemble_context_chunks,
+    build_grounded_context,
+    render_grounded_context,
+)
 from backend.retrieval.embeddings import (
     EmbeddingProvider,
 )
@@ -78,6 +85,19 @@ class ProductionRetrievalConfig:
                 "sum to 1."
             )
 
+@dataclass(frozen=True)
+class GroundedRetrievalResult:
+    retrieval_results: tuple[
+        RetrievalResult,
+        ...
+    ]
+    context_chunks: tuple[
+        PolicyChunk,
+        ...
+    ]
+    context: GroundedContext
+    rendered_context: str
+
 def build_production_retrieval_index(
     chunks: tuple[PolicyChunk, ...],
     embedding_provider: EmbeddingProvider,
@@ -116,3 +136,48 @@ def retrieve_policy_evidence(
     )
 
     return reranked_results[:config.top_k]
+
+def retrieve_grounded_context(
+    indexed_chunks: tuple[
+        IndexedPolicyChunk,
+        ...
+    ],
+    query: str,
+    embedding_provider: EmbeddingProvider,
+    reranker_provider: RerankerProvider,
+    retrieval_config: ProductionRetrievalConfig,
+    context_config: ContextAssemblyConfig,
+) -> GroundedRetrievalResult:
+    retrieval_results = retrieve_policy_evidence(
+        indexed_chunks,
+        query=query,
+        embedding_provider=embedding_provider,
+        reranker_provider=reranker_provider,
+        config=retrieval_config,
+    )
+
+    corpus_chunks = tuple(
+        indexed_chunk.chunk
+        for indexed_chunk in indexed_chunks
+    )
+
+    context_chunks = assemble_context_chunks(
+        corpus_chunks,
+        retrieval_results,
+        context_config,
+    )
+
+    context = build_grounded_context(
+        context_chunks,
+    )
+
+    rendered_context = render_grounded_context(
+        context,
+    )
+
+    return GroundedRetrievalResult(
+        retrieval_results=retrieval_results,
+        context_chunks=context_chunks,
+        context=context,
+        rendered_context=rendered_context,
+    )

@@ -1,9 +1,14 @@
 import pytest
 
 from backend.ingestion.models import PolicyChunk
+from backend.retrieval.context import (
+    ContextAssemblyConfig,
+)
 from backend.retrieval.production import (
+    GroundedRetrievalResult,
     ProductionRetrievalConfig,
     build_production_retrieval_index,
+    retrieve_grounded_context,
     retrieve_policy_evidence,
 )
 
@@ -257,3 +262,229 @@ def test_production_retrieval_rejects_empty_query():
                 ProductionRetrievalConfig()
             ),
         )
+
+def test_grounded_retrieval_returns_structured_result():
+    embedding_provider = (
+        CapturingEmbeddingProvider()
+    )
+
+    reranker_provider = (
+        CapturingRerankerProvider()
+    )
+
+    chunks = tuple(
+        make_chunk(index)
+        for index in range(12)
+    )
+
+    index = build_production_retrieval_index(
+        chunks,
+        embedding_provider,
+    )
+
+    result = retrieve_grounded_context(
+        index,
+        query="academic progression policy",
+        embedding_provider=(
+            embedding_provider
+        ),
+        reranker_provider=(
+            reranker_provider
+        ),
+        retrieval_config=(
+            ProductionRetrievalConfig()
+        ),
+        context_config=(
+            ContextAssemblyConfig()
+        ),
+    )
+
+    assert isinstance(
+        result,
+        GroundedRetrievalResult,
+    )
+
+    assert len(
+        result.retrieval_results
+    ) == 5
+
+    assert result.context.evidence_count == 1
+
+    assert result.rendered_context
+
+def test_grounded_retrieval_preserves_ranked_seeds():
+    embedding_provider = (
+        CapturingEmbeddingProvider()
+    )
+
+    reranker_provider = (
+        CapturingRerankerProvider()
+    )
+
+    chunks = tuple(
+        make_chunk(index)
+        for index in range(12)
+    )
+
+    index = build_production_retrieval_index(
+        chunks,
+        embedding_provider,
+    )
+
+    result = retrieve_grounded_context(
+        index,
+        query="academic progression policy",
+        embedding_provider=(
+            embedding_provider
+        ),
+        reranker_provider=(
+            reranker_provider
+        ),
+        retrieval_config=(
+            ProductionRetrievalConfig()
+        ),
+        context_config=(
+            ContextAssemblyConfig()
+        ),
+    )
+
+    assert [
+        item.chunk.chunk_index
+        for item in result.retrieval_results
+    ] == [
+        10,
+        9,
+        8,
+        7,
+        6,
+    ]
+
+    assert [
+        chunk.chunk_index
+        for chunk in result.context_chunks[:5]
+    ] == [
+        10,
+        9,
+        8,
+        7,
+        6,
+    ]
+
+def test_grounded_retrieval_expands_safe_neighbors():
+    embedding_provider = (
+        CapturingEmbeddingProvider()
+    )
+
+    reranker_provider = (
+        CapturingRerankerProvider()
+    )
+
+    chunks = tuple(
+        make_chunk(index)
+        for index in range(12)
+    )
+
+    index = build_production_retrieval_index(
+        chunks,
+        embedding_provider,
+    )
+
+    result = retrieve_grounded_context(
+        index,
+        query="academic progression policy",
+        embedding_provider=(
+            embedding_provider
+        ),
+        reranker_provider=(
+            reranker_provider
+        ),
+        retrieval_config=(
+            ProductionRetrievalConfig()
+        ),
+        context_config=(
+            ContextAssemblyConfig(
+                neighbor_window=1,
+                max_context_chunks=15,
+            )
+        ),
+    )
+
+    selected_indexes = {
+        chunk.chunk_index
+        for chunk in result.context_chunks
+    }
+
+    assert {
+        6,
+        7,
+        8,
+        9,
+        10,
+    }.issubset(
+        selected_indexes
+    )
+
+    assert 5 in selected_indexes
+    assert 11 in selected_indexes
+
+def test_grounded_retrieval_renders_citable_evidence():
+    embedding_provider = (
+        CapturingEmbeddingProvider()
+    )
+
+    reranker_provider = (
+        CapturingRerankerProvider()
+    )
+
+    chunks = tuple(
+        make_chunk(index)
+        for index in range(12)
+    )
+
+    index = build_production_retrieval_index(
+        chunks,
+        embedding_provider,
+    )
+
+    result = retrieve_grounded_context(
+        index,
+        query="academic progression policy",
+        embedding_provider=(
+            embedding_provider
+        ),
+        reranker_provider=(
+            reranker_provider
+        ),
+        retrieval_config=(
+            ProductionRetrievalConfig()
+        ),
+        context_config=(
+            ContextAssemblyConfig()
+        ),
+    )
+
+    assert "[E1]" in (
+        result.rendered_context
+    )
+
+    assert (
+        "Policy ID: 220"
+        in result.rendered_context
+    )
+
+    assert (
+        "Policy Title: "
+        "Academic Progression Review Policy"
+        in result.rendered_context
+    )
+
+    assert (
+        "Section 6 - Procedures"
+        in result.rendered_context
+    )
+
+    assert (
+        "https://policies.latrobe.edu.au/"
+        "document/view.php?id=220"
+        in result.rendered_context
+    )
