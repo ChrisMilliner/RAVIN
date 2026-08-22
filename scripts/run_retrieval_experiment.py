@@ -1014,6 +1014,12 @@ def main() -> None:
                 rerank_depth=(
                     CANDIDATE_RERANK_DEPTH
                 ),
+                grounded_overview_config=(
+                    overview_evaluation_config
+                ),
+                grounded_overview_evaluation=(
+                    candidate_v5_overview
+                ),
             )
         )  
 
