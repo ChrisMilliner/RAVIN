@@ -1,0 +1,30 @@
+{
+  "name": "RAVIN Preliminary Routing Development Baseline v1.0",
+  "status": "preliminary-not-gold-standard",
+  "questions": [
+    {
+      "question_id": "RQ001",
+      "question": "Who approves changes to academic dress?",
+      "expected_intent": "focused",
+      "expected_sufficiency": "sufficient",
+      "expected_behavior": "direct_answer",
+      "notes": "Seeded from retrieval baseline RB001. Existing preliminary retrieval evidence supports a bounded direct answer."
+    },
+    {
+      "question_id": "RQ002",
+      "question": "What happens when a student is not making satisfactory academic progress?",
+      "expected_intent": "broad",
+      "expected_sufficiency": "sufficient",
+      "expected_behavior": "grounded_overview",
+      "notes": "Seeded from retrieval baseline RB002. The question requires multiple parts of the academic progression process."
+    },
+    {
+      "question_id": "RQ003",
+      "question": "What are the admission requirements for university applicants?",
+      "expected_intent": "broad",
+      "expected_sufficiency": "sufficient",
+      "expected_behavior": "grounded_overview",
+      "notes": "Seeded from retrieval baseline RB003. The question requests a multi-part overview of admission requirements."
+    }
+  ]
+}
