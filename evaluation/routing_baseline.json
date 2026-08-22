@@ -241,6 +241,86 @@
       "expected_sufficiency": "sufficient",
       "expected_behavior": "direct_answer",
       "notes": "Seeded from retrieval baseline RB030 after manual routing-intent review."
+    },
+    {
+      "question_id": "RQ031",
+      "question": "What do I need to submit?",
+      "expected_intent": "ambiguous",
+      "expected_sufficiency": null,
+      "expected_behavior": "clarify",
+      "notes": "Could refer to admissions material, an academic progression show-cause response, an academic promotion application, or an academic dress change request."
+    },
+    {
+      "question_id": "RQ032",
+      "question": "How long do I have?",
+      "expected_intent": "ambiguous",
+      "expected_sufficiency": null,
+      "expected_behavior": "clarify",
+      "notes": "Could refer to the Stage Three show-cause timeframe, promotion reconsideration timeframe, offer deferral period, or another policy time limit."
+    },
+    {
+      "question_id": "RQ033",
+      "question": "What support is available?",
+      "expected_intent": "ambiguous",
+      "expected_sufficiency": null,
+      "expected_behavior": "clarify",
+      "notes": "Could refer to academic progression support or admissions support for people experiencing disadvantage or underrepresentation."
+    },
+    {
+      "question_id": "RQ034",
+      "question": "What requirements do I need to meet?",
+      "expected_intent": "ambiguous",
+      "expected_sufficiency": null,
+      "expected_behavior": "clarify",
+      "notes": "Could refer to admissions entry requirements, academic promotion requirements, or staff qualification requirements."
+    },
+    {
+      "question_id": "RQ035",
+      "question": "Does this apply to me?",
+      "expected_intent": "ambiguous",
+      "expected_sufficiency": null,
+      "expected_behavior": "clarify",
+      "notes": "The referenced policy or process is not identified, and several corpus documents define different scopes."
+    },
+    {
+      "question_id": "RQ036",
+      "question": "Who approves it?",
+      "expected_intent": "ambiguous",
+      "expected_sufficiency": null,
+      "expected_behavior": "clarify",
+      "notes": "The decision being approved is not identified. The corpus contains different authorities and oversight responsibilities."
+    },
+    {
+      "question_id": "RQ037",
+      "question": "Can I apply?",
+      "expected_intent": "ambiguous",
+      "expected_sufficiency": null,
+      "expected_behavior": "clarify",
+      "notes": "Could refer to university admission, Single Subject enrolment, academic promotion, or another application process represented in the corpus."
+    },
+    {
+      "question_id": "RQ038",
+      "question": "What happens next?",
+      "expected_intent": "ambiguous",
+      "expected_sufficiency": null,
+      "expected_behavior": "clarify",
+      "notes": "No preceding process or decision is identified. Admissions, progression, and promotion each have materially different next steps."
+    },
+    {
+      "question_id": "RQ039",
+      "question": "What happens if I am unsuccessful?",
+      "expected_intent": "ambiguous",
+      "expected_sufficiency": null,
+      "expected_behavior": "clarify",
+      "notes": "Could refer to an unsuccessful promotion outcome, an admissions outcome, or another unsuccessful decision with different consequences."
+    },
+    {
+      "question_id": "RQ040",
+      "question": "What information should I receive?",
+      "expected_intent": "ambiguous",
+      "expected_sufficiency": null,
+      "expected_behavior": "clarify",
+      "notes": "Could refer to pre-application and offer information in admissions or information communicated during another policy process."
     }
   ]
 }
