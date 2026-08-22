@@ -13,8 +13,11 @@ from backend.evaluation.experiments import (
 from backend.evaluation.models import (
     EvaluationConfig,
     EvaluationRunResult,
+    GroundedOverviewEvaluationConfig,
+    GroundedOverviewEvaluationResult,
 )
 from backend.evaluation.runner import (
+    run_grounded_overview_evaluation,
     run_retrieval_evaluation,
 )
 from backend.ingestion.acquisition import (
@@ -106,6 +109,81 @@ def print_evaluation_metrics(
         "Direct Answer MRR:",
         f"{evaluation.mrr:.4f}",
     )
+
+def print_grounded_overview_metrics(
+    name: str,
+    evaluation: GroundedOverviewEvaluationResult,
+) -> None:
+    print()
+    print(f"=== {name} ===")
+
+    print(
+        "Grounded Overview questions:",
+        evaluation.total_questions,
+    )
+
+    print(
+        "Complete Grounded Overview questions:",
+        (
+            f"{evaluation.passed_questions}"
+            f"/{evaluation.total_questions}"
+        ),
+    )
+
+    print(
+        "Grounded Overview question pass rate:",
+        f"{evaluation.question_pass_rate:.2%}",
+    )
+
+    print(
+        "Required evidence groups covered:",
+        (
+            f"{evaluation.covered_groups}"
+            f"/{evaluation.total_groups}"
+        ),
+    )
+
+    print(
+        "Evidence group coverage:",
+        f"{evaluation.evidence_group_coverage:.2%}",
+    )
+
+    print(
+        "Required question pass rate:",
+        f"{evaluation.pass_threshold:.2%}",
+    )
+
+    print(
+        "Grounded Overview quality gate:",
+        (
+            "PASS"
+            if evaluation.passed
+            else "FAIL"
+        ),
+    )
+
+    print()
+    print("Per-question evidence coverage:")
+
+    for question_result in (
+        evaluation.question_results
+    ):
+        print(
+            f"  {question_result.question_id}: "
+            f"{question_result.covered_groups}"
+            f"/{question_result.total_groups} "
+            f"({question_result.evidence_coverage:.2%}) "
+            f"{'PASS' if question_result.passed else 'FAIL'}"
+        )
+
+        for group_result in (
+            question_result.group_results
+        ):
+            print(
+                "    "
+                f"{group_result.group_id}: "
+                f"{'COVERED' if group_result.covered else 'MISSING'}"
+            )
 
 def print_evaluation_population(
     evaluation: EvaluationRunResult,
@@ -304,6 +382,13 @@ def main() -> None:
     )
 
     evaluation_config = EvaluationConfig()
+
+    overview_evaluation_config = (
+        GroundedOverviewEvaluationConfig(
+            top_k=evaluation_config.top_k,
+            pass_threshold=0.95,
+        )
+    )
 
     print()
     print(
@@ -595,8 +680,35 @@ def main() -> None:
         "Candidate v5 evaluation complete."
     )
 
+    print()
+    print(
+        "=== RUNNING CANDIDATE V5 "
+        "GROUNDED OVERVIEW EVALUATION ==="
+    )
+
+    candidate_v5_overview = (
+        run_grounded_overview_evaluation(
+            questions,
+            retrieve_candidate_v5,
+            overview_evaluation_config,
+        )
+    )
+
+    print(
+        "Candidate v5 Grounded Overview "
+        "evaluation complete."
+    )
+
     print_evaluation_population(
         candidate_v5
+    )
+
+    print_grounded_overview_metrics(
+        (
+            "CANDIDATE V5 - "
+            "GROUNDED OVERVIEW"
+        ),
+        candidate_v5_overview,
     )
 
     experiment_config = (
@@ -618,7 +730,7 @@ def main() -> None:
             ),
             dataset_name=(
                 "RAVIN Preliminary Retrieval "
-                "Development Baseline v1.4"
+                "Development Baseline v1.5"
             ),
             dataset_status=(
                 DatasetValidationStatus.PRELIMINARY
@@ -815,6 +927,15 @@ def main() -> None:
         "overall accuracy claim."
     )
 
+    print()
+    print(
+        "NOTE: Grounded Overview results are "
+        "also preliminary development results. "
+        "Passing the 95% Grounded Overview gate "
+        "does not constitute a validated accuracy "
+        "or completeness claim."
+    )
+
     generated_at = datetime.now(
         timezone.utc
     )
@@ -899,7 +1020,7 @@ def main() -> None:
     output_path = (
         f"{EXPERIMENT_OUTPUT_DIRECTORY}/"
         "body-only-rerank-depth-11-v5-"
-        "dataset-v1-4-"
+        "dataset-v1-5-"
         f"{timestamp_for_filename}.json"
     )
 
@@ -933,6 +1054,43 @@ def main() -> None:
     print(
         "Direct Answer Evaluation Top-K:",
         evaluation_config.top_k,
+    )
+    print(
+    "Grounded Overview Evaluation Top-K:",
+    overview_evaluation_config.top_k,
+    )
+
+    print(
+        "Grounded Overview questions:",
+        candidate_v5_overview.total_questions,
+    )
+
+    print(
+        "Grounded Overview groups:",
+        candidate_v5_overview.total_groups,
+    )
+
+    print(
+        "Grounded Overview question pass rate:",
+        (
+            f"{candidate_v5_overview.question_pass_rate:.2%}"
+        ),
+    )
+
+    print(
+        "Grounded Overview evidence group coverage:",
+        (
+            f"{candidate_v5_overview.evidence_group_coverage:.2%}"
+        ),
+    )
+
+    print(
+        "Grounded Overview preliminary quality gate:",
+        (
+            "PASS"
+            if candidate_v5_overview.passed
+            else "FAIL"
+        ),
     )
     print(
         "Experiment record:",
