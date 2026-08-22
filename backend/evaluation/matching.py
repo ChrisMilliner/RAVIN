@@ -1,4 +1,7 @@
-from backend.evaluation.models import ExpectedEvidence
+from backend.evaluation.models import (
+    ExpectedEvidence,
+    ExpectedEvidenceGroup,
+)
 from backend.ingestion.models import PolicyChunk
 
 def _normalize_text(value: str) -> str:
@@ -38,4 +41,17 @@ def matches_expected_evidence(
     return (
         _normalize_text(expected.text_contains)
         in _normalize_text(chunk.text)
+    )
+
+def is_expected_evidence_group_covered(
+    chunks: tuple[PolicyChunk, ...],
+    group: ExpectedEvidenceGroup,
+) -> bool:
+    return any(
+        matches_expected_evidence(
+            chunk,
+            alternative,
+        )
+        for chunk in chunks
+        for alternative in group.alternatives
     )
