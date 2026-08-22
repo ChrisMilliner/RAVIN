@@ -17,6 +17,7 @@ class EvidenceSufficiency(str, Enum):
 class QuestionAssessment:
     intent: QuestionIntent
     reason: str
+    clarification_options: tuple[str, ...] = ()
 
     def __post_init__(self) -> None:
         if not isinstance(
@@ -32,6 +33,25 @@ class QuestionAssessment:
             raise ValueError(
                 "Question assessment reason "
                 "cannot be empty."
+            )
+
+        if any(
+            not option.strip()
+            for option in self.clarification_options
+        ):
+            raise ValueError(
+                "Clarification options cannot "
+                "contain empty values."
+            )
+
+        if (
+            self.intent
+            != QuestionIntent.AMBIGUOUS
+            and self.clarification_options
+        ):
+            raise ValueError(
+                "Clarification options are only "
+                "valid for ambiguous questions."
             )
 
 @dataclass(frozen=True)

@@ -480,3 +480,69 @@ def test_routing_result_rejects_invalid_evidence_assessment():
             ),
             reason="Test reason.",
         )
+
+def test_ambiguous_question_preserves_clarification_options():
+    assessment = QuestionAssessment(
+        intent=QuestionIntent.AMBIGUOUS,
+        reason=(
+            "The question could refer to more "
+            "than one university process."
+        ),
+        clarification_options=(
+            (
+                "What do I need to submit for an "
+                "academic progression review?"
+            ),
+            (
+                "What documents do I need to "
+                "submit for admission?"
+            ),
+        ),
+    )
+
+    assert assessment.clarification_options == (
+        (
+            "What do I need to submit for an "
+            "academic progression review?"
+        ),
+        (
+            "What documents do I need to "
+            "submit for admission?"
+        ),
+    )
+
+def test_non_ambiguous_question_rejects_clarification_options():
+    with pytest.raises(
+        ValueError,
+        match=(
+            "Clarification options are only "
+            "valid for ambiguous questions."
+        ),
+    ):
+        QuestionAssessment(
+            intent=QuestionIntent.FOCUSED,
+            reason=(
+                "The question asks for one "
+                "specific fact."
+            ),
+            clarification_options=(
+                "Did you mean something else?",
+            ),
+        )
+
+def test_question_assessment_rejects_empty_clarification_option():
+    with pytest.raises(
+        ValueError,
+        match=(
+            "Clarification options cannot "
+            "contain empty values."
+        ),
+    ):
+        QuestionAssessment(
+            intent=QuestionIntent.AMBIGUOUS,
+            reason="The question is unclear.",
+            clarification_options=(
+                "Valid suggested question?",
+                "   ",
+            ),
+        )
