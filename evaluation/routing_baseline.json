@@ -369,6 +369,38 @@
       "expected_sufficiency": "insufficient",
       "expected_behavior": "no_grounded_answer",
       "notes": "The Academic Dress Policy defines required dress and how it is worn, but the inspected corpus does not establish penalties for incorrect wear."
+    },
+    {
+      "question_id": "RQ047",
+      "question": "What financial, accommodation and wellbeing support is provided to students at each stage of academic progression?",
+      "expected_intent": "broad",
+      "expected_sufficiency": "insufficient",
+      "expected_behavior": "no_grounded_answer",
+      "notes": "Live corpus review found academic and non-academic support, recovery activities and advocacy support, but did not establish the requested financial, accommodation and wellbeing support across academic progression stages."
+    },
+    {
+      "question_id": "RQ048",
+      "question": "What financial benefits, leave entitlements and salary changes apply when academic staff are promoted?",
+      "expected_intent": "broad",
+      "expected_sufficiency": "insufficient",
+      "expected_behavior": "no_grounded_answer",
+      "notes": "The Academic Promotions Policy establishes effective date and salary-point treatment after promotion, but the inspected corpus does not establish the requested leave entitlements and complete financial-benefits overview."
+    },
+    {
+      "question_id": "RQ049",
+      "question": "What scholarships, fee reductions and living-cost assistance are available to applicants experiencing disadvantage?",
+      "expected_intent": "broad",
+      "expected_sufficiency": "insufficient",
+      "expected_behavior": "no_grounded_answer",
+      "notes": "Admissions evidence establishes SEAS adjustments, alternative-entry and targeted programs and reasonable adjustment opportunities, but does not establish the requested scholarships, fee reductions and living-cost assistance."
+    },
+    {
+      "question_id": "RQ050",
+      "question": "What employment benefits, salary changes and career progression rights result from achieving Professional Equivalence?",
+      "expected_intent": "broad",
+      "expected_sufficiency": "insufficient",
+      "expected_behavior": "no_grounded_answer",
+      "notes": "The Academic Staff Qualifications Policy defines Professional Equivalence and relevant teaching arrangements, but the inspected corpus does not establish the requested employment benefits, salary changes and career progression rights."
     }
   ]
 }
