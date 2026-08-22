@@ -151,7 +151,8 @@ class EvidenceAssessment:
 @dataclass(frozen=True)
 class RoutingResult:
     behavior: AnswerBehavior
-    evidence: EvidenceSignals
+    question_assessment: QuestionAssessment
+    evidence_assessment: EvidenceAssessment
     reason: str
 
     def __post_init__(self) -> None:
@@ -165,12 +166,21 @@ class RoutingResult:
             )
 
         if not isinstance(
-            self.evidence,
-            EvidenceSignals,
+            self.question_assessment,
+            QuestionAssessment,
         ):
             raise ValueError(
-                "Routing evidence must be "
-                "EvidenceSignals."
+                "Routing question assessment must "
+                "be QuestionAssessment."
+            )
+
+        if not isinstance(
+            self.evidence_assessment,
+            EvidenceAssessment,
+        ):
+            raise ValueError(
+                "Routing evidence assessment must "
+                "be EvidenceAssessment."
             )
 
         if not self.reason.strip():

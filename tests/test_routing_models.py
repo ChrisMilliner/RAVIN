@@ -137,8 +137,8 @@ def test_distinct_policy_count_cannot_exceed_blocks():
             score_margin=1.0,
         )
 
-def test_routing_result_preserves_behavior_and_evidence():
-    evidence = EvidenceSignals(
+def test_routing_result_preserves_assessments():
+    signals = EvidenceSignals(
         retrieved_count=5,
         context_block_count=2,
         distinct_policy_count=1,
@@ -147,28 +147,74 @@ def test_routing_result_preserves_behavior_and_evidence():
         score_margin=2.0,
     )
 
+    question_assessment = QuestionAssessment(
+        intent=QuestionIntent.FOCUSED,
+        reason="The question asks for one fact.",
+    )
+
+    evidence_assessment = EvidenceAssessment(
+        sufficiency=(
+            EvidenceSufficiency.SUFFICIENT
+        ),
+        signals=signals,
+        reason=(
+            "Retrieved evidence directly "
+            "addresses the question."
+        ),
+    )
+
     result = RoutingResult(
         behavior=AnswerBehavior.DIRECT_ANSWER,
-        evidence=evidence,
-        reason="Evidence supports a focused answer.",
+        question_assessment=(
+            question_assessment
+        ),
+        evidence_assessment=(
+            evidence_assessment
+        ),
+        reason=(
+            "Focused question with sufficient "
+            "grounded evidence."
+        ),
     )
 
     assert result.behavior is (
         AnswerBehavior.DIRECT_ANSWER
     )
-    assert result.evidence is evidence
+
+    assert result.question_assessment is (
+        question_assessment
+    )
+
+    assert result.evidence_assessment is (
+        evidence_assessment
+    )
+
     assert result.reason == (
-        "Evidence supports a focused answer."
+        "Focused question with sufficient "
+        "grounded evidence."
     )
 
 def test_routing_result_rejects_empty_reason():
-    evidence = EvidenceSignals(
+    signals = EvidenceSignals(
         retrieved_count=0,
         context_block_count=0,
         distinct_policy_count=0,
         top_score=None,
         second_score=None,
         score_margin=None,
+    )
+
+    question_assessment = QuestionAssessment(
+        intent=QuestionIntent.FOCUSED,
+        reason="The question asks for one fact.",
+    )
+
+    evidence_assessment = EvidenceAssessment(
+        sufficiency=(
+            EvidenceSufficiency.INSUFFICIENT
+        ),
+        signals=signals,
+        reason="No grounded evidence was found.",
     )
 
     with pytest.raises(
@@ -179,7 +225,12 @@ def test_routing_result_rejects_empty_reason():
             behavior=(
                 AnswerBehavior.NO_GROUNDED_ANSWER
             ),
-            evidence=evidence,
+            question_assessment=(
+                question_assessment
+            ),
+            evidence_assessment=(
+                evidence_assessment
+            ),
             reason="   ",
         )
 
@@ -356,4 +407,76 @@ def test_evidence_assessment_rejects_empty_reason():
             ),
             signals=signals,
             reason="   ",
+        )
+
+def test_routing_result_rejects_invalid_question_assessment():
+    invalid_question_assessment = cast(
+        QuestionAssessment,
+        object(),
+    )
+
+    signals = EvidenceSignals(
+        retrieved_count=0,
+        context_block_count=0,
+        distinct_policy_count=0,
+        top_score=None,
+        second_score=None,
+        score_margin=None,
+    )
+
+    evidence_assessment = EvidenceAssessment(
+        sufficiency=(
+            EvidenceSufficiency.INSUFFICIENT
+        ),
+        signals=signals,
+        reason="No grounded evidence was found.",
+    )
+
+    with pytest.raises(
+        ValueError,
+        match=(
+            "Routing question assessment must "
+            "be QuestionAssessment."
+        ),
+    ):
+        RoutingResult(
+            behavior=(
+                AnswerBehavior.NO_GROUNDED_ANSWER
+            ),
+            question_assessment=(
+                invalid_question_assessment
+            ),
+            evidence_assessment=(
+                evidence_assessment
+            ),
+            reason="Test reason.",
+        )
+
+def test_routing_result_rejects_invalid_evidence_assessment():
+    question_assessment = QuestionAssessment(
+        intent=QuestionIntent.FOCUSED,
+        reason="The question asks for one fact.",
+    )
+
+    invalid_evidence_assessment = cast(
+        EvidenceAssessment,
+        object(),
+    )
+
+    with pytest.raises(
+        ValueError,
+        match=(
+            "Routing evidence assessment must "
+            "be EvidenceAssessment."
+        ),
+    ):
+        RoutingResult(
+            behavior=AnswerBehavior.DIRECT_ANSWER,
+            question_assessment=(
+                question_assessment
+            ),
+            evidence_assessment=(
+                invalid_evidence_assessment
+            ),
+            reason="Test reason.",
         )
