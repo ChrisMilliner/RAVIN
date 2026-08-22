@@ -7,6 +7,9 @@ from backend.retrieval.context import (
     merge_structural_chunk_text,
     GroundedContextBlock,
     build_grounded_context_blocks,
+    GroundedContext,
+    build_grounded_context,
+    render_grounded_context,
 )
 from backend.retrieval.models import RetrievalResult
 
@@ -1032,3 +1035,234 @@ def test_build_grounded_context_blocks_empty_input_returns_empty():
     assert build_grounded_context_blocks(
         (),
     ) == ()
+
+def test_grounded_context_preserves_blocks():
+    block = GroundedContextBlock(
+        policy_id="169",
+        policy_title="Admissions Policy",
+        source_url="https://example.invalid/169",
+        heading_path=(
+            "Section 5",
+        ),
+        start_chunk_index=7,
+        end_chunk_index=7,
+        text="Grounded evidence.",
+    )
+
+    context = GroundedContext(
+        blocks=(
+            block,
+        )
+    )
+
+    assert context.blocks == (
+        block,
+    )
+
+    assert context.evidence_count == 1
+
+def test_build_grounded_context_packages_blocks():
+    heading = (
+        "Section 5",
+    )
+
+    chunks = (
+        PolicyChunk(
+            policy_id="169",
+            policy_title="Admissions Policy",
+            source_url="https://example.invalid/169",
+            status="Current",
+            effective_date=None,
+            review_date=None,
+            chunk_index=0,
+            text="one two three four",
+            heading_path=heading,
+        ),
+        PolicyChunk(
+            policy_id="169",
+            policy_title="Admissions Policy",
+            source_url="https://example.invalid/169",
+            status="Current",
+            effective_date=None,
+            review_date=None,
+            chunk_index=1,
+            text="three four five six",
+            heading_path=heading,
+        ),
+    )
+
+    context = build_grounded_context(
+        chunks,
+        overlap_words=2,
+    )
+
+    assert context.evidence_count == 1
+
+    assert context.blocks[0].text == (
+        "one two three four five six"
+    )
+
+def test_render_grounded_context_includes_evidence_label():
+    block = GroundedContextBlock(
+        policy_id="169",
+        policy_title="Admissions Policy",
+        source_url="https://example.invalid/169",
+        heading_path=(
+            "Section 5",
+        ),
+        start_chunk_index=7,
+        end_chunk_index=7,
+        text="Grounded evidence.",
+    )
+
+    rendered = render_grounded_context(
+        GroundedContext(
+            blocks=(
+                block,
+            )
+        )
+    )
+
+    assert "[E1]" in rendered
+
+def test_render_grounded_context_includes_provenance():
+    block = GroundedContextBlock(
+        policy_id="169",
+        policy_title="Admissions Policy",
+        source_url="https://example.invalid/169",
+        heading_path=(
+            "Section 5",
+            "Entry Requirements",
+        ),
+        start_chunk_index=7,
+        end_chunk_index=9,
+        text="Grounded evidence.",
+    )
+
+    rendered = render_grounded_context(
+        GroundedContext(
+            blocks=(
+                block,
+            )
+        )
+    )
+
+    assert "Policy ID: 169" in rendered
+    assert (
+        "Policy Title: Admissions Policy"
+        in rendered
+    )
+    assert (
+        "Heading: Section 5 > "
+        "Entry Requirements"
+        in rendered
+    )
+    assert "Chunks: 7-9" in rendered
+    assert (
+        "Source: https://example.invalid/169"
+        in rendered
+    )
+    assert "Grounded evidence." in rendered
+
+def test_render_grounded_context_uses_single_chunk_index():
+    block = GroundedContextBlock(
+        policy_id="169",
+        policy_title="Admissions Policy",
+        source_url="https://example.invalid/169",
+        heading_path=(
+            "Section 5",
+        ),
+        start_chunk_index=7,
+        end_chunk_index=7,
+        text="Grounded evidence.",
+    )
+
+    rendered = render_grounded_context(
+        GroundedContext(
+            blocks=(
+                block,
+            )
+        )
+    )
+
+    assert "Chunks: 7" in rendered
+    assert "Chunks: 7-7" not in rendered
+
+def test_render_grounded_context_handles_document_root():
+    block = GroundedContextBlock(
+        policy_id="169",
+        policy_title="Admissions Policy",
+        source_url="https://example.invalid/169",
+        heading_path=(),
+        start_chunk_index=0,
+        end_chunk_index=0,
+        text="Root policy evidence.",
+    )
+
+    rendered = render_grounded_context(
+        GroundedContext(
+            blocks=(
+                block,
+            )
+        )
+    )
+
+    assert (
+        "Heading: (document root)"
+        in rendered
+    )
+
+def test_render_grounded_context_preserves_block_order():
+    first = GroundedContextBlock(
+        policy_id="169",
+        policy_title="Admissions Policy",
+        source_url="https://example.invalid/169",
+        heading_path=(
+            "Section 5",
+        ),
+        start_chunk_index=7,
+        end_chunk_index=7,
+        text="First evidence.",
+    )
+
+    second = GroundedContextBlock(
+        policy_id="340",
+        policy_title="Admissions Procedure",
+        source_url="https://example.invalid/340",
+        heading_path=(
+            "Section 6",
+        ),
+        start_chunk_index=12,
+        end_chunk_index=12,
+        text="Second evidence.",
+    )
+
+    rendered = render_grounded_context(
+        GroundedContext(
+            blocks=(
+                first,
+                second,
+            )
+        )
+    )
+
+    assert rendered.index("[E1]") < (
+        rendered.index("[E2]")
+    )
+
+    assert rendered.index(
+        "First evidence."
+    ) < rendered.index(
+        "Second evidence."
+    )
+
+def test_render_empty_grounded_context_returns_empty():
+    context = GroundedContext(
+        blocks=()
+    )
+
+    assert context.evidence_count == 0
+
+    assert render_grounded_context(
+        context
+    ) == ""

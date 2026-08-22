@@ -81,6 +81,17 @@ class GroundedContextBlock:
                 "be empty."
             )
 
+@dataclass(frozen=True)
+class GroundedContext:
+    blocks: tuple[
+        GroundedContextBlock,
+        ...
+    ]
+
+    @property
+    def evidence_count(self) -> int:
+        return len(self.blocks)
+
 def find_structural_neighbors(
     chunks: tuple[PolicyChunk, ...],
     anchor: PolicyChunk,
@@ -387,4 +398,74 @@ def build_grounded_context_blocks(
     return tuple(
         block
         for _, block in ranked_blocks
+    )
+
+def build_grounded_context(
+    chunks: tuple[PolicyChunk, ...],
+    overlap_words: int = DEFAULT_CHUNK_OVERLAP_WORDS,
+) -> GroundedContext:
+    return GroundedContext(
+        blocks=build_grounded_context_blocks(
+            chunks,
+            overlap_words=overlap_words,
+        )
+    )
+
+def render_grounded_context(
+    context: GroundedContext,
+) -> str:
+    rendered_blocks: list[str] = []
+
+    for position, block in enumerate(
+        context.blocks,
+        start=1,
+    ):
+        evidence_id = f"E{position}"
+
+        if block.heading_path:
+            heading = " > ".join(
+                block.heading_path
+            )
+        else:
+            heading = "(document root)"
+
+        if (
+            block.start_chunk_index
+            == block.end_chunk_index
+        ):
+            chunk_range = str(
+                block.start_chunk_index
+            )
+        else:
+            chunk_range = (
+                f"{block.start_chunk_index}-"
+                f"{block.end_chunk_index}"
+            )
+
+        rendered_blocks.append(
+            "\n".join(
+                (
+                    f"[{evidence_id}]",
+                    (
+                        "Policy ID: "
+                        f"{block.policy_id}"
+                    ),
+                    (
+                        "Policy Title: "
+                        f"{block.policy_title}"
+                    ),
+                    f"Heading: {heading}",
+                    f"Chunks: {chunk_range}",
+                    (
+                        "Source: "
+                        f"{block.source_url}"
+                    ),
+                    "Evidence:",
+                    block.text,
+                )
+            )
+        )
+
+    return "\n\n".join(
+        rendered_blocks
     )
