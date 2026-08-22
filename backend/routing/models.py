@@ -1,5 +1,38 @@
 from dataclasses import dataclass
+from enum import Enum
 from backend.behavior import AnswerBehavior
+
+class QuestionIntent(str, Enum):
+    FOCUSED = "focused"
+    BROAD = "broad"
+    AMBIGUOUS = "ambiguous"
+
+
+class EvidenceSufficiency(str, Enum):
+    SUFFICIENT = "sufficient"
+    INSUFFICIENT = "insufficient"
+    UNCERTAIN = "uncertain"
+
+@dataclass(frozen=True)
+class QuestionAssessment:
+    intent: QuestionIntent
+    reason: str
+
+    def __post_init__(self) -> None:
+        if not isinstance(
+            self.intent,
+            QuestionIntent,
+        ):
+            raise ValueError(
+                "Question intent must be a "
+                "QuestionIntent."
+            )
+
+        if not self.reason.strip():
+            raise ValueError(
+                "Question assessment reason "
+                "cannot be empty."
+            )
 
 @dataclass(frozen=True)
 class EvidenceSignals:
@@ -83,6 +116,37 @@ class EvidenceSignals:
             self.retrieved_count > 0
             and self.context_block_count > 0
         )
+
+@dataclass(frozen=True)
+class EvidenceAssessment:
+    sufficiency: EvidenceSufficiency
+    signals: EvidenceSignals
+    reason: str
+
+    def __post_init__(self) -> None:
+        if not isinstance(
+            self.sufficiency,
+            EvidenceSufficiency,
+        ):
+            raise ValueError(
+                "Evidence sufficiency must be an "
+                "EvidenceSufficiency."
+            )
+
+        if not isinstance(
+            self.signals,
+            EvidenceSignals,
+        ):
+            raise ValueError(
+                "Evidence assessment signals must "
+                "be EvidenceSignals."
+            )
+
+        if not self.reason.strip():
+            raise ValueError(
+                "Evidence assessment reason "
+                "cannot be empty."
+            )
 
 @dataclass(frozen=True)
 class RoutingResult:

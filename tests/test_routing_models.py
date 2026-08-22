@@ -1,7 +1,12 @@
 import pytest
+from typing import cast
 from backend.behavior import AnswerBehavior
 from backend.routing.models import (
+    EvidenceAssessment,
     EvidenceSignals,
+    EvidenceSufficiency,
+    QuestionAssessment,
+    QuestionIntent,
     RoutingResult,
 )
 
@@ -175,5 +180,180 @@ def test_routing_result_rejects_empty_reason():
                 AnswerBehavior.NO_GROUNDED_ANSWER
             ),
             evidence=evidence,
+            reason="   ",
+        )
+
+def test_question_intent_defines_expected_values():
+    assert tuple(
+        intent.value
+        for intent in QuestionIntent
+    ) == (
+        "focused",
+        "broad",
+        "ambiguous",
+    )
+
+def test_evidence_sufficiency_defines_expected_values():
+    assert tuple(
+        sufficiency.value
+        for sufficiency in EvidenceSufficiency
+    ) == (
+        "sufficient",
+        "insufficient",
+        "uncertain",
+    )
+
+def test_question_assessment_preserves_values():
+    assessment = QuestionAssessment(
+        intent=QuestionIntent.BROAD,
+        reason=(
+            "The question asks about a process "
+            "rather than one specific fact."
+        ),
+    )
+
+    assert assessment.intent is (
+        QuestionIntent.BROAD
+    )
+
+    assert assessment.reason == (
+        "The question asks about a process "
+        "rather than one specific fact."
+    )
+
+def test_question_assessment_rejects_invalid_intent():
+    invalid_intent = cast(
+        QuestionIntent,
+        "invalid",
+    )
+
+    with pytest.raises(
+        ValueError,
+        match=(
+            "Question intent must be a "
+            "QuestionIntent."
+        ),
+    ):
+        QuestionAssessment(
+            intent=invalid_intent,
+            reason="Test reason.",
+        )
+
+def test_question_assessment_rejects_empty_reason():
+    with pytest.raises(
+        ValueError,
+        match=(
+            "Question assessment reason "
+            "cannot be empty."
+        ),
+    ):
+        QuestionAssessment(
+            intent=QuestionIntent.FOCUSED,
+            reason="   ",
+        )
+
+def test_evidence_assessment_preserves_values():
+    signals = EvidenceSignals(
+        retrieved_count=5,
+        context_block_count=3,
+        distinct_policy_count=1,
+        top_score=7.0,
+        second_score=5.0,
+        score_margin=2.0,
+    )
+
+    assessment = EvidenceAssessment(
+        sufficiency=(
+            EvidenceSufficiency.SUFFICIENT
+        ),
+        signals=signals,
+        reason=(
+            "Retrieved evidence directly "
+            "addresses the question."
+        ),
+    )
+
+    assert assessment.sufficiency is (
+        EvidenceSufficiency.SUFFICIENT
+    )
+
+    assert assessment.signals is signals
+
+    assert assessment.reason == (
+        "Retrieved evidence directly "
+        "addresses the question."
+    )
+
+def test_evidence_assessment_rejects_invalid_sufficiency():
+    invalid_sufficiency = cast(
+        EvidenceSufficiency,
+        "invalid",
+    )
+
+    signals = EvidenceSignals(
+        retrieved_count=0,
+        context_block_count=0,
+        distinct_policy_count=0,
+        top_score=None,
+        second_score=None,
+        score_margin=None,
+    )
+
+    with pytest.raises(
+        ValueError,
+        match=(
+            "Evidence sufficiency must be an "
+            "EvidenceSufficiency."
+        ),
+    ):
+        EvidenceAssessment(
+            sufficiency=invalid_sufficiency,
+            signals=signals,
+            reason="Test reason.",
+        )
+
+def test_evidence_assessment_rejects_invalid_signals():
+    invalid_signals = cast(
+        EvidenceSignals,
+        object(),
+    )
+
+    with pytest.raises(
+        ValueError,
+        match=(
+            "Evidence assessment signals must "
+            "be EvidenceSignals."
+        ),
+    ):
+        EvidenceAssessment(
+            sufficiency=(
+                EvidenceSufficiency.UNCERTAIN
+            ),
+            signals=invalid_signals,
+            reason="Test reason.",
+        )
+
+def test_evidence_assessment_rejects_empty_reason():
+    signals = EvidenceSignals(
+        retrieved_count=0,
+        context_block_count=0,
+        distinct_policy_count=0,
+        top_score=None,
+        second_score=None,
+        score_margin=None,
+    )
+
+    with pytest.raises(
+        ValueError,
+        match=(
+            "Evidence assessment reason "
+            "cannot be empty."
+        ),
+    ):
+        EvidenceAssessment(
+            sufficiency=(
+                EvidenceSufficiency.UNCERTAIN
+            ),
+            signals=signals,
             reason="   ",
         )
