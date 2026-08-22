@@ -9,6 +9,9 @@ from backend.evaluation.models import (
     ExpectedEvidence,
     EvaluationPopulation,
     ExpectedEvidenceGroup,
+    GroundedOverviewGroupResult,
+    GroundedOverviewQuestionResult,
+    GroundedOverviewEvaluationResult,
 )
 
 def make_expected_evidence() -> ExpectedEvidence:
@@ -418,3 +421,282 @@ def test_evaluation_question_preserves_evidence_groups():
     assert question.expected_evidence_groups == (
         group,
     )
+
+def test_grounded_overview_group_result_preserves_values():
+    result = GroundedOverviewGroupResult(
+        group_id="concept_one",
+        covered=True,
+    )
+
+    assert result.group_id == "concept_one"
+    assert result.covered is True
+
+def test_grounded_overview_group_result_rejects_empty_id():
+    with pytest.raises(
+        ValueError,
+        match=(
+            "Grounded overview group result ID "
+            "cannot be empty."
+        ),
+    ):
+        GroundedOverviewGroupResult(
+            group_id="   ",
+            covered=True,
+        )
+
+def test_grounded_overview_question_calculates_complete_coverage():
+    result = GroundedOverviewQuestionResult(
+        question_id="RB002",
+        group_results=(
+            GroundedOverviewGroupResult(
+                group_id="group_one",
+                covered=True,
+            ),
+            GroundedOverviewGroupResult(
+                group_id="group_two",
+                covered=True,
+            ),
+        ),
+    )
+
+    assert result.total_groups == 2
+    assert result.covered_groups == 2
+    assert result.evidence_coverage == 1.0
+    assert result.passed is True
+
+def test_grounded_overview_question_fails_when_group_missing():
+    result = GroundedOverviewQuestionResult(
+        question_id="RB002",
+        group_results=(
+            GroundedOverviewGroupResult(
+                group_id="group_one",
+                covered=True,
+            ),
+            GroundedOverviewGroupResult(
+                group_id="group_two",
+                covered=False,
+            ),
+        ),
+    )
+
+    assert result.total_groups == 2
+    assert result.covered_groups == 1
+    assert result.evidence_coverage == 0.5
+    assert result.passed is False
+
+def test_grounded_overview_question_rejects_empty_groups():
+    with pytest.raises(
+        ValueError,
+        match=(
+            "Grounded overview question result "
+            "must contain at least one group result."
+        ),
+    ):
+        GroundedOverviewQuestionResult(
+            question_id="RB002",
+            group_results=(),
+        )
+
+def test_grounded_overview_question_rejects_duplicate_groups():
+    with pytest.raises(
+        ValueError,
+        match=(
+            "Grounded overview question result "
+            "cannot contain duplicate group IDs."
+        ),
+    ):
+        GroundedOverviewQuestionResult(
+            question_id="RB002",
+            group_results=(
+                GroundedOverviewGroupResult(
+                    group_id="same_group",
+                    covered=True,
+                ),
+                GroundedOverviewGroupResult(
+                    group_id="same_group",
+                    covered=False,
+                ),
+            ),
+        )
+
+def test_grounded_overview_evaluation_calculates_question_gate():
+    evaluation = GroundedOverviewEvaluationResult(
+        question_results=(
+            GroundedOverviewQuestionResult(
+                question_id="RB002",
+                group_results=(
+                    GroundedOverviewGroupResult(
+                        group_id="one",
+                        covered=True,
+                    ),
+                ),
+            ),
+            GroundedOverviewQuestionResult(
+                question_id="RB003",
+                group_results=(
+                    GroundedOverviewGroupResult(
+                        group_id="two",
+                        covered=False,
+                    ),
+                ),
+            ),
+        ),
+        pass_threshold=0.95,
+    )
+
+    assert evaluation.total_questions == 2
+    assert evaluation.passed_questions == 1
+    assert evaluation.question_pass_rate == 0.5
+
+    assert evaluation.total_groups == 2
+    assert evaluation.covered_groups == 1
+    assert (
+        evaluation.evidence_group_coverage
+        == 0.5
+    )
+
+    assert evaluation.passed is False
+
+def test_grounded_overview_evaluation_passes_threshold():
+    evaluation = GroundedOverviewEvaluationResult(
+        question_results=(
+            GroundedOverviewQuestionResult(
+                question_id="RB002",
+                group_results=(
+                    GroundedOverviewGroupResult(
+                        group_id="one",
+                        covered=True,
+                    ),
+                ),
+            ),
+        ),
+        pass_threshold=0.95,
+    )
+
+    assert evaluation.question_pass_rate == 1.0
+    assert evaluation.passed is True
+
+def test_grounded_overview_evaluation_rejects_invalid_threshold():
+    with pytest.raises(
+        ValueError,
+        match=(
+            "Grounded overview pass threshold "
+            "must be between 0 and 1."
+        ),
+    ):
+        GroundedOverviewEvaluationResult(
+            question_results=(
+                GroundedOverviewQuestionResult(
+                    question_id="RB002",
+                    group_results=(
+                        GroundedOverviewGroupResult(
+                            group_id="one",
+                            covered=True,
+                        ),
+                    ),
+                ),
+            ),
+            pass_threshold=1.01,
+        )
+
+def test_grounded_overview_group_result_rejects_invalid_covered_type():
+    with pytest.raises(
+        ValueError,
+        match=(
+            "Grounded overview group result "
+            "covered must be a boolean."
+        ),
+    ):
+        GroundedOverviewGroupResult(
+            group_id="concept_one",
+            covered="yes",  # type: ignore[arg-type]
+        )
+
+def test_grounded_overview_question_rejects_empty_question_id():
+    with pytest.raises(
+        ValueError,
+        match=(
+            "Grounded overview question result ID "
+            "cannot be empty."
+        ),
+    ):
+        GroundedOverviewQuestionResult(
+            question_id="   ",
+            group_results=(
+                GroundedOverviewGroupResult(
+                    group_id="one",
+                    covered=True,
+                ),
+            ),
+        )
+
+def test_grounded_overview_question_rejects_invalid_group_result_type():
+    with pytest.raises(
+        ValueError,
+        match=(
+            "Grounded overview question group "
+            "results must be "
+            "GroundedOverviewGroupResult values."
+        ),
+    ):
+        GroundedOverviewQuestionResult(
+            question_id="RB002",
+            group_results=(
+                "invalid",  # type: ignore[arg-type]
+            ),
+        )
+
+def test_grounded_overview_evaluation_rejects_empty_results():
+    with pytest.raises(
+        ValueError,
+        match=(
+            "Grounded overview evaluation "
+            "requires at least one question result."
+        ),
+    ):
+        GroundedOverviewEvaluationResult(
+            question_results=(),
+            pass_threshold=0.95,
+        )
+
+def test_grounded_overview_evaluation_rejects_invalid_result_type():
+    with pytest.raises(
+        ValueError,
+        match=(
+            "Grounded overview evaluation question "
+            "results must be "
+            "GroundedOverviewQuestionResult values."
+        ),
+    ):
+        GroundedOverviewEvaluationResult(
+            question_results=(
+                "invalid",  # type: ignore[arg-type]
+            ),
+            pass_threshold=0.95,
+        )
+
+def test_grounded_overview_evaluation_rejects_duplicate_questions():
+    question = GroundedOverviewQuestionResult(
+        question_id="RB002",
+        group_results=(
+            GroundedOverviewGroupResult(
+                group_id="one",
+                covered=True,
+            ),
+        ),
+    )
+
+    with pytest.raises(
+        ValueError,
+        match=(
+            "Grounded overview evaluation cannot "
+            "contain duplicate question IDs."
+        ),
+    ):
+        GroundedOverviewEvaluationResult(
+            question_results=(
+                question,
+                question,
+            ),
+            pass_threshold=0.95,
+        )

@@ -75,6 +75,192 @@ class ExpectedEvidenceGroup:
             )
 
 @dataclass(frozen=True)
+class GroundedOverviewGroupResult:
+    group_id: str
+    covered: bool
+
+    def __post_init__(self) -> None:
+        if not self.group_id.strip():
+            raise ValueError(
+                "Grounded overview group result ID "
+                "cannot be empty."
+            )
+
+        if not isinstance(
+            self.covered,
+            bool,
+        ):
+            raise ValueError(
+                "Grounded overview group result "
+                "covered must be a boolean."
+            )
+
+@dataclass(frozen=True)
+class GroundedOverviewQuestionResult:
+    question_id: str
+    group_results: tuple[
+        GroundedOverviewGroupResult,
+        ...
+    ]
+
+    def __post_init__(self) -> None:
+        if not self.question_id.strip():
+            raise ValueError(
+                "Grounded overview question result ID "
+                "cannot be empty."
+            )
+
+        if not self.group_results:
+            raise ValueError(
+                "Grounded overview question result "
+                "must contain at least one group result."
+            )
+
+        if any(
+            not isinstance(
+                result,
+                GroundedOverviewGroupResult,
+            )
+            for result in self.group_results
+        ):
+            raise ValueError(
+                "Grounded overview question group "
+                "results must be "
+                "GroundedOverviewGroupResult values."
+            )
+
+        group_ids = [
+            result.group_id
+            for result in self.group_results
+        ]
+
+        if len(group_ids) != len(set(group_ids)):
+            raise ValueError(
+                "Grounded overview question result "
+                "cannot contain duplicate group IDs."
+            )
+
+    @property
+    def total_groups(self) -> int:
+        return len(self.group_results)
+
+    @property
+    def covered_groups(self) -> int:
+        return sum(
+            1
+            for result in self.group_results
+            if result.covered
+        )
+
+    @property
+    def evidence_coverage(self) -> float:
+        return (
+            self.covered_groups
+            / self.total_groups
+        )
+
+    @property
+    def passed(self) -> bool:
+        return (
+            self.covered_groups
+            == self.total_groups
+        )
+
+@dataclass(frozen=True)
+class GroundedOverviewEvaluationResult:
+    question_results: tuple[
+        GroundedOverviewQuestionResult,
+        ...
+    ]
+    pass_threshold: float
+
+    def __post_init__(self) -> None:
+        if not self.question_results:
+            raise ValueError(
+                "Grounded overview evaluation "
+                "requires at least one question result."
+            )
+
+        if any(
+            not isinstance(
+                result,
+                GroundedOverviewQuestionResult,
+            )
+            for result in self.question_results
+        ):
+            raise ValueError(
+                "Grounded overview evaluation question "
+                "results must be "
+                "GroundedOverviewQuestionResult values."
+            )
+
+        question_ids = [
+            result.question_id
+            for result in self.question_results
+        ]
+
+        if len(question_ids) != len(
+            set(question_ids)
+        ):
+            raise ValueError(
+                "Grounded overview evaluation cannot "
+                "contain duplicate question IDs."
+            )
+
+        if not 0.0 <= self.pass_threshold <= 1.0:
+            raise ValueError(
+                "Grounded overview pass threshold "
+                "must be between 0 and 1."
+            )
+
+    @property
+    def total_questions(self) -> int:
+        return len(self.question_results)
+
+    @property
+    def passed_questions(self) -> int:
+        return sum(
+            1
+            for result in self.question_results
+            if result.passed
+        )
+
+    @property
+    def question_pass_rate(self) -> float:
+        return (
+            self.passed_questions
+            / self.total_questions
+        )
+
+    @property
+    def total_groups(self) -> int:
+        return sum(
+            result.total_groups
+            for result in self.question_results
+        )
+
+    @property
+    def covered_groups(self) -> int:
+        return sum(
+            result.covered_groups
+            for result in self.question_results
+        )
+
+    @property
+    def evidence_group_coverage(self) -> float:
+        return (
+            self.covered_groups
+            / self.total_groups
+        )
+
+    @property
+    def passed(self) -> bool:
+        return (
+            self.question_pass_rate
+            >= self.pass_threshold
+        )
+
+@dataclass(frozen=True)
 class EvaluationQuestion:
     question_id: str
     question: str
