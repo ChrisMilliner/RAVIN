@@ -3,6 +3,7 @@ from backend.ingestion.config import (
     DEFAULT_CHUNK_OVERLAP_WORDS,
 )
 from backend.ingestion.models import PolicyChunk
+from backend.retrieval.models import RetrievalResult
 
 DEFAULT_NEIGHBOR_WINDOW = 1
 DEFAULT_MAX_CONTEXT_CHUNKS = 15
@@ -123,3 +124,84 @@ def merge_structural_chunk_text(
             )
 
     return " ".join(merged_words)
+
+def assemble_context_chunks(
+    chunks: tuple[PolicyChunk, ...],
+    retrieval_results: tuple[
+        RetrievalResult,
+        ...
+    ],
+    config: ContextAssemblyConfig,
+) -> tuple[PolicyChunk, ...]:
+    selected: list[PolicyChunk] = []
+    selected_keys: set[tuple[str, int]] = set()
+
+    seed_chunks: list[PolicyChunk] = []
+
+    for result in retrieval_results:
+        chunk = result.chunk
+        key = (
+            chunk.policy_id,
+            chunk.chunk_index,
+        )
+
+        if key in selected_keys:
+            continue
+
+        seed_chunks.append(chunk)
+        selected.append(chunk)
+        selected_keys.add(key)
+
+    if len(seed_chunks) > config.max_context_chunks:
+        raise ValueError(
+            "Maximum context chunks cannot be "
+            "smaller than the retrieved seed count."
+        )
+
+    if (
+        len(selected)
+        >= config.max_context_chunks
+        or config.neighbor_window == 0
+    ):
+        return tuple(selected)
+
+    for distance in range(
+        1,
+        config.neighbor_window + 1,
+    ):
+        for seed in seed_chunks:
+            neighbors = find_structural_neighbors(
+                chunks,
+                anchor=seed,
+                window=distance,
+            )
+
+            exact_distance_neighbors = (
+                neighbor
+                for neighbor in neighbors
+                if abs(
+                    neighbor.chunk_index
+                    - seed.chunk_index
+                )
+                == distance
+            )
+
+            for neighbor in exact_distance_neighbors:
+                key = (
+                    neighbor.policy_id,
+                    neighbor.chunk_index,
+                )
+
+                if key in selected_keys:
+                    continue
+
+                selected.append(neighbor)
+                selected_keys.add(key)
+
+                if (
+                    len(selected)
+                    >= config.max_context_chunks
+                ):
+                    return tuple(selected)
+
+    return tuple(selected)

@@ -2,9 +2,11 @@ import pytest
 from backend.ingestion.models import PolicyChunk
 from backend.retrieval.context import (
     ContextAssemblyConfig,
+    assemble_context_chunks,
     find_structural_neighbors,
     merge_structural_chunk_text,
 )
+from backend.retrieval.models import RetrievalResult
 
 def make_chunk(
     chunk_index: int,
@@ -24,6 +26,15 @@ def make_chunk(
         chunk_index=chunk_index,
         text=f"Policy chunk {chunk_index}.",
         heading_path=heading_path,
+    )
+
+def make_result(
+    chunk: PolicyChunk,
+    score: float,
+) -> RetrievalResult:
+    return RetrievalResult(
+        chunk=chunk,
+        score=score,
     )
 
 def test_context_config_uses_expected_defaults():
@@ -453,3 +464,329 @@ def test_merge_structural_chunk_text_empty_input_returns_empty():
     assert merge_structural_chunk_text(
         (),
     ) == ""
+
+def test_assemble_context_chunks_keeps_retrieved_seeds_first():
+    heading = (
+        "Section 5",
+    )
+
+    chunks = tuple(
+        make_chunk(
+            index,
+            heading,
+        )
+        for index in range(5)
+    )
+
+    retrieval_results = (
+        make_result(
+            chunks[3],
+            0.95,
+        ),
+        make_result(
+            chunks[1],
+            0.90,
+        ),
+    )
+
+    assembled = assemble_context_chunks(
+        chunks,
+        retrieval_results,
+        ContextAssemblyConfig(
+            neighbor_window=1,
+            max_context_chunks=6,
+        ),
+    )
+
+    assert [
+        chunk.chunk_index
+        for chunk in assembled[:2]
+    ] == [
+        3,
+        1,
+    ]
+
+def test_assemble_context_chunks_adds_structural_neighbors():
+    heading = (
+        "Section 5",
+    )
+
+    chunks = tuple(
+        make_chunk(
+            index,
+            heading,
+        )
+        for index in range(5)
+    )
+
+    retrieval_results = (
+        make_result(
+            chunks[2],
+            0.95,
+        ),
+    )
+
+    assembled = assemble_context_chunks(
+        chunks,
+        retrieval_results,
+        ContextAssemblyConfig(
+            neighbor_window=1,
+            max_context_chunks=5,
+        ),
+    )
+
+    assert [
+        chunk.chunk_index
+        for chunk in assembled
+    ] == [
+        2,
+        1,
+        3,
+    ]
+
+def test_assemble_context_chunks_deduplicates_seed_neighbors():
+    heading = (
+        "Section 5",
+    )
+
+    chunks = tuple(
+        make_chunk(
+            index,
+            heading,
+        )
+        for index in range(4)
+    )
+
+    retrieval_results = (
+        make_result(
+            chunks[1],
+            0.95,
+        ),
+        make_result(
+            chunks[2],
+            0.90,
+        ),
+    )
+
+    assembled = assemble_context_chunks(
+        chunks,
+        retrieval_results,
+        ContextAssemblyConfig(
+            neighbor_window=1,
+            max_context_chunks=6,
+        ),
+    )
+
+    assert [
+        chunk.chunk_index
+        for chunk in assembled
+    ] == [
+        1,
+        2,
+        0,
+        3,
+    ]
+
+def test_assemble_context_chunks_deduplicates_retrieved_seeds():
+    heading = (
+        "Section 5",
+    )
+
+    chunk = make_chunk(
+        1,
+        heading,
+    )
+
+    retrieval_results = (
+        make_result(
+            chunk,
+            0.95,
+        ),
+        make_result(
+            chunk,
+            0.90,
+        ),
+    )
+
+    assembled = assemble_context_chunks(
+        (chunk,),
+        retrieval_results,
+        ContextAssemblyConfig(
+            neighbor_window=0,
+            max_context_chunks=5,
+        ),
+    )
+
+    assert assembled == (
+        chunk,
+    )
+
+def test_assemble_context_chunks_respects_maximum():
+    heading = (
+        "Section 5",
+    )
+
+    chunks = tuple(
+        make_chunk(
+            index,
+            heading,
+        )
+        for index in range(7)
+    )
+
+    retrieval_results = (
+        make_result(
+            chunks[3],
+            0.95,
+        ),
+        make_result(
+            chunks[5],
+            0.90,
+        ),
+    )
+
+    assembled = assemble_context_chunks(
+        chunks,
+        retrieval_results,
+        ContextAssemblyConfig(
+            neighbor_window=2,
+            max_context_chunks=4,
+        ),
+    )
+
+    assert len(assembled) == 4
+
+    assert [
+        chunk.chunk_index
+        for chunk in assembled[:2]
+    ] == [
+        3,
+        5,
+    ]
+
+def test_assemble_context_chunks_does_not_cross_heading_boundary():
+    first_heading = (
+        "Section 5",
+    )
+
+    second_heading = (
+        "Section 6",
+    )
+
+    chunks = (
+        make_chunk(
+            0,
+            first_heading,
+        ),
+        make_chunk(
+            1,
+            second_heading,
+        ),
+    )
+
+    retrieval_results = (
+        make_result(
+            chunks[0],
+            0.95,
+        ),
+    )
+
+    assembled = assemble_context_chunks(
+        chunks,
+        retrieval_results,
+        ContextAssemblyConfig(
+            neighbor_window=1,
+            max_context_chunks=5,
+        ),
+    )
+
+    assert assembled == (
+        chunks[0],
+    )
+
+def test_assemble_context_chunks_rejects_limit_below_seed_count():
+    heading = (
+        "Section 5",
+    )
+
+    chunks = tuple(
+        make_chunk(
+            index,
+            heading,
+        )
+        for index in range(3)
+    )
+
+    retrieval_results = (
+        make_result(
+            chunks[0],
+            0.95,
+        ),
+        make_result(
+            chunks[1],
+            0.90,
+        ),
+        make_result(
+            chunks[2],
+            0.85,
+        ),
+    )
+
+    with pytest.raises(
+        ValueError,
+        match=(
+            "Maximum context chunks cannot be "
+            "smaller than the retrieved seed count."
+        ),
+    ):
+        assemble_context_chunks(
+            chunks,
+            retrieval_results,
+            ContextAssemblyConfig(
+                neighbor_window=1,
+                max_context_chunks=2,
+            ),
+        )
+
+def test_assemble_context_chunks_is_deterministic():
+    heading = (
+        "Section 5",
+    )
+
+    chunks = tuple(
+        make_chunk(
+            index,
+            heading,
+        )
+        for index in range(7)
+    )
+
+    retrieval_results = (
+        make_result(
+            chunks[3],
+            0.95,
+        ),
+        make_result(
+            chunks[5],
+            0.90,
+        ),
+    )
+
+    config = ContextAssemblyConfig(
+        neighbor_window=2,
+        max_context_chunks=6,
+    )
+
+    first = assemble_context_chunks(
+        chunks,
+        retrieval_results,
+        config,
+    )
+
+    second = assemble_context_chunks(
+        chunks,
+        retrieval_results,
+        config,
+    )
+
+    assert first == second
