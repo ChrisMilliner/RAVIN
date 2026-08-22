@@ -440,3 +440,101 @@ Required evidence groups: **3**
 
 RB025 should pass Grounded Overview evidence coverage only when all
 three required groups are covered.
+
+---
+
+## RB026
+
+### Question
+
+How does La Trobe support admission for people who have experienced
+disadvantage or are underrepresented in higher education?
+
+### Behaviour
+
+`GROUNDED_OVERVIEW`
+
+### Audit decision
+
+A satisfactory overview should establish that La Trobe explicitly
+encourages and supports participation by people who have experienced
+disadvantage or belong to groups underrepresented in higher education,
+and should identify concrete admission mechanisms through which that
+support is provided.
+
+Two required evidence groups are therefore defined.
+
+### Required group 1 - participation_commitment
+
+**Concept**
+
+La Trobe explicitly supports participation by people who have
+experienced disadvantage or are from groups underrepresented in higher
+education.
+
+**Required meaning**
+
+The evidence must establish the University's commitment to supporting
+participation by the population identified in the question.
+
+**Source**
+
+Policy 169 - Admissions Policy
+
+Heading:
+
+`Section 5 - Policy Statement`
+
+Stable answer-bearing fragment:
+
+`encourages and supports participation from persons who have experienced disadvantage`
+
+### Required group 2 - support_mechanisms
+
+**Concept**
+
+The University provides concrete admission mechanisms to support that
+participation.
+
+**Required meaning**
+
+The evidence must establish that the commitment is implemented through
+specific admission-support mechanisms rather than being only a general
+statement of principle.
+
+**Source**
+
+Policy 169 - Admissions Policy
+
+Heading:
+
+`Section 5 - Policy Statement`
+
+Stable answer-bearing fragment:
+
+`special entry access schemes and alternative entry programs`
+
+### Supplementary but not required evidence
+
+The same policy passage identifies additional examples of support,
+including targeted programs and pathways for particular groups and
+other measures intended to improve participation.
+
+These details may improve the generated overview, but each individual
+mechanism is not independently required for RB026 to achieve complete
+evidence coverage.
+
+The Admissions Procedure also contains more detailed provisions for
+specific mechanisms such as Special Entry Access Scheme adjustments.
+Those provisions may provide useful supporting detail, but they are not
+required to establish the broad policy-level answer to RB026.
+
+### Audit outcome
+
+Required evidence groups: **2**
+
+- `participation_commitment`
+- `support_mechanisms`
+
+RB026 should pass Grounded Overview evidence coverage only when both
+required groups are covered.
