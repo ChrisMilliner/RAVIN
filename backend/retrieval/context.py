@@ -30,6 +30,57 @@ class ContextAssemblyConfig:
                 "greater than zero."
             )
 
+@dataclass(frozen=True)
+class GroundedContextBlock:
+    policy_id: str
+    policy_title: str
+    source_url: str
+    heading_path: tuple[str, ...]
+    start_chunk_index: int
+    end_chunk_index: int
+    text: str
+
+    def __post_init__(self) -> None:
+        if not self.policy_id.strip():
+            raise ValueError(
+                "Grounded context policy ID cannot "
+                "be empty."
+            )
+
+        if not self.policy_title.strip():
+            raise ValueError(
+                "Grounded context policy title cannot "
+                "be empty."
+            )
+
+        if not self.source_url.strip():
+            raise ValueError(
+                "Grounded context source URL cannot "
+                "be empty."
+            )
+
+        if self.start_chunk_index < 0:
+            raise ValueError(
+                "Grounded context start chunk index "
+                "cannot be negative."
+            )
+
+        if (
+            self.end_chunk_index
+            < self.start_chunk_index
+        ):
+            raise ValueError(
+                "Grounded context end chunk index "
+                "cannot be smaller than the start "
+                "chunk index."
+            )
+
+        if not self.text.strip():
+            raise ValueError(
+                "Grounded context text cannot "
+                "be empty."
+            )
+
 def find_structural_neighbors(
     chunks: tuple[PolicyChunk, ...],
     anchor: PolicyChunk,
@@ -205,3 +256,135 @@ def assemble_context_chunks(
                     return tuple(selected)
 
     return tuple(selected)
+
+def build_grounded_context_blocks(
+    chunks: tuple[PolicyChunk, ...],
+    overlap_words: int = DEFAULT_CHUNK_OVERLAP_WORDS,
+) -> tuple[GroundedContextBlock, ...]:
+    if overlap_words < 0:
+        raise ValueError(
+            "Chunk overlap cannot be negative."
+        )
+
+    if not chunks:
+        return ()
+
+    positions: dict[
+        tuple[str, int],
+        int,
+    ] = {}
+
+    for position, chunk in enumerate(chunks):
+        key = (
+            chunk.policy_id,
+            chunk.chunk_index,
+        )
+
+        if key in positions:
+            raise ValueError(
+                "Grounded context cannot contain "
+                "duplicate policy chunks."
+            )
+
+        positions[key] = position
+
+    structural_groups: dict[
+        tuple[
+            str,
+            str,
+            str,
+            tuple[str, ...],
+        ],
+        list[PolicyChunk],
+    ] = {}
+
+    for chunk in chunks:
+        structural_key = (
+            chunk.policy_id,
+            chunk.policy_title,
+            chunk.source_url,
+            chunk.heading_path,
+        )
+
+        structural_groups.setdefault(
+            structural_key,
+            [],
+        ).append(chunk)
+
+    ranked_blocks: list[
+        tuple[int, GroundedContextBlock]
+    ] = []
+
+    for group_chunks in structural_groups.values():
+        ordered_chunks = sorted(
+            group_chunks,
+            key=lambda chunk: chunk.chunk_index,
+        )
+
+        runs: list[list[PolicyChunk]] = []
+        current_run: list[PolicyChunk] = []
+
+        for chunk in ordered_chunks:
+            if not current_run:
+                current_run.append(chunk)
+                continue
+
+            previous = current_run[-1]
+
+            if (
+                chunk.chunk_index
+                == previous.chunk_index + 1
+            ):
+                current_run.append(chunk)
+            else:
+                runs.append(current_run)
+                current_run = [chunk]
+
+        if current_run:
+            runs.append(current_run)
+
+        for run in runs:
+            run_tuple = tuple(run)
+
+            block = GroundedContextBlock(
+                policy_id=run[0].policy_id,
+                policy_title=run[0].policy_title,
+                source_url=run[0].source_url,
+                heading_path=run[0].heading_path,
+                start_chunk_index=(
+                    run[0].chunk_index
+                ),
+                end_chunk_index=(
+                    run[-1].chunk_index
+                ),
+                text=merge_structural_chunk_text(
+                    run_tuple,
+                    overlap_words=overlap_words,
+                ),
+            )
+
+            first_selected_position = min(
+                positions[
+                    (
+                        chunk.policy_id,
+                        chunk.chunk_index,
+                    )
+                ]
+                for chunk in run
+            )
+
+            ranked_blocks.append(
+                (
+                    first_selected_position,
+                    block,
+                )
+            )
+
+    ranked_blocks.sort(
+        key=lambda item: item[0],
+    )
+
+    return tuple(
+        block
+        for _, block in ranked_blocks
+    )

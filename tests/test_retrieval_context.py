@@ -5,6 +5,8 @@ from backend.retrieval.context import (
     assemble_context_chunks,
     find_structural_neighbors,
     merge_structural_chunk_text,
+    GroundedContextBlock,
+    build_grounded_context_blocks,
 )
 from backend.retrieval.models import RetrievalResult
 
@@ -790,3 +792,243 @@ def test_assemble_context_chunks_is_deterministic():
     )
 
     assert first == second
+
+def test_grounded_context_block_preserves_provenance():
+    block = GroundedContextBlock(
+        policy_id="169",
+        policy_title="Admissions Policy",
+        source_url="https://example.invalid/169",
+        heading_path=(
+            "Section 5",
+        ),
+        start_chunk_index=7,
+        end_chunk_index=9,
+        text="Grounded policy evidence.",
+    )
+
+    assert block.policy_id == "169"
+    assert block.policy_title == (
+        "Admissions Policy"
+    )
+    assert block.source_url == (
+        "https://example.invalid/169"
+    )
+    assert block.heading_path == (
+        "Section 5",
+    )
+    assert block.start_chunk_index == 7
+    assert block.end_chunk_index == 9
+    assert block.text == (
+        "Grounded policy evidence."
+    )
+
+def test_build_grounded_context_blocks_merges_consecutive_chunks():
+    heading = (
+        "Section 5",
+    )
+
+    chunks = (
+        PolicyChunk(
+            policy_id="169",
+            policy_title="Admissions Policy",
+            source_url="https://example.invalid/169",
+            status="Current",
+            effective_date=None,
+            review_date=None,
+            chunk_index=1,
+            text="three four five six",
+            heading_path=heading,
+        ),
+        PolicyChunk(
+            policy_id="169",
+            policy_title="Admissions Policy",
+            source_url="https://example.invalid/169",
+            status="Current",
+            effective_date=None,
+            review_date=None,
+            chunk_index=0,
+            text="one two three four",
+            heading_path=heading,
+        ),
+    )
+
+    blocks = build_grounded_context_blocks(
+        chunks,
+        overlap_words=2,
+    )
+
+    assert len(blocks) == 1
+
+    block = blocks[0]
+
+    assert block.start_chunk_index == 0
+    assert block.end_chunk_index == 1
+    assert block.text == (
+        "one two three four five six"
+    )
+
+def test_build_grounded_context_blocks_separates_headings():
+    chunks = (
+        make_chunk(
+            0,
+            ("Section 5",),
+        ),
+        make_chunk(
+            1,
+            ("Section 6",),
+        ),
+    )
+
+    blocks = build_grounded_context_blocks(
+        chunks,
+    )
+
+    assert len(blocks) == 2
+
+    assert blocks[0].heading_path == (
+        "Section 5",
+    )
+
+    assert blocks[1].heading_path == (
+        "Section 6",
+    )
+
+def test_build_grounded_context_blocks_separates_nonconsecutive_chunks():
+    heading = (
+        "Section 5",
+    )
+
+    chunks = (
+        make_chunk(
+            0,
+            heading,
+        ),
+        make_chunk(
+            2,
+            heading,
+        ),
+    )
+
+    blocks = build_grounded_context_blocks(
+        chunks,
+    )
+
+    assert len(blocks) == 2
+
+    assert blocks[0].start_chunk_index == 0
+    assert blocks[0].end_chunk_index == 0
+
+    assert blocks[1].start_chunk_index == 2
+    assert blocks[1].end_chunk_index == 2
+
+def test_build_grounded_context_blocks_preserves_selection_priority():
+    first_heading = (
+        "Section 6",
+    )
+
+    second_heading = (
+        "Section 5",
+    )
+
+    chunks = (
+        make_chunk(
+            10,
+            first_heading,
+        ),
+        make_chunk(
+            2,
+            second_heading,
+        ),
+    )
+
+    blocks = build_grounded_context_blocks(
+        chunks,
+    )
+
+    assert blocks[0].start_chunk_index == 10
+    assert blocks[1].start_chunk_index == 2
+
+def test_build_grounded_context_blocks_handles_seed_first_neighbor_order():
+    heading = (
+        "Section 5",
+    )
+
+    chunks = (
+        PolicyChunk(
+            policy_id="169",
+            policy_title="Admissions Policy",
+            source_url="https://example.invalid/169",
+            status="Current",
+            effective_date=None,
+            review_date=None,
+            chunk_index=2,
+            text="five six seven eight",
+            heading_path=heading,
+        ),
+        PolicyChunk(
+            policy_id="169",
+            policy_title="Admissions Policy",
+            source_url="https://example.invalid/169",
+            status="Current",
+            effective_date=None,
+            review_date=None,
+            chunk_index=1,
+            text="three four five six",
+            heading_path=heading,
+        ),
+        PolicyChunk(
+            policy_id="169",
+            policy_title="Admissions Policy",
+            source_url="https://example.invalid/169",
+            status="Current",
+            effective_date=None,
+            review_date=None,
+            chunk_index=3,
+            text="seven eight nine ten",
+            heading_path=heading,
+        ),
+    )
+
+    blocks = build_grounded_context_blocks(
+        chunks,
+        overlap_words=2,
+    )
+
+    assert len(blocks) == 1
+
+    assert blocks[0].start_chunk_index == 1
+    assert blocks[0].end_chunk_index == 3
+    assert blocks[0].text == (
+        "three four five six seven eight "
+        "nine ten"
+    )
+
+def test_build_grounded_context_blocks_rejects_duplicates():
+    heading = (
+        "Section 5",
+    )
+
+    chunk = make_chunk(
+        1,
+        heading,
+    )
+
+    with pytest.raises(
+        ValueError,
+        match=(
+            "Grounded context cannot contain "
+            "duplicate policy chunks."
+        ),
+    ):
+        build_grounded_context_blocks(
+            (
+                chunk,
+                chunk,
+            ),
+        )
+
+
+def test_build_grounded_context_blocks_empty_input_returns_empty():
+    assert build_grounded_context_blocks(
+        (),
+    ) == ()
