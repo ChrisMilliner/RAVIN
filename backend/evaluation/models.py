@@ -1,16 +1,12 @@
 from dataclasses import dataclass
-from enum import Enum
+from backend.behavior import AnswerBehavior
 from backend.retrieval.models import RetrievalResult
 
 DEFAULT_TOP_K = 5
 DEFAULT_TOP_1_PASS_THRESHOLD = 0.95
 DEFAULT_GROUNDED_OVERVIEW_PASS_THRESHOLD = 0.95
 
-class EvaluationBehavior(str, Enum):
-    DIRECT_ANSWER = "direct_answer"
-    GROUNDED_OVERVIEW = "grounded_overview"
-    CLARIFY = "clarify"
-    NO_GROUNDED_ANSWER = "no_grounded_answer"
+EvaluationBehavior = AnswerBehavior
 
 @dataclass(frozen=True)
 class ExpectedEvidence:
