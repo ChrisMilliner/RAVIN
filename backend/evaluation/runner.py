@@ -16,9 +16,11 @@ from backend.evaluation.models import (
     EvaluationQuestion,
     EvaluationRunResult,
     ExpectedEvidence,
-    QuestionEvaluationResult,
+    GroundedOverviewEvaluationResult,
     GroundedOverviewGroupResult,
     GroundedOverviewQuestionResult,
+    QuestionEvaluationResult,
+    GroundedOverviewEvaluationConfig,
 )
 from backend.retrieval.models import RetrievalResult
 
@@ -89,6 +91,54 @@ def evaluate_grounded_overview_question(
     return GroundedOverviewQuestionResult(
         question_id=question.question_id,
         group_results=group_results,
+    )
+
+def run_grounded_overview_evaluation(
+    questions: tuple[EvaluationQuestion, ...],
+    retrieve: RetrievalFunction,
+    config: GroundedOverviewEvaluationConfig,
+) -> GroundedOverviewEvaluationResult:
+    overview_questions = tuple(
+        question
+        for question in questions
+        if (
+            question.behavior
+            == EvaluationBehavior.GROUNDED_OVERVIEW
+        )
+    )
+
+    if not overview_questions:
+        raise ValueError(
+            "Grounded overview evaluation requires "
+            "at least one Grounded Overview question."
+        )
+
+    question_results: list[
+        GroundedOverviewQuestionResult
+    ] = []
+
+    for question in overview_questions:
+        retrieved_results = retrieve(
+            question.question,
+            config.top_k,
+        )
+
+        retrieved_results = (
+            retrieved_results[:config.top_k]
+        )
+
+        question_results.append(
+            evaluate_grounded_overview_question(
+                question,
+                retrieved_results,
+            )
+        )
+
+    return GroundedOverviewEvaluationResult(
+        question_results=tuple(
+            question_results
+        ),
+        pass_threshold=config.pass_threshold,
     )
 
 def run_retrieval_evaluation(

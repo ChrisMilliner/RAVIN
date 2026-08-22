@@ -12,6 +12,7 @@ from backend.evaluation.models import (
     GroundedOverviewGroupResult,
     GroundedOverviewQuestionResult,
     GroundedOverviewEvaluationResult,
+    GroundedOverviewEvaluationConfig,
 )
 
 def make_expected_evidence() -> ExpectedEvidence:
@@ -699,4 +700,34 @@ def test_grounded_overview_evaluation_rejects_duplicate_questions():
                 question,
             ),
             pass_threshold=0.95,
+        )
+
+def test_grounded_overview_config_defaults():
+    config = GroundedOverviewEvaluationConfig()
+
+    assert config.top_k == 5
+    assert config.pass_threshold == 0.95
+
+def test_grounded_overview_config_rejects_invalid_top_k():
+    with pytest.raises(
+        ValueError,
+        match=(
+            "Grounded overview top_k must be "
+            "greater than zero."
+        ),
+    ):
+        GroundedOverviewEvaluationConfig(
+            top_k=0,
+        )
+
+def test_grounded_overview_config_rejects_invalid_threshold():
+    with pytest.raises(
+        ValueError,
+        match=(
+            "Grounded overview pass threshold "
+            "must be between 0 and 1."
+        ),
+    ):
+        GroundedOverviewEvaluationConfig(
+            pass_threshold=1.01,
         )

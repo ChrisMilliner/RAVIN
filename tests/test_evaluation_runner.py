@@ -5,10 +5,12 @@ from backend.evaluation.models import (
     EvaluationQuestion,
     ExpectedEvidence,
     ExpectedEvidenceGroup,
+    GroundedOverviewEvaluationConfig,
 )
 from backend.evaluation.runner import (
     evaluate_grounded_overview_question,
     find_first_relevant_rank,
+    run_grounded_overview_evaluation,
     run_retrieval_evaluation,
 )
 from backend.ingestion.models import PolicyChunk
@@ -70,13 +72,16 @@ def make_question(
         behavior=behavior,
     )
 
-def make_overview_question() -> EvaluationQuestion:
+def make_overview_question(
+    question_id: str = "RB002",
+    question: str = (
+        "What happens when a student is not "
+        "making satisfactory academic progress?"
+    ),
+) -> EvaluationQuestion:
     return EvaluationQuestion(
-        question_id="RB002",
-        question=(
-            "What happens when a student is not "
-            "making satisfactory academic progress?"
-        ),
+        question_id=question_id,
+        question=question,
         expected_evidence=(
             ExpectedEvidence(
                 policy_id="220",
@@ -725,3 +730,268 @@ def test_grounded_overview_question_requires_evidence_groups():
             question,
             (),
         )
+
+def test_grounded_overview_runner_calculates_question_gateway():
+    questions = (
+        make_question(
+            "Q001",
+            "Direct question",
+        ),
+        make_overview_question(
+            "RB002",
+            "Overview one",
+        ),
+        make_overview_question(
+            "RB003",
+            "Overview two",
+        ),
+    )
+
+    results_by_question = {
+        "Overview one": (
+            make_result(
+                "220",
+                (
+                    "Section 6 - Procedures",
+                    (
+                        "Part A - Monitoring and "
+                        "Determining Academic Progression"
+                    ),
+                ),
+                0.95,
+                (
+                    "Students trigger one of three stages "
+                    "of academic progression with associated "
+                    "support and interventions."
+                ),
+            ),
+            make_result(
+                "220",
+                (
+                    "Section 6 - Procedures",
+                    (
+                        "Part A - Monitoring and "
+                        "Determining Academic Progression"
+                    ),
+                ),
+                0.90,
+                (
+                    "Academic Progression Stage Three "
+                    "involves Show Cause and Course Exclusion."
+                ),
+            ),
+        ),
+        "Overview two": (
+            make_result(
+                "220",
+                (
+                    "Section 6 - Procedures",
+                    (
+                        "Part A - Monitoring and "
+                        "Determining Academic Progression"
+                    ),
+                ),
+                0.95,
+                (
+                    "Students trigger one of three stages "
+                    "of academic progression with associated "
+                    "support and interventions."
+                ),
+            ),
+        ),
+    }
+
+    retrieved_questions: list[str] = []
+
+    def retrieve(
+        question: str,
+        top_k: int,
+    ) -> tuple[RetrievalResult, ...]:
+        retrieved_questions.append(
+            question
+        )
+
+        return results_by_question[question][
+            :top_k
+        ]
+
+    result = run_grounded_overview_evaluation(
+        questions,
+        retrieve,
+        GroundedOverviewEvaluationConfig(
+            top_k=5,
+            pass_threshold=0.95,
+        ),
+    )
+
+    assert retrieved_questions == [
+        "Overview one",
+        "Overview two",
+    ]
+
+    assert result.total_questions == 2
+    assert result.passed_questions == 1
+
+    assert result.question_pass_rate == pytest.approx(
+        0.5
+    )
+
+    assert result.total_groups == 6
+    assert result.covered_groups == 5
+
+    assert (
+        result.evidence_group_coverage
+        == pytest.approx(5.0 / 6.0)
+    )
+
+    assert result.passed is False
+
+def test_grounded_overview_runner_passes_when_all_questions_complete():
+    question = make_overview_question(
+        "RB002",
+        "Overview question",
+    )
+
+    def retrieve(
+        question_text: str,
+        top_k: int,
+    ) -> tuple[RetrievalResult, ...]:
+        return (
+            make_result(
+                "220",
+                (
+                    "Section 6 - Procedures",
+                    (
+                        "Part A - Monitoring and "
+                        "Determining Academic Progression"
+                    ),
+                ),
+                0.95,
+                (
+                    "Students trigger one of three stages "
+                    "of academic progression with associated "
+                    "support and interventions."
+                ),
+            ),
+            make_result(
+                "220",
+                (
+                    "Section 6 - Procedures",
+                    (
+                        "Part A - Monitoring and "
+                        "Determining Academic Progression"
+                    ),
+                ),
+                0.90,
+                (
+                    "The final stage involves "
+                    "Show Cause and Course Exclusion."
+                ),
+            ),
+        )
+
+    result = run_grounded_overview_evaluation(
+        (question,),
+        retrieve,
+        GroundedOverviewEvaluationConfig(
+            top_k=5,
+            pass_threshold=0.95,
+        ),
+    )
+
+    assert result.total_questions == 1
+    assert result.passed_questions == 1
+    assert result.question_pass_rate == 1.0
+    assert result.evidence_group_coverage == 1.0
+    assert result.passed is True
+
+def test_grounded_overview_runner_rejects_no_overview_questions():
+    questions = (
+        make_question(
+            "Q001",
+            "Direct question",
+        ),
+    )
+
+    def retrieve(
+        question: str,
+        top_k: int,
+    ) -> tuple[RetrievalResult, ...]:
+        return ()
+
+    with pytest.raises(
+        ValueError,
+        match=(
+            "Grounded overview evaluation requires "
+            "at least one Grounded Overview question."
+        ),
+    ):
+        run_grounded_overview_evaluation(
+            questions,
+            retrieve,
+            GroundedOverviewEvaluationConfig(),
+        )
+
+def test_grounded_overview_runner_respects_top_k():
+    question = make_overview_question(
+        "RB002",
+        "Overview question",
+    )
+
+    def retrieve(
+        question_text: str,
+        top_k: int,
+    ) -> tuple[RetrievalResult, ...]:
+        assert top_k == 1
+
+        return (
+            make_result(
+                "220",
+                (
+                    "Section 6 - Procedures",
+                    (
+                        "Part A - Monitoring and "
+                        "Determining Academic Progression"
+                    ),
+                ),
+                0.95,
+                (
+                    "Students trigger one of three stages "
+                    "of academic progression with associated "
+                    "support and interventions."
+                ),
+            ),
+            make_result(
+                "220",
+                (
+                    "Section 6 - Procedures",
+                    (
+                        "Part A - Monitoring and "
+                        "Determining Academic Progression"
+                    ),
+                ),
+                0.90,
+                (
+                    "This later result contains "
+                    "Show Cause and Course Exclusion."
+                ),
+            ),
+        )
+
+    result = run_grounded_overview_evaluation(
+        (question,),
+        retrieve,
+        GroundedOverviewEvaluationConfig(
+            top_k=1,
+            pass_threshold=0.95,
+        ),
+    )
+
+    question_result = (
+        result.question_results[0]
+    )
+
+    assert question_result.total_groups == 3
+    assert question_result.covered_groups == 2
+    assert question_result.passed is False
+    assert result.passed is False
