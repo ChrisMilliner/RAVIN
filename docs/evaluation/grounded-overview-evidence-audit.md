@@ -317,29 +317,32 @@ before they apply or accept an offer?
 
 ### Audit decision
 
-A satisfactory overview should explain the information that must be
-available and accessible to prospective students before admission,
-explain that students must be informed of their rights and obligations
-before accepting or declining an offer, and identify the principal
-offer-related matters that this information includes.
+A satisfactory overview should identify the principal admission
+information that must be available to prospective students, establish
+that this information is accessible, explain that students must be
+informed of their rights and obligations before accepting or declining
+an offer, and identify the main financial and offer-management
+information associated with that decision.
 
-Three required evidence groups are therefore defined.
+The previously identified concepts are represented as five atomic
+required evidence groups so that each requirement can be evaluated
+without introducing nested AND/OR matching rules.
+
+Five required evidence groups are therefore defined.
 
 ### Required group 1 - pre_application_information
 
 **Concept**
 
-Prospective students must have accessible and current information about
-admission and participation requirements and related admission
-arrangements.
+Prospective students must be provided with information about admission,
+participation and related admission arrangements.
 
 **Required meaning**
 
-The evidence must establish that information concerning entry
-requirements, core participation requirements, other entry conditions,
-deferral and transfer procedures, pathways and credit arrangements is
-made available and easily accessible to prospective students and is
-regularly updated.
+The evidence must identify the principal categories of information
+available before admission, including entry requirements, core
+participation requirements, other entry conditions, deferral and
+transfer procedures, pathways and credit arrangements.
 
 **Source**
 
@@ -353,22 +356,43 @@ Stable answer-bearing fragment:
 
 `information regarding entry requirements, core participation requirements, other conditions for entry, deferral and transfer procedures, pathways and credit arrangements`
 
-**Additional stable fragment**
+### Required group 2 - prospective_information_accessibility
+
+**Concept**
+
+Admission information must be made available and easily accessible to
+prospective students.
+
+**Required meaning**
+
+The evidence must establish that prospective students can access the
+admission information rather than merely establishing that the
+information exists.
+
+**Source**
+
+Policy 169 - Admissions Policy
+
+Heading:
+
+`Section 5 - Policy Statement`
+
+Stable answer-bearing fragment:
 
 `made available and easily accessible to prospective students`
 
-### Required group 2 - offer_rights_and_obligations
+### Required group 3 - offer_rights_and_obligations
 
 **Concept**
 
 Students must be informed of their rights and obligations before
-deciding whether to accept an offer.
+accepting or declining an offer.
 
 **Required meaning**
 
 The evidence must establish both the existence of rights and
-obligations information and that it is provided before the student
-accepts or declines the offer.
+obligations information and its timing before the student's offer
+decision.
 
 **Source**
 
@@ -382,18 +406,16 @@ Stable answer-bearing fragment:
 
 `students are informed of their rights and obligations before accepting or declining their offer`
 
-### Required group 3 - offer_information_details
+### Required group 4 - fees_and_charges_information
 
 **Concept**
 
-The information provided before offer acceptance includes the principal
-financial and offer-management matters relevant to the student.
+Students must receive information about fees and charges.
 
 **Required meaning**
 
-The evidence must establish that the required offer information
-includes fees and charges and rights and obligations relating to course
-acceptance, changes to offers, deferment and withdrawal.
+The evidence must establish that financial information concerning fees
+and charges forms part of the information supplied to students.
 
 **Source**
 
@@ -407,7 +429,27 @@ Stable answer-bearing fragment:
 
 `information about all fees and charges`
 
-**Additional stable fragment**
+### Required group 5 - offer_management_rights
+
+**Concept**
+
+Students must receive information about their rights and obligations
+for managing an offer and subsequent enrolment decision.
+
+**Required meaning**
+
+The evidence must establish that these rights and obligations concern
+course acceptance, changes to offers, deferment and withdrawal.
+
+**Source**
+
+Policy 169 - Admissions Policy
+
+Heading:
+
+`Section 5 - Policy Statement`
+
+Stable answer-bearing fragment:
 
 `rights and obligations in relation to course acceptance, changes to offers, deferment and withdrawal`
 
@@ -432,14 +474,16 @@ be available before application or offer acceptance.
 
 ### Audit outcome
 
-Required evidence groups: **3**
+Required evidence groups: **5**
 
 - `pre_application_information`
+- `prospective_information_accessibility`
 - `offer_rights_and_obligations`
-- `offer_information_details`
+- `fees_and_charges_information`
+- `offer_management_rights`
 
 RB025 should pass Grounded Overview evidence coverage only when all
-three required groups are covered.
+five required groups are covered.
 
 ---
 
