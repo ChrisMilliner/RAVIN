@@ -1,5 +1,6 @@
 from typing import Callable
 from backend.evaluation.matching import (
+    is_expected_evidence_group_covered,
     matches_expected_evidence,
 )
 from backend.evaluation.metrics import (
@@ -16,6 +17,8 @@ from backend.evaluation.models import (
     EvaluationRunResult,
     ExpectedEvidence,
     QuestionEvaluationResult,
+    GroundedOverviewGroupResult,
+    GroundedOverviewQuestionResult,
 )
 from backend.retrieval.models import RetrievalResult
 
@@ -42,6 +45,51 @@ def find_first_relevant_rank(
             return rank
 
     return None
+
+def evaluate_grounded_overview_question(
+    question: EvaluationQuestion,
+    retrieved_results: tuple[
+        RetrievalResult,
+        ...
+    ],
+) -> GroundedOverviewQuestionResult:
+    if (
+        question.behavior
+        != EvaluationBehavior.GROUNDED_OVERVIEW
+    ):
+        raise ValueError(
+            "Grounded overview evaluation requires "
+            "a Grounded Overview question."
+        )
+
+    if not question.expected_evidence_groups:
+        raise ValueError(
+            "Grounded Overview question must define "
+            "expected evidence groups."
+        )
+
+    chunks = tuple(
+        result.chunk
+        for result in retrieved_results
+    )
+
+    group_results = tuple(
+        GroundedOverviewGroupResult(
+            group_id=group.group_id,
+            covered=(
+                is_expected_evidence_group_covered(
+                    chunks,
+                    group,
+                )
+            ),
+        )
+        for group in question.expected_evidence_groups
+    )
+
+    return GroundedOverviewQuestionResult(
+        question_id=question.question_id,
+        group_results=group_results,
+    )
 
 def run_retrieval_evaluation(
     questions: tuple[EvaluationQuestion, ...],
