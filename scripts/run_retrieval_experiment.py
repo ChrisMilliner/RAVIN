@@ -54,6 +54,11 @@ from backend.evaluation.reporting import (
     get_repository_commit,
     write_experiment_record,
 )
+from backend.retrieval.production import (
+    ProductionRetrievalConfig,
+    build_production_retrieval_index,
+    retrieve_policy_evidence,
+)
 
 POLICIES = (
     ("208", "Academic Dress Policy"),
@@ -72,7 +77,6 @@ EXPERIMENT_OUTPUT_DIRECTORY = (
 SEMANTIC_WEIGHT = 0.85
 LEXICAL_WEIGHT = 0.15
 BASELINE_RERANK_DEPTH = 5
-CANDIDATE_RERANK_DEPTH = 11
 
 def format_rank(
     rank: int | None,
@@ -314,12 +318,9 @@ def main() -> None:
     )
 
     body_only_index = (
-        build_semantic_index(
+        build_production_retrieval_index(
             tuple(all_chunks),
             embedding_provider,
-            embedding_text_strategy=(
-                BODY_ONLY_EMBEDDING
-            ),
         )
     )
 
@@ -382,6 +383,10 @@ def main() -> None:
     )
 
     evaluation_config = EvaluationConfig()
+
+    production_retrieval_config = (
+        ProductionRetrievalConfig()
+    )
 
     overview_evaluation_config = (
         GroundedOverviewEvaluationConfig(
@@ -487,26 +492,23 @@ def main() -> None:
         question: str,
         top_k: int,
     ):
-        hybrid_results = search_hybrid_index(
+        if top_k != production_retrieval_config.top_k:
+            raise ValueError(
+                "Candidate v5 evaluation top_k must "
+                "match production retrieval top_k."
+            )
+
+        return retrieve_policy_evidence(
             body_only_index,
             query=question,
             embedding_provider=(
                 embedding_provider
             ),
-            top_k=CANDIDATE_RERANK_DEPTH,
-            semantic_weight=SEMANTIC_WEIGHT,
-            lexical_weight=LEXICAL_WEIGHT,
-        )
-
-        reranked_results = rerank_results(
-            query=question,
-            results=hybrid_results,
             reranker_provider=(
                 reranker_provider
             ),
+            config=production_retrieval_config,
         )
-
-        return reranked_results[:top_k]
 
     def retrieve_candidate_v4(
         question: str,
@@ -663,7 +665,15 @@ def main() -> None:
     )
     print(
         "Candidate rerank depth:",
-        CANDIDATE_RERANK_DEPTH,
+        production_retrieval_config.rerank_depth,
+    )
+    print(
+        "Semantic weight:",
+        f"{production_retrieval_config.semantic_weight:.0%}",
+    )
+    print(
+        "Lexical weight:",
+        f"{production_retrieval_config.lexical_weight:.0%}",
     )
     print(
         "Reranker model:",
@@ -977,10 +987,12 @@ def main() -> None:
                     DEFAULT_EMBEDDING_MODEL
                 ),
                 semantic_weight=(
-                    SEMANTIC_WEIGHT
+                    production_retrieval_config
+                    .semantic_weight
                 ),
                 lexical_weight=(
-                    LEXICAL_WEIGHT
+                    production_retrieval_config
+                    .lexical_weight
                 ),
                 baseline_strategy=(
                     "hybrid-semantic-lexical-"
@@ -1012,7 +1024,8 @@ def main() -> None:
                     DEFAULT_RERANKER_MODEL
                 ),
                 rerank_depth=(
-                    CANDIDATE_RERANK_DEPTH
+                    production_retrieval_config
+                    .rerank_depth
                 ),
                 grounded_overview_config=(
                     overview_evaluation_config
@@ -1062,8 +1075,8 @@ def main() -> None:
         evaluation_config.top_k,
     )
     print(
-    "Grounded Overview Evaluation Top-K:",
-    overview_evaluation_config.top_k,
+        "Grounded Overview Evaluation Top-K:",
+        overview_evaluation_config.top_k,
     )
 
     print(
@@ -1116,7 +1129,7 @@ def main() -> None:
     )
     print(
         "Candidate rerank depth:",
-        CANDIDATE_RERANK_DEPTH,
+        production_retrieval_config.rerank_depth,
     )
 
 
