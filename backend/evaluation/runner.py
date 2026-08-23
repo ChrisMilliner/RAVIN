@@ -1,5 +1,6 @@
 from typing import Callable
 from backend.evaluation.matching import (
+    is_expected_evidence_group_covered,
     matches_expected_evidence,
 )
 from backend.evaluation.metrics import (
@@ -9,11 +10,17 @@ from backend.evaluation.metrics import (
     meets_top_1_quality_gate,
 )
 from backend.evaluation.models import (
+    EvaluationBehavior,
     EvaluationConfig,
+    EvaluationPopulation,
     EvaluationQuestion,
     EvaluationRunResult,
     ExpectedEvidence,
+    GroundedOverviewEvaluationResult,
+    GroundedOverviewGroupResult,
+    GroundedOverviewQuestionResult,
     QuestionEvaluationResult,
+    GroundedOverviewEvaluationConfig,
 )
 from backend.retrieval.models import RetrievalResult
 
@@ -41,6 +48,99 @@ def find_first_relevant_rank(
 
     return None
 
+def evaluate_grounded_overview_question(
+    question: EvaluationQuestion,
+    retrieved_results: tuple[
+        RetrievalResult,
+        ...
+    ],
+) -> GroundedOverviewQuestionResult:
+    if (
+        question.behavior
+        != EvaluationBehavior.GROUNDED_OVERVIEW
+    ):
+        raise ValueError(
+            "Grounded overview evaluation requires "
+            "a Grounded Overview question."
+        )
+
+    if not question.expected_evidence_groups:
+        raise ValueError(
+            "Grounded Overview question must define "
+            "expected evidence groups."
+        )
+
+    chunks = tuple(
+        result.chunk
+        for result in retrieved_results
+    )
+
+    group_results = tuple(
+        GroundedOverviewGroupResult(
+            group_id=group.group_id,
+            covered=(
+                is_expected_evidence_group_covered(
+                    chunks,
+                    group,
+                )
+            ),
+        )
+        for group in question.expected_evidence_groups
+    )
+
+    return GroundedOverviewQuestionResult(
+        question_id=question.question_id,
+        group_results=group_results,
+    )
+
+def run_grounded_overview_evaluation(
+    questions: tuple[EvaluationQuestion, ...],
+    retrieve: RetrievalFunction,
+    config: GroundedOverviewEvaluationConfig,
+) -> GroundedOverviewEvaluationResult:
+    overview_questions = tuple(
+        question
+        for question in questions
+        if (
+            question.behavior
+            == EvaluationBehavior.GROUNDED_OVERVIEW
+        )
+    )
+
+    if not overview_questions:
+        raise ValueError(
+            "Grounded overview evaluation requires "
+            "at least one Grounded Overview question."
+        )
+
+    question_results: list[
+        GroundedOverviewQuestionResult
+    ] = []
+
+    for question in overview_questions:
+        retrieved_results = retrieve(
+            question.question,
+            config.top_k,
+        )
+
+        retrieved_results = (
+            retrieved_results[:config.top_k]
+        )
+
+        question_results.append(
+            evaluate_grounded_overview_question(
+                question,
+                retrieved_results,
+            )
+        )
+
+    return GroundedOverviewEvaluationResult(
+        question_results=tuple(
+            question_results
+        ),
+        pass_threshold=config.pass_threshold,
+    )
+
 def run_retrieval_evaluation(
     questions: tuple[EvaluationQuestion, ...],
     retrieve: RetrievalFunction,
@@ -51,13 +151,64 @@ def run_retrieval_evaluation(
             "Cannot evaluate an empty question set."
         )
 
+    population = EvaluationPopulation(
+        dataset_questions=len(questions),
+        direct_answer_questions=sum(
+            1
+            for question in questions
+            if (
+                question.behavior
+                == EvaluationBehavior.DIRECT_ANSWER
+            )
+        ),
+        grounded_overview_questions=sum(
+            1
+            for question in questions
+            if (
+                question.behavior
+                == EvaluationBehavior.GROUNDED_OVERVIEW
+            )
+        ),
+        clarify_questions=sum(
+            1
+            for question in questions
+            if (
+                question.behavior
+                == EvaluationBehavior.CLARIFY
+            )
+        ),
+        no_grounded_answer_questions=sum(
+            1
+            for question in questions
+            if (
+                question.behavior
+                == EvaluationBehavior.NO_GROUNDED_ANSWER
+            )
+        ),
+    )
+
+    ranking_questions = tuple(
+        question
+        for question in questions
+        if (
+            question.behavior
+            == EvaluationBehavior.DIRECT_ANSWER
+        )
+    )
+
+    if not ranking_questions:
+        raise ValueError(
+            "Retrieval ranking evaluation requires "
+            "at least one Direct Answer question."
+        )
+
     question_results: list[
         QuestionEvaluationResult
     ] = []
 
     first_relevant_ranks: list[int | None] = []
 
-    for question in questions:
+    for question in ranking_questions:
         retrieved_results = retrieve(
             question.question,
             config.top_k,
@@ -121,4 +272,5 @@ def run_retrieval_evaluation(
             config.top_1_pass_threshold
         ),
         passed=passed,
+        population=population,
     )

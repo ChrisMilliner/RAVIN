@@ -7,6 +7,10 @@ from backend.retrieval.models import (
 )
 from backend.retrieval.text import build_retrieval_text
 
+RETRIEVAL_TEXT_EMBEDDING = "retrieval-text"
+BODY_ONLY_EMBEDDING = "body-only"
+TITLE_BODY_EMBEDDING = "title-body"
+
 def cosine_similarity(
     first: tuple[float, ...],
     second: tuple[float, ...],
@@ -46,9 +50,32 @@ def cosine_similarity(
         first_magnitude * second_magnitude
     )
 
+def _build_embedding_text(
+    chunk: PolicyChunk,
+    strategy: str,
+) -> str:
+    if strategy == RETRIEVAL_TEXT_EMBEDDING:
+        return build_retrieval_text(chunk)
+
+    if strategy == BODY_ONLY_EMBEDDING:
+        return chunk.text
+
+    if strategy == TITLE_BODY_EMBEDDING:
+        return "\n".join(
+            (
+                chunk.policy_title,
+                chunk.text,
+            )
+        )
+
+    raise ValueError(
+        "Unsupported embedding text strategy."
+    )
+
 def build_semantic_index(
     chunks: tuple[PolicyChunk, ...],
     embedding_provider: EmbeddingProvider,
+    embedding_text_strategy: str = RETRIEVAL_TEXT_EMBEDDING,
 ) -> tuple[IndexedPolicyChunk, ...]:
     if not chunks:
         raise ValueError(
@@ -60,8 +87,16 @@ def build_semantic_index(
         for chunk in chunks
     )
 
+    embedding_texts = tuple(
+        _build_embedding_text(
+            chunk,
+            embedding_text_strategy,
+        )
+        for chunk in chunks
+    )
+
     embeddings = embedding_provider.embed_documents(
-        retrieval_texts
+        embedding_texts
     )
 
     if len(embeddings) != len(chunks):

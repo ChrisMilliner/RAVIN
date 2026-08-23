@@ -1,0 +1,213 @@
+{
+  "schema_version": 1,
+  "experiment": {
+    "name": "Cross-encoder rerank depth 11 v5",
+    "baseline": "Body-only MiniLM embeddings + Hybrid 85/15 + MS MARCO MiniLM-L6-v2 reranking depth 5 v3",
+    "candidate": "Body-only MiniLM embeddings + Hybrid 85/15 + MS MARCO MiniLM-L6-v2 reranking depth 11 v5",
+    "top_k": 5,
+    "quality_threshold": 0.95
+  },
+  "retrieval_configuration": {
+    "embedding_model": "sentence-transformers/all-MiniLM-L6-v2",
+    "baseline": {
+      "strategy": "hybrid-semantic-lexical-cross-encoder",
+      "embedding_text_strategy": "body-only",
+      "semantic_weight": 0.85,
+      "lexical_weight": 0.15,
+      "reranker_model": "cross-encoder/ms-marco-MiniLM-L6-v2",
+      "rerank_depth": 5
+    },
+    "candidate": {
+      "strategy": "hybrid-semantic-lexical-cross-encoder",
+      "embedding_text_strategy": "body-only",
+      "semantic_weight": 0.85,
+      "lexical_weight": 0.15,
+      "reranker_model": "cross-encoder/ms-marco-MiniLM-L6-v2",
+      "rerank_depth": 11
+    }
+  },
+  "dataset": {
+    "name": "RAVIN Preliminary Retrieval Development Baseline v1.4",
+    "status": "preliminary",
+    "path": "evaluation/retrieval_baseline.json",
+    "sha256": "85bd8d155b882c1bb3e5e27765047bb80b9f746dc86856a0b065a9eb573beda3"
+  },
+  "evaluation_population": {
+    "dataset_questions": 30,
+    "direct_answer_questions": 26,
+    "grounded_overview_questions": 4,
+    "clarify_questions": 0,
+    "no_grounded_answer_questions": 0,
+    "ranking_metric_scope": "direct_answer"
+  },
+  "corpus": {
+    "policy_ids": [
+      "208",
+      "220",
+      "76",
+      "420",
+      "169",
+      "340"
+    ],
+    "chunk_count": 212,
+    "sha256": "fc9f8d16a0d8ce74ed6c279099508b16796b3c84596388b914a337f7f3c226fb"
+  },
+  "provenance": {
+    "repository_commit": "38a2a95da19970b9aad2b957dd87cdf52a6cb300",
+    "generated_at_utc": "2026-08-17T08:25:28.798329+00:00"
+  },
+  "baseline_metrics": {
+    "top_1_accuracy": 0.9615384615384616,
+    "hit_at_k": 0.9615384615384616,
+    "mrr": 0.9615384615384616
+  },
+  "candidate_metrics": {
+    "top_1_accuracy": 1.0,
+    "hit_at_k": 1.0,
+    "mrr": 1.0
+  },
+  "metric_deltas": {
+    "top_1_accuracy": 0.038461538461538436,
+    "hit_at_k": 0.038461538461538436,
+    "mrr": 0.038461538461538436
+  },
+  "question_rank_changes": [
+    {
+      "question_id": "RB001",
+      "baseline_rank": 1,
+      "candidate_rank": 1
+    },
+    {
+      "question_id": "RB004",
+      "baseline_rank": 1,
+      "candidate_rank": 1
+    },
+    {
+      "question_id": "RB005",
+      "baseline_rank": 1,
+      "candidate_rank": 1
+    },
+    {
+      "question_id": "RB006",
+      "baseline_rank": 1,
+      "candidate_rank": 1
+    },
+    {
+      "question_id": "RB007",
+      "baseline_rank": 1,
+      "candidate_rank": 1
+    },
+    {
+      "question_id": "RB008",
+      "baseline_rank": 1,
+      "candidate_rank": 1
+    },
+    {
+      "question_id": "RB009",
+      "baseline_rank": 1,
+      "candidate_rank": 1
+    },
+    {
+      "question_id": "RB010",
+      "baseline_rank": 1,
+      "candidate_rank": 1
+    },
+    {
+      "question_id": "RB011",
+      "baseline_rank": 1,
+      "candidate_rank": 1
+    },
+    {
+      "question_id": "RB012",
+      "baseline_rank": 1,
+      "candidate_rank": 1
+    },
+    {
+      "question_id": "RB013",
+      "baseline_rank": 1,
+      "candidate_rank": 1
+    },
+    {
+      "question_id": "RB014",
+      "baseline_rank": 1,
+      "candidate_rank": 1
+    },
+    {
+      "question_id": "RB015",
+      "baseline_rank": 1,
+      "candidate_rank": 1
+    },
+    {
+      "question_id": "RB016",
+      "baseline_rank": 1,
+      "candidate_rank": 1
+    },
+    {
+      "question_id": "RB017",
+      "baseline_rank": null,
+      "candidate_rank": 1
+    },
+    {
+      "question_id": "RB018",
+      "baseline_rank": 1,
+      "candidate_rank": 1
+    },
+    {
+      "question_id": "RB019",
+      "baseline_rank": 1,
+      "candidate_rank": 1
+    },
+    {
+      "question_id": "RB020",
+      "baseline_rank": 1,
+      "candidate_rank": 1
+    },
+    {
+      "question_id": "RB021",
+      "baseline_rank": 1,
+      "candidate_rank": 1
+    },
+    {
+      "question_id": "RB022",
+      "baseline_rank": 1,
+      "candidate_rank": 1
+    },
+    {
+      "question_id": "RB023",
+      "baseline_rank": 1,
+      "candidate_rank": 1
+    },
+    {
+      "question_id": "RB024",
+      "baseline_rank": 1,
+      "candidate_rank": 1
+    },
+    {
+      "question_id": "RB027",
+      "baseline_rank": 1,
+      "candidate_rank": 1
+    },
+    {
+      "question_id": "RB028",
+      "baseline_rank": 1,
+      "candidate_rank": 1
+    },
+    {
+      "question_id": "RB029",
+      "baseline_rank": 1,
+      "candidate_rank": 1
+    },
+    {
+      "question_id": "RB030",
+      "baseline_rank": 1,
+      "candidate_rank": 1
+    }
+  ],
+  "quality_decision": {
+    "relative_direction": "improved",
+    "quality_gate_passed": true,
+    "validated_dataset_gate_passed": false,
+    "selection_decision": "requires-validated-evaluation",
+    "candidate_eligible_for_selection": false
+  }
+}
