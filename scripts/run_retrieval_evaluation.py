@@ -14,8 +14,14 @@ from backend.retrieval.index import (
     build_semantic_index,
     search_semantic_index,
 )
-from backend.retrieval.sentence_transformer_provider import (
-    SentenceTransformerEmbeddingProvider,
+from backend.core.provider_composition import (
+    compose_embedding_provider,
+)
+from backend.core.provider_registry import (
+    create_provider_factories,
+)
+from backend.core.runtime_config_loader import (
+    load_runtime_provider_config,
 )
 
 POLICIES = (
@@ -76,12 +82,40 @@ def main() -> None:
         len(all_chunks),
     )
 
+    runtime_provider_config = (
+        load_runtime_provider_config()
+    )
+
+    provider_factories = (
+        create_provider_factories()
+    )
+
+    embedding_config = (
+        runtime_provider_config
+        .retrieval
+        .embedding
+    )
+
     print()
-    print("=== BUILDING SEMANTIC INDEX ===")
+    print("=== EMBEDDING PROVIDER ===")
+    print(
+        "Provider:",
+        embedding_config.provider,
+    )
+    print(
+        "Model:",
+        embedding_config.model,
+    )
 
     embedding_provider = (
-        SentenceTransformerEmbeddingProvider()
+        compose_embedding_provider(
+            embedding_config,
+            provider_factories,
+        )
     )
+
+    print()
+    print("=== BUILDING SEMANTIC INDEX ===")
 
     semantic_index = build_semantic_index(
         tuple(all_chunks),
