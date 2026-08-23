@@ -28,10 +28,6 @@ from backend.ingestion.processor import process_policy
 from backend.retrieval.hybrid import (
     search_hybrid_index,
 )
-from backend.retrieval.cross_encoder_provider import (
-    DEFAULT_RERANKER_MODEL,
-    CrossEncoderRerankerProvider,
-)
 from backend.retrieval.index import (
     BODY_ONLY_EMBEDDING,
     RETRIEVAL_TEXT_EMBEDDING,
@@ -41,10 +37,6 @@ from backend.retrieval.index import (
 )
 from backend.retrieval.reranking import (
     rerank_results,
-)
-from backend.retrieval.sentence_transformer_provider import (
-    DEFAULT_EMBEDDING_MODEL,
-    SentenceTransformerEmbeddingProvider,
 )
 from backend.evaluation.reporting import (
     build_experiment_record,
@@ -58,6 +50,16 @@ from backend.retrieval.production import (
     ProductionRetrievalConfig,
     build_production_retrieval_index,
     retrieve_policy_evidence,
+)
+from backend.core.provider_composition import (
+    compose_embedding_provider,
+    compose_reranker_provider,
+)
+from backend.core.provider_registry import (
+    create_provider_factories,
+)
+from backend.core.runtime_config_loader import (
+    load_runtime_provider_config,
 )
 
 POLICIES = (
@@ -224,6 +226,26 @@ def print_evaluation_population(
 def main() -> None:
     ensure_clean_git_working_tree()
 
+    runtime_provider_config = (
+        load_runtime_provider_config()
+    )
+
+    provider_factories = (
+        create_provider_factories()
+    )
+
+    embedding_config = (
+        runtime_provider_config
+        .retrieval
+        .embedding
+    )
+
+    reranker_config = (
+        runtime_provider_config
+        .retrieval
+        .reranker
+    )
+
     repository_commit = (
         get_repository_commit()
     )
@@ -292,8 +314,22 @@ def main() -> None:
         "SEMANTIC INDEX ==="
     )
 
+    print()
+    print("=== EMBEDDING PROVIDER ===")
+    print(
+        "Provider:",
+        embedding_config.provider,
+    )
+    print(
+        "Model:",
+        embedding_config.model,
+    )
+
     embedding_provider = (
-        SentenceTransformerEmbeddingProvider()
+        compose_embedding_provider(
+            embedding_config,
+            provider_factories,
+        )
     )
 
     retrieval_text_index = (
@@ -396,20 +432,25 @@ def main() -> None:
     )
 
     print()
+    print("=== RERANKER PROVIDER ===")
     print(
-        "=== LOADING CROSS-ENCODER RERANKER ==="
+        "Provider:",
+        reranker_config.provider,
     )
     print(
-        "Reranker model:",
-        DEFAULT_RERANKER_MODEL,
+        "Model:",
+        reranker_config.model,
     )
 
     reranker_provider = (
-        CrossEncoderRerankerProvider()
+        compose_reranker_provider(
+            reranker_config,
+            provider_factories,
+        )
     )
 
     print(
-        "Cross-encoder reranker loaded."
+        "Reranker provider loaded."
     )
 
     def retrieve_baseline(
@@ -581,7 +622,7 @@ def main() -> None:
     )
     print(
         "Reranker model:",
-        DEFAULT_RERANKER_MODEL,
+        reranker_config.model,
     )
 
     candidate_v2 = run_retrieval_evaluation(
@@ -609,7 +650,7 @@ def main() -> None:
     )
     print(
         "Reranker model:",
-        DEFAULT_RERANKER_MODEL,
+        reranker_config.model,
     )
 
     candidate_v3 = run_retrieval_evaluation(
@@ -637,7 +678,7 @@ def main() -> None:
     )
     print(
         "Reranker model:",
-        DEFAULT_RERANKER_MODEL,
+        reranker_config.model,
     )
 
     candidate_v4 = run_retrieval_evaluation(
@@ -677,7 +718,7 @@ def main() -> None:
     )
     print(
         "Reranker model:",
-        DEFAULT_RERANKER_MODEL,
+        reranker_config.model,
     )
 
     candidate_v5 = run_retrieval_evaluation(
@@ -724,18 +765,16 @@ def main() -> None:
     experiment_config = (
         RetrievalExperimentConfig(
             experiment_name=(
-                "Cross-encoder rerank depth 11 v5"
+                "Rerank depth 11 v5"
             ),
             baseline_name=(
-                "Body-only MiniLM embeddings + "
-                "Hybrid 85/15 + MS MARCO "
-                "MiniLM-L6-v2 reranking "
+                "Body-only embeddings + "
+                "Hybrid 85/15 + reranking "
                 "depth 5 v3"
             ),
             candidate_name=(
-                "Body-only MiniLM embeddings + "
-                "Hybrid 85/15 + MS MARCO "
-                "MiniLM-L6-v2 reranking "
+                "Body-only embeddings + "
+                "Hybrid 85/15 + reranking "
                 "depth 11 v5"
             ),
             dataset_name=(
@@ -983,8 +1022,11 @@ def main() -> None:
                 generated_at_utc=(
                     generated_at_utc
                 ),
+                embedding_provider=(
+                    embedding_config.provider
+                ),
                 embedding_model=(
-                    DEFAULT_EMBEDDING_MODEL
+                    embedding_config.model
                 ),
                 semantic_weight=(
                     production_retrieval_config
@@ -996,7 +1038,7 @@ def main() -> None:
                 ),
                 baseline_strategy=(
                     "hybrid-semantic-lexical-"
-                    "cross-encoder"
+                    "reranked"
                 ),
                 baseline_embedding_text_strategy=(
                     BODY_ONLY_EMBEDDING
@@ -1007,21 +1049,27 @@ def main() -> None:
                 baseline_lexical_weight=(
                     LEXICAL_WEIGHT
                 ),
+                baseline_reranker_provider=(
+                    reranker_config.provider
+                ),
                 baseline_reranker_model=(
-                    DEFAULT_RERANKER_MODEL
+                    reranker_config.model
                 ),
                 baseline_rerank_depth=(
                     BASELINE_RERANK_DEPTH
                 ),
                 candidate_strategy=(
                     "hybrid-semantic-lexical-"
-                    "cross-encoder"
+                    "reranked"
                 ),
                 candidate_embedding_text_strategy=(
                     BODY_ONLY_EMBEDDING
                 ),
+                reranker_provider=(
+                    reranker_config.provider
+                ),
                 reranker_model=(
-                    DEFAULT_RERANKER_MODEL
+                    reranker_config.model
                 ),
                 rerank_depth=(
                     production_retrieval_config
@@ -1063,12 +1111,20 @@ def main() -> None:
         corpus_sha256,
     )
     print(
+        "Embedding provider:",
+        embedding_config.provider,
+    )
+    print(
         "Embedding model:",
-        DEFAULT_EMBEDDING_MODEL,
+        embedding_config.model,
+    )
+    print(
+        "Reranker provider:",
+        reranker_config.provider,
     )
     print(
         "Reranker model:",
-        DEFAULT_RERANKER_MODEL,
+        reranker_config.model,
     )
     print(
         "Direct Answer Evaluation Top-K:",
