@@ -1,6 +1,9 @@
 import pytest
 from backend.core.provider_composition import (
     ProviderFactories,
+    compose_embedding_provider,
+    compose_question_parser,
+    compose_reranker_provider,
     compose_runtime_providers,
 )
 from backend.core.runtime_config import (
@@ -558,3 +561,143 @@ def test_unknown_fallback_provider_is_lazy_failure():
         providers.question_parser.parse(
             "Question?"
         )
+
+def test_compose_embedding_provider_constructs_only_embedding():
+    created: list[
+        tuple[str, str]
+    ] = []
+
+    def create_embedding(
+        model: str,
+    ) -> FakeEmbeddingProvider:
+        created.append(
+            (
+                "embedding",
+                model,
+            )
+        )
+
+        return FakeEmbeddingProvider(
+            model
+        )
+
+    provider = compose_embedding_provider(
+        ProviderModelConfig(
+            provider="embedding-a",
+            model="embedding-model",
+        ),
+        ProviderFactories(
+            embedding={
+                "embedding-a": create_embedding,
+            },
+            reranker={},
+            question_parser={},
+        ),
+    )
+
+    assert created == [
+        (
+            "embedding",
+            "embedding-model",
+        )
+    ]
+
+    assert isinstance(
+        provider,
+        FakeEmbeddingProvider,
+    )
+
+def test_compose_reranker_provider_constructs_only_reranker():
+    created: list[
+        tuple[str, str]
+    ] = []
+
+    def create_reranker(
+        model: str,
+    ) -> FakeRerankerProvider:
+        created.append(
+            (
+                "reranker",
+                model,
+            )
+        )
+
+        return FakeRerankerProvider(
+            model
+        )
+
+    provider = compose_reranker_provider(
+        ProviderModelConfig(
+            provider="reranker-a",
+            model="reranker-model",
+        ),
+        ProviderFactories(
+            embedding={},
+            reranker={
+                "reranker-a": create_reranker,
+            },
+            question_parser={},
+        ),
+    )
+
+    assert created == [
+        (
+            "reranker",
+            "reranker-model",
+        )
+    ]
+
+    assert isinstance(
+        provider,
+        FakeRerankerProvider,
+    )
+
+def test_compose_question_parser_keeps_fallback_lazy():
+    fallback_calls = 0
+
+    def create_fallback(
+        model: str,
+    ) -> FakeQuestionParseProvider:
+        nonlocal fallback_calls
+
+        fallback_calls += 1
+
+        return FakeQuestionParseProvider(
+            model,
+            _usable_parse(),
+        )
+
+    parser = compose_question_parser(
+        QuestionParserProviderConfig(
+            primary=ProviderModelConfig(
+                provider="parser-a",
+                model="primary-model",
+            ),
+            fallback=ProviderModelConfig(
+                provider="parser-b",
+                model="fallback-model",
+            ),
+        ),
+        ProviderFactories(
+            embedding={},
+            reranker={},
+            question_parser={
+                "parser-a": lambda model: (
+                    FakeQuestionParseProvider(
+                        model,
+                        _usable_parse(),
+                    )
+                ),
+                "parser-b": create_fallback,
+            },
+        ),
+    )
+
+    assert fallback_calls == 0
+
+    result = parser.parse(
+        "Can students apply?"
+    )
+
+    assert not result.used_fallback
+    assert fallback_calls == 0

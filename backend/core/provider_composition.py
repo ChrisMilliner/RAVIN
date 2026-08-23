@@ -6,6 +6,7 @@ from typing import (
 )
 from backend.core.runtime_config import (
     ProviderModelConfig,
+    QuestionParserProviderConfig,
     RuntimeProviderConfig,
 )
 from backend.retrieval.embeddings import (
@@ -84,31 +85,37 @@ def _create_provider(
         config.model
     )
 
-def compose_runtime_providers(
-    config: RuntimeProviderConfig,
+def compose_embedding_provider(
+    config: ProviderModelConfig,
     factories: ProviderFactories,
-) -> ComposedProviders:
-    embedding = _create_provider(
-        config.retrieval.embedding,
+) -> EmbeddingProvider:
+    return _create_provider(
+        config,
         factories.embedding,
         "embedding",
     )
 
-    reranker = _create_provider(
-        config.retrieval.reranker,
+def compose_reranker_provider(
+    config: ProviderModelConfig,
+    factories: ProviderFactories,
+) -> RerankerProvider:
+    return _create_provider(
+        config,
         factories.reranker,
         "reranker",
     )
 
+def compose_question_parser(
+    config: QuestionParserProviderConfig,
+    factories: ProviderFactories,
+) -> QuestionParser:
     primary_parser = _create_provider(
-        config.question_parser.primary,
+        config.primary,
         factories.question_parser,
         "question parser",
     )
 
-    fallback_config = (
-        config.question_parser.fallback
-    )
+    fallback_config = config.fallback
 
     fallback_factory = None
 
@@ -123,15 +130,28 @@ def compose_runtime_providers(
 
         fallback_factory = create_fallback
 
-    question_parser = QuestionParser(
+    return QuestionParser(
         primary_provider=primary_parser,
         fallback_provider_factory=(
             fallback_factory
         ),
     )
 
+def compose_runtime_providers(
+    config: RuntimeProviderConfig,
+    factories: ProviderFactories,
+) -> ComposedProviders:
     return ComposedProviders(
-        embedding=embedding,
-        reranker=reranker,
-        question_parser=question_parser,
+        embedding=compose_embedding_provider(
+            config.retrieval.embedding,
+            factories,
+        ),
+        reranker=compose_reranker_provider(
+            config.retrieval.reranker,
+            factories,
+        ),
+        question_parser=compose_question_parser(
+            config.question_parser,
+            factories,
+        ),
     )
