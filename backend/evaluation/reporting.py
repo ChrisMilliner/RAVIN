@@ -118,6 +118,7 @@ def build_experiment_record(
     corpus_sha256: str,
     repository_commit: str,
     generated_at_utc: str,
+    embedding_provider: str,
     embedding_model: str,
     semantic_weight: float,
     lexical_weight: float,
@@ -133,8 +134,10 @@ def build_experiment_record(
     candidate_embedding_text_strategy: str = (
         "retrieval-text"
     ),
+    baseline_reranker_provider: str | None = None,
     baseline_reranker_model: str | None = None,
     baseline_rerank_depth: int | None = None,
+    reranker_provider: str | None = None,
     reranker_model: str | None = None,
     rerank_depth: int | None = None,
     grounded_overview_config: (
@@ -178,6 +181,11 @@ def build_experiment_record(
     if not generated_at_utc.strip():
         raise ValueError(
             "Experiment timestamp cannot be empty."
+        )
+
+    if not embedding_provider.strip():
+        raise ValueError(
+            "Embedding provider cannot be empty."
         )
 
     if not embedding_model.strip():
@@ -294,6 +302,32 @@ def build_experiment_record(
     ):
         raise ValueError(
             "Rerank depth must be greater than zero."
+        )
+
+    if (
+    reranker_model is not None
+    and reranker_provider is None
+    ):
+        raise ValueError(
+            "Reranker model requires "
+            "a reranker provider."
+        )
+
+    if (
+        reranker_provider is not None
+        and not reranker_provider.strip()
+    ):
+        raise ValueError(
+            "Reranker provider cannot be empty."
+        )
+
+    if (
+        reranker_provider is not None
+        and reranker_model is None
+    ):
+        raise ValueError(
+            "Reranker provider requires "
+            "a reranker model."
         )
 
     if not 0.0 <= semantic_weight <= 1.0:
@@ -441,7 +475,7 @@ def build_experiment_record(
         }
 
     return {
-        "schema_version": 2,
+        "schema_version": 3,
         "experiment": {
             "name": config.experiment_name,
             "baseline": config.baseline_name,
@@ -452,9 +486,13 @@ def build_experiment_record(
             ),
         },
         "retrieval_configuration": {
+            "embedding_provider": embedding_provider,
             "embedding_model": embedding_model,
             "baseline": {
                 "strategy": baseline_strategy,
+                "reranker_provider": (
+                    baseline_reranker_provider
+                ),
                 "embedding_text_strategy": (
                     baseline_embedding_text_strategy
                 ),
@@ -482,6 +520,7 @@ def build_experiment_record(
                 "lexical_weight": (
                     lexical_weight
                 ),
+                "reranker_provider": reranker_provider,
                 "reranker_model": reranker_model,
                 "rerank_depth": rerank_depth,
             },
