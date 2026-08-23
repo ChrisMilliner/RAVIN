@@ -153,3 +153,328 @@ class RoutingEvaluationQuestion:
                 "Expected behavior does not match "
                 "the intent and evidence labels."
             )
+
+DEFAULT_ROUTING_PASS_THRESHOLD = 0.95
+
+@dataclass(frozen=True)
+class RoutingEvaluationConfig:
+    intent_pass_threshold: float = (
+        DEFAULT_ROUTING_PASS_THRESHOLD
+    )
+    sufficiency_pass_threshold: float = (
+        DEFAULT_ROUTING_PASS_THRESHOLD
+    )
+    behavior_pass_threshold: float = (
+        DEFAULT_ROUTING_PASS_THRESHOLD
+    )
+
+    def __post_init__(self) -> None:
+        thresholds = (
+            self.intent_pass_threshold,
+            self.sufficiency_pass_threshold,
+            self.behavior_pass_threshold,
+        )
+
+        if any(
+            not 0.0 <= threshold <= 1.0
+            for threshold in thresholds
+        ):
+            raise ValueError(
+                "Routing evaluation thresholds "
+                "must be between 0 and 1."
+            )
+
+@dataclass(frozen=True)
+class RoutingPrediction:
+    question_id: str
+    predicted_intent: QuestionIntent
+    predicted_sufficiency: (
+        EvidenceSufficiency | None
+    )
+    predicted_behavior: AnswerBehavior
+
+    def __post_init__(self) -> None:
+        if not self.question_id.strip():
+            raise ValueError(
+                "Routing prediction question ID "
+                "cannot be empty."
+            )
+
+        if not isinstance(
+            self.predicted_intent,
+            QuestionIntent,
+        ):
+            raise ValueError(
+                "Routing prediction intent must "
+                "be a QuestionIntent."
+            )
+
+        if (
+            self.predicted_sufficiency is not None
+            and not isinstance(
+                self.predicted_sufficiency,
+                EvidenceSufficiency,
+            )
+        ):
+            raise ValueError(
+                "Routing prediction sufficiency "
+                "must be an EvidenceSufficiency "
+                "or None."
+            )
+
+        if not isinstance(
+            self.predicted_behavior,
+            AnswerBehavior,
+        ):
+            raise ValueError(
+                "Routing prediction behavior must "
+                "be an AnswerBehavior."
+            )
+
+@dataclass(frozen=True)
+class RoutingQuestionEvaluationResult:
+    question_id: str
+    expected_intent: QuestionIntent
+    predicted_intent: QuestionIntent
+    expected_sufficiency: (
+        EvidenceSufficiency | None
+    )
+    predicted_sufficiency: (
+        EvidenceSufficiency | None
+    )
+    expected_behavior: AnswerBehavior
+    predicted_behavior: AnswerBehavior
+
+    def __post_init__(self) -> None:
+        if not self.question_id.strip():
+            raise ValueError(
+                "Routing question result ID "
+                "cannot be empty."
+            )
+
+        if not isinstance(
+            self.expected_intent,
+            QuestionIntent,
+        ):
+            raise ValueError(
+                "Expected routing intent must be "
+                "a QuestionIntent."
+            )
+
+        if not isinstance(
+            self.predicted_intent,
+            QuestionIntent,
+        ):
+            raise ValueError(
+                "Predicted routing intent must be "
+                "a QuestionIntent."
+            )
+
+        for sufficiency in (
+            self.expected_sufficiency,
+            self.predicted_sufficiency,
+        ):
+            if (
+                sufficiency is not None
+                and not isinstance(
+                    sufficiency,
+                    EvidenceSufficiency,
+                )
+            ):
+                raise ValueError(
+                    "Routing question result "
+                    "sufficiency values must be "
+                    "EvidenceSufficiency or None."
+                )
+
+        if not isinstance(
+            self.expected_behavior,
+            AnswerBehavior,
+        ):
+            raise ValueError(
+                "Expected routing behavior must "
+                "be an AnswerBehavior."
+            )
+
+        if not isinstance(
+            self.predicted_behavior,
+            AnswerBehavior,
+        ):
+            raise ValueError(
+                "Predicted routing behavior must "
+                "be an AnswerBehavior."
+            )
+
+@dataclass(frozen=True)
+class RoutingClassResult:
+    label: str
+    support: int
+    correct: int
+
+    def __post_init__(self) -> None:
+        if not self.label.strip():
+            raise ValueError(
+                "Routing class result label "
+                "cannot be empty."
+            )
+
+        if self.support <= 0:
+            raise ValueError(
+                "Routing class result support "
+                "must be greater than zero."
+            )
+
+        if self.correct < 0:
+            raise ValueError(
+                "Routing class result correct "
+                "count cannot be negative."
+            )
+
+        if self.correct > self.support:
+            raise ValueError(
+                "Routing class result correct "
+                "count cannot exceed support."
+            )
+
+    @property
+    def accuracy(self) -> float:
+        return self.correct / self.support
+
+@dataclass(frozen=True)
+class RoutingClassificationResult:
+    overall_accuracy: float
+    macro_accuracy: float
+    class_results: tuple[
+        RoutingClassResult,
+        ...
+    ]
+    pass_threshold: float
+
+    def __post_init__(self) -> None:
+        if not 0.0 <= self.overall_accuracy <= 1.0:
+            raise ValueError(
+                "Routing overall accuracy must "
+                "be between 0 and 1."
+            )
+
+        if not 0.0 <= self.macro_accuracy <= 1.0:
+            raise ValueError(
+                "Routing macro accuracy must "
+                "be between 0 and 1."
+            )
+
+        if not self.class_results:
+            raise ValueError(
+                "Routing classification result "
+                "must contain class results."
+            )
+
+        if any(
+            not isinstance(
+                result,
+                RoutingClassResult,
+            )
+            for result in self.class_results
+        ):
+            raise ValueError(
+                "Routing classification class "
+                "results must be "
+                "RoutingClassResult values."
+            )
+
+        labels = tuple(
+            result.label
+            for result in self.class_results
+        )
+
+        if len(set(labels)) != len(labels):
+            raise ValueError(
+                "Routing classification class "
+                "labels must be unique."
+            )
+
+        if not 0.0 <= self.pass_threshold <= 1.0:
+            raise ValueError(
+                "Routing classification pass "
+                "threshold must be between "
+                "0 and 1."
+            )
+
+    @property
+    def passed(self) -> bool:
+        return (
+            self.macro_accuracy
+            >= self.pass_threshold
+        )
+
+@dataclass(frozen=True)
+class RoutingEvaluationRunResult:
+    question_results: tuple[
+        RoutingQuestionEvaluationResult,
+        ...
+    ]
+    intent_result: RoutingClassificationResult
+    sufficiency_result: RoutingClassificationResult
+    behavior_result: RoutingClassificationResult
+
+    def __post_init__(self) -> None:
+        if not self.question_results:
+            raise ValueError(
+                "Routing evaluation run must "
+                "contain question results."
+            )
+
+        if any(
+            not isinstance(
+                result,
+                RoutingQuestionEvaluationResult,
+            )
+            for result in self.question_results
+        ):
+            raise ValueError(
+                "Routing evaluation question "
+                "results must be "
+                "RoutingQuestionEvaluationResult "
+                "values."
+            )
+
+        question_ids = tuple(
+            result.question_id
+            for result in self.question_results
+        )
+
+        if len(set(question_ids)) != len(
+            question_ids
+        ):
+            raise ValueError(
+                "Routing evaluation question "
+                "result IDs must be unique."
+            )
+
+        classification_results = (
+            self.intent_result,
+            self.sufficiency_result,
+            self.behavior_result,
+        )
+
+        if any(
+            not isinstance(
+                result,
+                RoutingClassificationResult,
+            )
+            for result in classification_results
+        ):
+            raise ValueError(
+                "Routing evaluation classification "
+                "results must be "
+                "RoutingClassificationResult "
+                "values."
+            )
+
+    @property
+    def passed(self) -> bool:
+        return (
+            self.intent_result.passed
+            and self.sufficiency_result.passed
+            and self.behavior_result.passed
+        )
