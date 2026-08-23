@@ -6,19 +6,23 @@ from backend.ingestion.acquisition import (
 from backend.ingestion.processor import (
     process_policy,
 )
-from backend.retrieval.context import (
-    ContextAssemblyConfig,
-)
-from backend.retrieval.cross_encoder_provider import (
-    CrossEncoderRerankerProvider,
-)
 from backend.retrieval.production import (
     ProductionRetrievalConfig,
     build_production_retrieval_index,
     retrieve_grounded_context,
 )
-from backend.retrieval.sentence_transformer_provider import (
-    SentenceTransformerEmbeddingProvider,
+from backend.retrieval.context import (
+    ContextAssemblyConfig,
+)
+from backend.core.provider_composition import (
+    compose_embedding_provider,
+    compose_reranker_provider,
+)
+from backend.core.provider_registry import (
+    create_provider_factories,
+)
+from backend.core.runtime_config_loader import (
+    load_runtime_provider_config,
 )
 
 POLICIES = (
@@ -105,8 +109,31 @@ def inspect_questions(
 
     chunks = acquire_corpus_chunks()
 
+    runtime_provider_config = (
+        load_runtime_provider_config()
+    )
+
+    provider_factories = (
+        create_provider_factories()
+    )
+
+    embedding_config = (
+        runtime_provider_config
+        .retrieval
+        .embedding
+    )
+
+    reranker_config = (
+        runtime_provider_config
+        .retrieval
+        .reranker
+    )
+
     embedding_provider = (
-        SentenceTransformerEmbeddingProvider()
+        compose_embedding_provider(
+            embedding_config,
+            provider_factories,
+        )
     )
 
     index = build_production_retrieval_index(
@@ -115,7 +142,10 @@ def inspect_questions(
     )
 
     reranker_provider = (
-        CrossEncoderRerankerProvider()
+        compose_reranker_provider(
+            reranker_config,
+            provider_factories,
+        )
     )
 
     retrieval_config = (
