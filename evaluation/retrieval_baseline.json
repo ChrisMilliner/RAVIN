@@ -1,0 +1,54 @@
+{
+  "name": "COPF-221 Preliminary Retrieval Baseline",
+  "status": "preliminary-not-gold-standard",
+  "questions": [
+    {
+      "question_id": "RB001",
+      "question": "Who approves changes to academic dress?",
+      "expected_evidence": [
+        {
+          "policy_id": "208",
+          "heading_path": [
+            "Section 4 - Key Decisions"
+          ]
+        },
+        {
+          "policy_id": "208",
+          "heading_path": [
+            "Section 6 - Procedures",
+            "Part B - Requests for Changes or Additions to Academic Dress"
+          ]
+        }
+      ],
+      "notes": "Two locations contain direct answer-bearing evidence."
+    },
+    {
+      "question_id": "RB002",
+      "question": "What happens when a student is not making satisfactory academic progress?",
+      "expected_evidence": [
+        {
+          "policy_id": "220",
+          "heading_path": [
+            "Section 6 - Procedures",
+            "Part A - Monitoring and Determining Academic Progression"
+          ]
+        }
+      ],
+      "notes": "Preliminary expected evidence based on manual review."
+    },
+    {
+      "question_id": "RB003",
+      "question": "What are the admission requirements for university applicants?",
+      "expected_evidence": [
+        {
+          "policy_id": "340",
+          "heading_path": [
+            "Section 6 - Procedures",
+            "Part A - Entry Criteria"
+          ]
+        }
+      ],
+      "notes": "Retains the known baseline ranking weakness where a Definitions chunk ranked above Entry Criteria."
+    }
+  ]
+}
