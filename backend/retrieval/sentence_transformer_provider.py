@@ -2,16 +2,19 @@ from typing import cast
 from numpy import ndarray
 from sentence_transformers import SentenceTransformer
 
-DEFAULT_EMBEDDING_MODEL = (
-    "sentence-transformers/all-MiniLM-L6-v2"
-)
-
 class SentenceTransformerEmbeddingProvider:
     def __init__(
         self,
-        model_name: str = DEFAULT_EMBEDDING_MODEL,
+        model_name: str,
     ) -> None:
-        self._model = SentenceTransformer(model_name)
+        if not model_name.strip():
+            raise ValueError(
+                "Embedding model name cannot be empty."
+            )
+
+        self._model = SentenceTransformer(
+            model_name
+        )
 
     def embed_documents(
         self,

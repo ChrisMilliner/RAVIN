@@ -2,15 +2,16 @@ from typing import cast
 from numpy import ndarray
 from sentence_transformers import CrossEncoder
 
-DEFAULT_RERANKER_MODEL = (
-    "cross-encoder/ms-marco-MiniLM-L6-v2"
-)
-
 class CrossEncoderRerankerProvider:
     def __init__(
         self,
-        model_name: str = DEFAULT_RERANKER_MODEL,
+        model_name: str,
     ) -> None:
+        if not model_name.strip():
+            raise ValueError(
+                "Reranker model name cannot be empty."
+            )
+
         self._model = CrossEncoder(
             model_name
         )

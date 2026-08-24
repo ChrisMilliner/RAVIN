@@ -1,8 +1,11 @@
 import pytest
 import backend.retrieval.cross_encoder_provider as provider_module
 from backend.retrieval.cross_encoder_provider import (
-    DEFAULT_RERANKER_MODEL,
     CrossEncoderRerankerProvider,
+)
+
+TEST_RERANKER_MODEL = (
+    "example/test-reranker-model"
 )
 
 class FakeCrossEncoder:
@@ -53,25 +56,7 @@ def install_fake_cross_encoder(
 
     return created_models
 
-def test_provider_uses_default_model(
-    monkeypatch,
-):
-    created_models = (
-        install_fake_cross_encoder(
-            monkeypatch
-        )
-    )
-
-    CrossEncoderRerankerProvider()
-
-    assert len(created_models) == 1
-
-    assert (
-        created_models[0].model_name
-        == DEFAULT_RERANKER_MODEL
-    )
-
-def test_provider_accepts_custom_model(
+def test_provider_passes_model_name(
     monkeypatch,
 ):
     created_models = (
@@ -81,12 +66,12 @@ def test_provider_accepts_custom_model(
     )
 
     CrossEncoderRerankerProvider(
-        model_name="example/custom-model"
+        model_name=TEST_RERANKER_MODEL
     )
 
     assert (
         created_models[0].model_name
-        == "example/custom-model"
+        == TEST_RERANKER_MODEL
     )
 
 def test_provider_scores_query_document_pairs(
@@ -99,7 +84,9 @@ def test_provider_scores_query_document_pairs(
     )
 
     provider = (
-        CrossEncoderRerankerProvider()
+        CrossEncoderRerankerProvider(
+            model_name=TEST_RERANKER_MODEL
+        )
     )
 
     scores = provider.score(
@@ -151,7 +138,9 @@ def test_provider_rejects_empty_query(
     )
 
     provider = (
-        CrossEncoderRerankerProvider()
+        CrossEncoderRerankerProvider(
+            model_name=TEST_RERANKER_MODEL
+        )
     )
 
     with pytest.raises(
@@ -173,7 +162,9 @@ def test_provider_rejects_empty_documents(
     )
 
     provider = (
-        CrossEncoderRerankerProvider()
+        CrossEncoderRerankerProvider(
+            model_name=TEST_RERANKER_MODEL
+        )
     )
 
     with pytest.raises(
@@ -183,4 +174,21 @@ def test_provider_rejects_empty_documents(
         provider.score(
             query="Policy question",
             documents=(),
+        )
+
+def test_provider_rejects_empty_model_name(
+    monkeypatch,
+):
+    install_fake_cross_encoder(
+        monkeypatch
+    )
+
+    with pytest.raises(
+        ValueError,
+        match=(
+            "Reranker model name cannot be empty."
+        ),
+    ):
+        CrossEncoderRerankerProvider(
+            model_name="   "
         )
