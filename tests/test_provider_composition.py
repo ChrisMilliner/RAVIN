@@ -1,6 +1,7 @@
 import pytest
 from backend.core.provider_composition import (
     ProviderFactories,
+    compose_answerability_provider,
     compose_embedding_provider,
     compose_question_parser,
     compose_reranker_provider,
@@ -15,6 +16,9 @@ from backend.core.runtime_config import (
 from backend.routing.question_parser import (
     ParsedToken,
     QuestionParse,
+)
+from backend.routing.answerability import (
+    AnswerabilityResult,
 )
 
 class FakeEmbeddingProvider:
@@ -57,6 +61,28 @@ class FakeRerankerProvider:
         return tuple(
             1.0
             for _ in documents
+        )
+
+class FakeAnswerabilityProvider:
+    def __init__(
+        self,
+        model_name: str,
+    ) -> None:
+        self.model_name = model_name
+
+    def score(
+        self,
+        question: str,
+        evidence_texts: tuple[
+            str,
+            ...
+        ],
+    ) -> AnswerabilityResult:
+        return AnswerabilityResult(
+            scores=tuple(
+                0.5
+                for _ in evidence_texts
+            )
         )
 
 class FakeQuestionParseProvider:
@@ -226,6 +252,7 @@ def test_composition_passes_configured_models_to_factories():
             question_parser={
                 "parser-a": create_parser,
             },
+            answerability={},
         ),
     )
 
@@ -295,6 +322,7 @@ def test_configuration_can_select_different_provider_factories():
                 )
             ),
         },
+        answerability={},
     )
 
     compose_runtime_providers(
@@ -356,6 +384,7 @@ def test_fallback_parser_is_not_created_during_composition():
                 ),
                 "parser-b": create_fallback,
             },
+            answerability={},
         ),
     )
 
@@ -414,6 +443,7 @@ def test_fallback_parser_is_created_only_when_required():
                 ),
                 "parser-b": create_fallback,
             },
+            answerability={},
         ),
     )
 
@@ -463,6 +493,7 @@ def test_unknown_embedding_provider_is_rejected():
                         )
                     ),
                 },
+                answerability={},
             ),
         )
 
@@ -493,6 +524,7 @@ def test_unknown_reranker_provider_is_rejected():
                         )
                     ),
                 },
+                answerability={},
             ),
         )
 
@@ -520,6 +552,7 @@ def test_unknown_primary_parser_provider_is_rejected():
                     ),
                 },
                 question_parser={},
+                answerability={},
             ),
         )
 
@@ -548,6 +581,7 @@ def test_unknown_fallback_provider_is_lazy_failure():
                     )
                 ),
             },
+            answerability={},
         ),
     )
 
@@ -592,6 +626,7 @@ def test_compose_embedding_provider_constructs_only_embedding():
             },
             reranker={},
             question_parser={},
+            answerability={},
         ),
     )
 
@@ -637,6 +672,7 @@ def test_compose_reranker_provider_constructs_only_reranker():
                 "reranker-a": create_reranker,
             },
             question_parser={},
+            answerability={},
         ),
     )
 
@@ -690,6 +726,7 @@ def test_compose_question_parser_keeps_fallback_lazy():
                 ),
                 "parser-b": create_fallback,
             },
+            answerability={},
         ),
     )
 
@@ -701,3 +738,72 @@ def test_compose_question_parser_keeps_fallback_lazy():
 
     assert not result.used_fallback
     assert fallback_calls == 0
+
+def test_compose_answerability_provider_constructs_only_answerability():
+    created: list[
+        tuple[str, str]
+    ] = []
+
+    def create_answerability(
+        model: str,
+    ) -> FakeAnswerabilityProvider:
+        created.append(
+            (
+                "answerability",
+                model,
+            )
+        )
+
+        return FakeAnswerabilityProvider(
+            model
+        )
+
+    provider = compose_answerability_provider(
+        ProviderModelConfig(
+            provider="answerability-a",
+            model="answerability-model",
+        ),
+        ProviderFactories(
+            embedding={},
+            reranker={},
+            question_parser={},
+            answerability={
+                "answerability-a": (
+                    create_answerability
+                ),
+            },
+        ),
+    )
+
+    assert created == [
+        (
+            "answerability",
+            "answerability-model",
+        )
+    ]
+
+    assert isinstance(
+        provider,
+        FakeAnswerabilityProvider,
+    )
+
+def test_unknown_answerability_provider_is_rejected():
+    with pytest.raises(
+        ValueError,
+        match=(
+            "Unknown answerability provider: "
+            "missing."
+        ),
+    ):
+        compose_answerability_provider(
+            ProviderModelConfig(
+                provider="missing",
+                model="answerability-model",
+            ),
+            ProviderFactories(
+                embedding={},
+                reranker={},
+                question_parser={},
+                answerability={},
+            ),
+        )

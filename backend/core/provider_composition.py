@@ -19,6 +19,9 @@ from backend.routing.question_parser import (
     QuestionParseProvider,
     QuestionParser,
 )
+from backend.routing.answerability import (
+    AnswerabilityProvider,
+)
 
 EmbeddingProviderFactory = Callable[
     [str],
@@ -31,6 +34,10 @@ RerankerProviderFactory = Callable[
 QuestionParseProviderFactory = Callable[
     [str],
     QuestionParseProvider,
+]
+AnswerabilityProviderFactory = Callable[
+    [str],
+    AnswerabilityProvider,
 ]
 
 @dataclass(frozen=True)
@@ -48,6 +55,11 @@ class ProviderFactories:
     question_parser: Mapping[
         str,
         QuestionParseProviderFactory,
+    ]
+
+    answerability: Mapping[
+        str,
+        AnswerabilityProviderFactory,
     ]
 
 @dataclass(frozen=True)
@@ -103,6 +115,16 @@ def compose_reranker_provider(
         config,
         factories.reranker,
         "reranker",
+    )
+
+def compose_answerability_provider(
+    config: ProviderModelConfig,
+    factories: ProviderFactories,
+) -> AnswerabilityProvider:
+    return _create_provider(
+        config,
+        factories.answerability,
+        "answerability",
     )
 
 def compose_question_parser(

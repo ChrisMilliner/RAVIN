@@ -76,6 +76,10 @@ def test_registry_exposes_expected_provider_ids():
         SPACY_PROVIDER,
     )
 
+    assert tuple(
+        factories.answerability
+    ) == ()
+
 def test_embedding_factory_passes_model_name(
     monkeypatch,
 ):
