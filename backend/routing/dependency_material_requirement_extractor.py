@@ -1,14 +1,17 @@
 from backend.routing.material_requirements import (
     MaterialQuestionRequirements,
     MaterialRequirement,
+    MaterialRequirementExtractionResult,
     MaterialRequirementKind,
+    MaterialRequirementResolution,
+    MaterialRequirementSelection,
 )
 from backend.routing.question_parser import (
     ParsedSpan,
     ParsedToken,
     QuestionParse,
+    QuestionParseReliability,
     QuestionParserService,
-    ParsedToken,
 )
 
 CLAUSE_DEPENDENCIES = frozenset(
@@ -37,7 +40,7 @@ class DependencyMaterialRequirementExtractor:
     def extract(
         self,
         question: str,
-    ) -> MaterialQuestionRequirements:
+    ) -> MaterialRequirementExtractionResult:
         question = question.strip()
 
         if not question:
@@ -49,33 +52,83 @@ class DependencyMaterialRequirementExtractor:
             question
         )
 
-        requirements = list(
-            self._extract_from_parse(
+        primary = (
+            self._requirements_from_parse(
                 parse_result.primary
             )
         )
 
+        fallback = None
+
         if parse_result.fallback is not None:
-            requirements.extend(
-                self._extract_from_parse(
+            fallback = (
+                self._requirements_from_parse(
                     parse_result.fallback
                 )
             )
 
-        unique_requirements = (
+        if (
+            parse_result.reliability
+            == QuestionParseReliability.UNRESOLVED
+        ):
+            return (
+                MaterialRequirementExtractionResult(
+                    primary=primary,
+                    fallback=fallback,
+                    resolution=(
+                        MaterialRequirementResolution.UNRESOLVED
+                    ),
+                    selection=None,
+                )
+            )
+
+        if not parse_result.primary_suspicious:
+            selection = (
+                MaterialRequirementSelection.PRIMARY
+            )
+        elif (
+            fallback is not None
+            and parse_result.fallback_suspicious
+            is False
+        ):
+            selection = (
+                MaterialRequirementSelection.FALLBACK
+            )
+        else:
+            raise ValueError(
+                "Resolved question parse did not "
+                "identify a usable interpretation."
+            )
+
+        return MaterialRequirementExtractionResult(
+            primary=primary,
+            fallback=fallback,
+            resolution=(
+                MaterialRequirementResolution.RESOLVED
+            ),
+            selection=selection,
+        )
+
+    def _requirements_from_parse(
+        self,
+        parse: QuestionParse,
+    ) -> MaterialQuestionRequirements:
+        requirements = (
             self._deduplicate_requirements(
-                tuple(requirements)
+                self._extract_from_parse(
+                    parse
+                )
             )
         )
 
-        if not unique_requirements:
+        if not requirements:
             raise ValueError(
                 "Question parse did not produce "
                 "material requirements."
             )
 
         return MaterialQuestionRequirements(
-            requirements=unique_requirements
+            requirements=requirements
         )
 
     def _extract_from_parse(

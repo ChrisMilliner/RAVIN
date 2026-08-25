@@ -4,6 +4,8 @@ from backend.routing.dependency_material_requirement_extractor import (
 )
 from backend.routing.material_requirements import (
     MaterialRequirementKind,
+    MaterialRequirementResolution,
+    MaterialRequirementSelection,
 )
 from backend.routing.question_parser import (
     ParsedSpan,
@@ -56,6 +58,48 @@ def _token(
         is_alpha=is_alpha,
     )
 
+def _usable_relation_parse(
+) -> QuestionParse:
+    return QuestionParse(
+        tokens=(
+            _token(
+                0,
+                "apply",
+                "apply",
+                "VERB",
+                "VB",
+                "ROOT",
+                0,
+            ),
+        ),
+        noun_phrases=(),
+    )
+
+def _suspicious_concept_parse(
+    text: str,
+) -> QuestionParse:
+    return QuestionParse(
+        tokens=(
+            _token(
+                0,
+                text,
+                text.lower(),
+                "NOUN",
+                "NN",
+                "ROOT",
+                0,
+            ),
+        ),
+        noun_phrases=(
+            ParsedSpan(
+                text=text,
+                start_index=0,
+                end_index=1,
+                root_index=0,
+            ),
+        ),
+    )
+
 def _pairs(
     extractor: DependencyMaterialRequirementExtractor,
     question: str,
@@ -69,13 +113,17 @@ def _pairs(
         question
     )
 
+    active = result.active
+
+    assert active is not None
+
     return {
         (
             requirement.kind,
             requirement.text,
         )
         for requirement
-        in result.requirements
+        in active.requirements
     }
 
 def test_standalone_question_word_is_not_a_requested_attribute():
@@ -771,63 +819,169 @@ def test_how_long_is_preserved_as_requested_information():
         "wait",
     ) in requirements
 
-def test_primary_and_fallback_requirements_are_deduplicated():
-    parse = QuestionParse(
-        tokens=(
-            _token(
-                0,
-                "items",
-                "item",
-                "NOUN",
-                "NNS",
-                "nsubj",
-                1,
-            ),
-            _token(
-                1,
-                "expire",
-                "expire",
-                "VERB",
-                "VBP",
-                "ROOT",
-                1,
-            ),
-        ),
-        noun_phrases=(
-            ParsedSpan(
-                text="items",
-                start_index=0,
-                end_index=1,
-                root_index=0,
-            ),
-        ),
-    )
-
+def test_resolved_primary_selects_primary_interpretation():
     extractor = (
         DependencyMaterialRequirementExtractor(
             FakeQuestionParser(
-                primary=parse,
-                fallback=parse,
+                primary=(
+                    _usable_relation_parse()
+                ),
             )
         )
     )
 
     result = extractor.extract(
-        "Items expire?"
+        "Members apply?"
     )
 
-    pairs = tuple(
+    assert (
+        result.resolution
+        == MaterialRequirementResolution.RESOLVED
+    )
+
+    assert (
+        result.selection
+        == MaterialRequirementSelection.PRIMARY
+    )
+
+    assert result.active is result.primary
+    assert result.fallback is None
+
+def test_usable_fallback_resolves_suspicious_primary():
+    extractor = (
+        DependencyMaterialRequirementExtractor(
+            FakeQuestionParser(
+                primary=(
+                    _suspicious_concept_parse(
+                        "support"
+                    )
+                ),
+                fallback=(
+                    _usable_relation_parse()
+                ),
+            )
+        )
+    )
+
+    result = extractor.extract(
+        "Can members apply?"
+    )
+
+    assert (
+        result.resolution
+        == MaterialRequirementResolution.RESOLVED
+    )
+
+    assert (
+        result.selection
+        == MaterialRequirementSelection.FALLBACK
+    )
+
+    assert result.active is result.fallback
+
+    assert {
         (
             requirement.kind,
             requirement.text,
         )
         for requirement
-        in result.requirements
+        in result.primary.requirements
+    } == {
+        (
+            MaterialRequirementKind.CONCEPT,
+            "support",
+        )
+    }
+
+    assert result.fallback is not None
+
+    assert {
+        (
+            requirement.kind,
+            requirement.text,
+        )
+        for requirement
+        in result.fallback.requirements
+    } == {
+        (
+            MaterialRequirementKind.RELATION,
+            "apply",
+        )
+    }
+
+def test_unresolved_parses_remain_separate():
+    extractor = (
+        DependencyMaterialRequirementExtractor(
+            FakeQuestionParser(
+                primary=(
+                    _suspicious_concept_parse(
+                        "support"
+                    )
+                ),
+                fallback=(
+                    _suspicious_concept_parse(
+                        "student"
+                    )
+                ),
+            )
+        )
     )
 
-    assert len(pairs) == len(
-        set(pairs)
+    result = extractor.extract(
+        "Question?"
     )
+
+    assert (
+        result.resolution
+        == MaterialRequirementResolution.UNRESOLVED
+    )
+
+    assert result.selection is None
+    assert result.active is None
+
+    assert {
+        requirement.text
+        for requirement
+        in result.primary.requirements
+    } == {
+        "support",
+    }
+
+    assert result.fallback is not None
+
+    assert {
+        requirement.text
+        for requirement
+        in result.fallback.requirements
+    } == {
+        "student",
+    }
+
+def test_unresolved_primary_without_fallback_has_no_active_interpretation():
+    extractor = (
+        DependencyMaterialRequirementExtractor(
+            FakeQuestionParser(
+                primary=(
+                    _suspicious_concept_parse(
+                        "support"
+                    )
+                ),
+            )
+        )
+    )
+
+    result = extractor.extract(
+        "Question?"
+    )
+
+    assert (
+        result.resolution
+        == MaterialRequirementResolution.UNRESOLVED
+    )
+
+    assert result.selection is None
+    assert result.fallback is None
+    assert result.active is None
 
 def test_empty_question_is_rejected():
     parse = QuestionParse(
@@ -941,13 +1095,17 @@ def test_main_relation_includes_xcomp_action():
         "Members have to submit requests"
     )
 
+    active = result.active
+
+    assert active is not None
+
     requirements = {
         (
             requirement.kind,
             requirement.text,
         )
         for requirement
-        in result.requirements
+        in active.requirements
     }
 
     assert (
@@ -1032,10 +1190,14 @@ def test_main_relation_includes_coordinated_action():
         "Members apply and extend"
     )
 
+    active = result.active
+
+    assert active is not None
+
     relations = {
         requirement.text
         for requirement
-        in result.requirements
+        in active.requirements
         if (
             requirement.kind
             == MaterialRequirementKind.RELATION
@@ -1119,10 +1281,14 @@ def test_auxiliary_root_uses_meaningful_adjective_predicate():
         "Information should be available"
     )
 
+    active = result.active
+
+    assert active is not None
+
     relations = {
         requirement.text
         for requirement
-        in result.requirements
+        in active.requirements
         if (
             requirement.kind
             == MaterialRequirementKind.RELATION
@@ -1205,10 +1371,14 @@ def test_condition_verb_is_not_promoted_to_main_relation():
         "What happens when members fail?"
     )
 
+    active = result.active
+
+    assert active is not None
+
     relations = {
         requirement.text
         for requirement
-        in result.requirements
+        in active.requirements
         if (
             requirement.kind
             == MaterialRequirementKind.RELATION

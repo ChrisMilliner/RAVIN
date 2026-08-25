@@ -6,13 +6,15 @@ from backend.routing.material_requirement_extractor import (
 from backend.routing.material_requirements import (
     MaterialQuestionRequirements,
     MaterialRequirement,
+    MaterialRequirementExtractionResult,
     MaterialRequirementKind,
+    MaterialRequirementResolution,
 )
 
 class FakeExtractor:
     def __init__(
         self,
-        result: MaterialQuestionRequirements,
+        result: MaterialRequirementExtractionResult,
     ) -> None:
         self.result = result
         self.received_question: str | None = None
@@ -20,7 +22,7 @@ class FakeExtractor:
     def extract(
         self,
         question: str,
-    ) -> MaterialQuestionRequirements:
+    ) -> MaterialRequirementExtractionResult:
         self.received_question = question
 
         return self.result
@@ -44,8 +46,14 @@ def _make_requirements(
         )
     )
 
-def test_extracts_material_requirements():
-    expected = _make_requirements()
+def _make_result(
+) -> MaterialRequirementExtractionResult:
+    return MaterialRequirementExtractionResult(
+        primary=_make_requirements()
+    )
+
+def test_extracts_material_requirement_result():
+    expected = _make_result()
 
     extractor = FakeExtractor(
         expected
@@ -60,7 +68,7 @@ def test_extracts_material_requirements():
 
 def test_strips_question_before_extraction():
     extractor = FakeExtractor(
-        _make_requirements()
+        _make_result()
     )
 
     extract_material_requirements(
@@ -74,7 +82,7 @@ def test_strips_question_before_extraction():
 
 def test_preserves_dynamic_requirement_text():
     extractor = FakeExtractor(
-        _make_requirements()
+        _make_result()
     )
 
     result = extract_material_requirements(
@@ -82,13 +90,38 @@ def test_preserves_dynamic_requirement_text():
         extractor,
     )
 
-    assert result.requirements[1].text == (
+    active = result.active
+
+    assert active is not None
+
+    assert active.requirements[1].text == (
         "within 14 days"
     )
 
+def test_preserves_unresolved_result():
+    primary = _make_requirements()
+
+    result = (
+        MaterialRequirementExtractionResult(
+            primary=primary,
+            resolution=(
+                MaterialRequirementResolution.UNRESOLVED
+            ),
+            selection=None,
+        )
+    )
+
+    extracted = extract_material_requirements(
+        "Question?",
+        FakeExtractor(result),
+    )
+
+    assert extracted is result
+    assert extracted.active is None
+
 def test_rejects_empty_question():
     extractor = FakeExtractor(
-        _make_requirements()
+        _make_result()
     )
 
     with pytest.raises(
@@ -105,9 +138,9 @@ def test_rejects_invalid_extractor_result():
         def extract(
             self,
             question: str,
-        ) -> MaterialQuestionRequirements:
+        ) -> MaterialRequirementExtractionResult:
             return cast(
-                MaterialQuestionRequirements,
+                MaterialRequirementExtractionResult,
                 "invalid",
             )
 
@@ -116,7 +149,7 @@ def test_rejects_invalid_extractor_result():
         match=(
             "Material requirement extractor "
             "must return "
-            "MaterialQuestionRequirements."
+            "MaterialRequirementExtractionResult."
         ),
     ):
         extract_material_requirements(

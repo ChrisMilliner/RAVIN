@@ -1,6 +1,6 @@
 from typing import Protocol
 from backend.routing.material_requirements import (
-    MaterialQuestionRequirements,
+    MaterialRequirementExtractionResult,
 )
 
 class MaterialRequirementExtractor(
@@ -9,13 +9,13 @@ class MaterialRequirementExtractor(
     def extract(
         self,
         question: str,
-    ) -> MaterialQuestionRequirements:
+    ) -> MaterialRequirementExtractionResult:
         ...
 
 def extract_material_requirements(
     question: str,
     extractor: MaterialRequirementExtractor,
-) -> MaterialQuestionRequirements:
+) -> MaterialRequirementExtractionResult:
     question = question.strip()
 
     if not question:
@@ -23,18 +23,18 @@ def extract_material_requirements(
             "Question cannot be empty."
         )
 
-    requirements = extractor.extract(
+    result = extractor.extract(
         question
     )
 
     if not isinstance(
-        requirements,
-        MaterialQuestionRequirements,
+        result,
+        MaterialRequirementExtractionResult,
     ):
         raise ValueError(
             "Material requirement extractor "
             "must return "
-            "MaterialQuestionRequirements."
+            "MaterialRequirementExtractionResult."
         )
 
-    return requirements
+    return result
