@@ -67,6 +67,7 @@ class ComposedProviders:
     embedding: EmbeddingProvider
     reranker: RerankerProvider
     question_parser: QuestionParser
+    answerability: AnswerabilityProvider
 
 ProviderType = TypeVar(
     "ProviderType"
@@ -175,5 +176,11 @@ def compose_runtime_providers(
         question_parser=compose_question_parser(
             config.question_parser,
             factories,
+        ),
+        answerability=(
+            compose_answerability_provider(
+                config.answerability,
+                factories,
+            )
         ),
     )

@@ -4,6 +4,7 @@ from backend.core.provider_registry import (
     CROSS_ENCODER_PROVIDER,
     SENTENCE_TRANSFORMER_PROVIDER,
     SPACY_PROVIDER,
+    CROSS_ENCODER_ANSWERABILITY_PROVIDER,
 )
 from backend.core.runtime_config import (
     ProviderModelConfig,
@@ -60,6 +61,18 @@ DEFAULT_RUNTIME_FALLBACK_PARSER_PROVIDER = (
 )
 DEFAULT_RUNTIME_FALLBACK_PARSER_MODEL = (
     "en_core_web_md"
+)
+ANSWERABILITY_PROVIDER_ENV = (
+    "RAVIN_ANSWERABILITY_PROVIDER"
+)
+ANSWERABILITY_MODEL_ENV = (
+    "RAVIN_ANSWERABILITY_MODEL"
+)
+DEFAULT_RUNTIME_ANSWERABILITY_PROVIDER = (
+    CROSS_ENCODER_ANSWERABILITY_PROVIDER
+)
+DEFAULT_RUNTIME_ANSWERABILITY_MODEL = (
+    "cross-encoder/qnli-electra-base"
 )
 
 def _read_setting(
@@ -140,6 +153,19 @@ def load_runtime_provider_config(
         ),
     )
 
+    answerability = ProviderModelConfig(
+        provider=_read_setting(
+            source,
+            ANSWERABILITY_PROVIDER_ENV,
+            DEFAULT_RUNTIME_ANSWERABILITY_PROVIDER,
+        ),
+        model=_read_setting(
+            source,
+            ANSWERABILITY_MODEL_ENV,
+            DEFAULT_RUNTIME_ANSWERABILITY_MODEL,
+        ),
+    )
+
     return RuntimeProviderConfig(
         retrieval=RetrievalProviderConfig(
             embedding=embedding,
@@ -151,4 +177,5 @@ def load_runtime_provider_config(
                 fallback=fallback_parser,
             )
         ),
+        answerability=answerability,
     )

@@ -3,6 +3,7 @@ from backend.core.provider_registry import (
     SENTENCE_TRANSFORMER_PROVIDER,
     SPACY_PROVIDER,
     create_provider_factories,
+    CROSS_ENCODER_ANSWERABILITY_PROVIDER,
 )
 from backend.retrieval.embeddings import (
     EmbeddingProvider,
@@ -14,6 +15,26 @@ from backend.routing.question_parser import (
     QuestionParse,
     QuestionParseProvider,
 )
+from backend.routing.answerability import (
+    AnswerabilityResult,
+    AnswerabilityProvider,
+)
+
+class FakeAnswerabilityProvider:
+    def score(
+        self,
+        question: str,
+        evidence_texts: tuple[
+            str,
+            ...
+        ],
+    ) -> AnswerabilityResult:
+        return AnswerabilityResult(
+            scores=tuple(
+                0.5
+                for _ in evidence_texts
+            )
+        )
 
 class FakeEmbeddingProvider:
     def embed_documents(
@@ -78,7 +99,51 @@ def test_registry_exposes_expected_provider_ids():
 
     assert tuple(
         factories.answerability
-    ) == ()
+    ) == (
+        CROSS_ENCODER_ANSWERABILITY_PROVIDER,
+    )
+
+def test_answerability_factory_passes_model_name(
+    monkeypatch,
+):
+    received_models: list[str] = []
+
+    fake_provider = (
+        FakeAnswerabilityProvider()
+    )
+
+    def fake_create_answerability(
+        model_name: str,
+    ) -> AnswerabilityProvider:
+        received_models.append(
+            model_name
+        )
+
+        return fake_provider
+
+    monkeypatch.setattr(
+        (
+            "backend.core.provider_registry."
+            "_create_cross_encoder_answerability_provider"
+        ),
+        fake_create_answerability,
+    )
+
+    factories = create_provider_factories()
+
+    provider = (
+        factories.answerability[
+            CROSS_ENCODER_ANSWERABILITY_PROVIDER
+        ](
+            "replacement-answerability-model"
+        )
+    )
+
+    assert received_models == [
+        "replacement-answerability-model"
+    ]
+
+    assert provider is fake_provider
 
 def test_embedding_factory_passes_model_name(
     monkeypatch,

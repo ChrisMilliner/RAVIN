@@ -3,6 +3,7 @@ from backend.core.provider_registry import (
     CROSS_ENCODER_PROVIDER,
     SENTENCE_TRANSFORMER_PROVIDER,
     SPACY_PROVIDER,
+    CROSS_ENCODER_ANSWERABILITY_PROVIDER,
 )
 from backend.core.runtime_config_loader import (
     DEFAULT_RUNTIME_EMBEDDING_MODEL,
@@ -17,6 +18,9 @@ from backend.core.runtime_config_loader import (
     PRIMARY_PARSER_PROVIDER_ENV,
     RERANKER_MODEL_ENV,
     RERANKER_PROVIDER_ENV,
+    ANSWERABILITY_MODEL_ENV,
+    ANSWERABILITY_PROVIDER_ENV,
+    DEFAULT_RUNTIME_ANSWERABILITY_MODEL,
     load_runtime_provider_config,
 )
 
@@ -70,6 +74,16 @@ def test_loads_current_default_runtime_configuration():
         == DEFAULT_RUNTIME_FALLBACK_PARSER_MODEL
     )
 
+    assert (
+    config.answerability.provider
+    == CROSS_ENCODER_ANSWERABILITY_PROVIDER
+    )
+
+    assert (
+        config.answerability.model
+        == DEFAULT_RUNTIME_ANSWERABILITY_MODEL
+    )
+
 def test_environment_can_replace_all_provider_and_model_choices():
     config = load_runtime_provider_config(
         {
@@ -96,6 +110,12 @@ def test_environment_can_replace_all_provider_and_model_choices():
             ),
             FALLBACK_PARSER_MODEL_ENV: (
                 "replacement-fallback-parser"
+            ),
+            ANSWERABILITY_PROVIDER_ENV: (
+                "replacement-answerability-provider"
+            ),
+            ANSWERABILITY_MODEL_ENV: (
+                "replacement-answerability-model"
             ),
         }
     )
@@ -143,6 +163,16 @@ def test_environment_can_replace_all_provider_and_model_choices():
     assert (
         config.question_parser.fallback.model
         == "replacement-fallback-parser"
+    )
+
+    assert (
+        config.answerability.provider
+        == "replacement-answerability-provider"
+    )
+
+    assert (
+        config.answerability.model
+        == "replacement-answerability-model"
     )
 
 def test_environment_can_override_only_one_model():

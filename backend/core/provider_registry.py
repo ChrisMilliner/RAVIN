@@ -10,6 +10,9 @@ from backend.retrieval.reranking import (
 from backend.routing.question_parser import (
     QuestionParseProvider,
 )
+from backend.routing.answerability import (
+    AnswerabilityProvider,
+)
 
 SENTENCE_TRANSFORMER_PROVIDER = (
     "sentence_transformer"
@@ -18,6 +21,20 @@ CROSS_ENCODER_PROVIDER = (
     "cross_encoder"
 )
 SPACY_PROVIDER = "spacy"
+CROSS_ENCODER_ANSWERABILITY_PROVIDER = (
+    "cross_encoder_answerability"
+)
+
+def _create_cross_encoder_answerability_provider(
+    model_name: str,
+) -> AnswerabilityProvider:
+    from backend.routing.cross_encoder_answerability_provider import (
+        CrossEncoderAnswerabilityProvider,
+    )
+
+    return CrossEncoderAnswerabilityProvider(
+        model_name=model_name,
+    )
 
 def _create_sentence_transformer_provider(
     model_name: str,
@@ -70,5 +87,9 @@ def create_provider_factories(
                 _create_spacy_provider
             ),
         },
-        answerability={},
+        answerability={
+            CROSS_ENCODER_ANSWERABILITY_PROVIDER: (
+                _create_cross_encoder_answerability_provider
+            ),
+        },
 )

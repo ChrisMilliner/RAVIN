@@ -76,6 +76,11 @@ def test_runtime_config_preserves_provider_choices():
         model="fallback-parser-model",
     )
 
+    answerability = ProviderModelConfig(
+        provider="answerability-provider",
+        model="answerability-model",
+    )
+
     config = RuntimeProviderConfig(
         retrieval=RetrievalProviderConfig(
             embedding=embedding,
@@ -87,6 +92,7 @@ def test_runtime_config_preserves_provider_choices():
                 fallback=fallback_parser,
             )
         ),
+        answerability=answerability,
     )
 
     assert (
@@ -107,4 +113,8 @@ def test_runtime_config_preserves_provider_choices():
     assert (
         config.question_parser.fallback
         is fallback_parser
+    )
+
+    assert config.answerability is (
+        answerability
     )

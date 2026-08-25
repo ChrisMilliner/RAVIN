@@ -167,6 +167,12 @@ def _runtime_config(
     parser_model: str = "parser-model-a",
     fallback_provider: str | None = None,
     fallback_model: str | None = None,
+    answerability_provider: str = (
+        "answerability-a"
+    ),
+    answerability_model: str = (
+        "answerability-model-a"
+    ),
 ) -> RuntimeProviderConfig:
     fallback = None
 
@@ -199,6 +205,10 @@ def _runtime_config(
                 fallback=fallback,
             )
         ),
+        answerability=ProviderModelConfig(
+            provider=answerability_provider,
+            model=answerability_model,
+        ),
     )
 
 def test_composition_passes_configured_models_to_factories():
@@ -210,7 +220,10 @@ def test_composition_passes_configured_models_to_factories():
         model: str,
     ) -> FakeEmbeddingProvider:
         created.append(
-            ("embedding", model)
+            (
+                "embedding",
+                model,
+            )
         )
 
         return FakeEmbeddingProvider(
@@ -221,7 +234,10 @@ def test_composition_passes_configured_models_to_factories():
         model: str,
     ) -> FakeRerankerProvider:
         created.append(
-            ("reranker", model)
+            (
+                "reranker",
+                model,
+            )
         )
 
         return FakeRerankerProvider(
@@ -232,7 +248,10 @@ def test_composition_passes_configured_models_to_factories():
         model: str,
     ) -> FakeQuestionParseProvider:
         created.append(
-            ("parser", model)
+            (
+                "parser",
+                model,
+            )
         )
 
         return FakeQuestionParseProvider(
@@ -240,19 +259,43 @@ def test_composition_passes_configured_models_to_factories():
             _usable_parse(),
         )
 
+    def create_answerability(
+        model: str,
+    ) -> FakeAnswerabilityProvider:
+        created.append(
+            (
+                "answerability",
+                model,
+            )
+        )
+
+        return FakeAnswerabilityProvider(
+            model
+        )
+
     compose_runtime_providers(
         _runtime_config(),
         ProviderFactories(
             embedding={
-                "embedding-a": create_embedding,
+                "embedding-a": (
+                    create_embedding
+                ),
             },
             reranker={
-                "reranker-a": create_reranker,
+                "reranker-a": (
+                    create_reranker
+                ),
             },
             question_parser={
-                "parser-a": create_parser,
+                "parser-a": (
+                    create_parser
+                ),
             },
-            answerability={},
+            answerability={
+                "answerability-a": (
+                    create_answerability
+                ),
+            },
         ),
     )
 
@@ -268,6 +311,10 @@ def test_composition_passes_configured_models_to_factories():
         (
             "parser",
             "parser-model-a",
+        ),
+        (
+            "answerability",
+            "answerability-model-a",
         ),
     ]
 
@@ -322,7 +369,11 @@ def test_configuration_can_select_different_provider_factories():
                 )
             ),
         },
-        answerability={},
+        answerability={
+            "answerability-a": (
+                FakeAnswerabilityProvider
+            ),
+        },
     )
 
     compose_runtime_providers(
@@ -384,7 +435,11 @@ def test_fallback_parser_is_not_created_during_composition():
                 ),
                 "parser-b": create_fallback,
             },
-            answerability={},
+            answerability={
+                "answerability-a": (
+                    FakeAnswerabilityProvider
+                ),
+            },
         ),
     )
 
@@ -443,7 +498,11 @@ def test_fallback_parser_is_created_only_when_required():
                 ),
                 "parser-b": create_fallback,
             },
-            answerability={},
+            answerability={
+                "answerability-a": (
+                    FakeAnswerabilityProvider
+                ),
+            },
         ),
     )
 
@@ -493,7 +552,11 @@ def test_unknown_embedding_provider_is_rejected():
                         )
                     ),
                 },
-                answerability={},
+                answerability={
+                    "answerability-a": (
+                        FakeAnswerabilityProvider
+                    ),
+                },
             ),
         )
 
@@ -524,7 +587,11 @@ def test_unknown_reranker_provider_is_rejected():
                         )
                     ),
                 },
-                answerability={},
+                answerability={
+                    "answerability-a": (
+                        FakeAnswerabilityProvider
+                    ),
+                },
             ),
         )
 
@@ -552,7 +619,11 @@ def test_unknown_primary_parser_provider_is_rejected():
                     ),
                 },
                 question_parser={},
-                answerability={},
+                answerability={
+                    "answerability-a": (
+                        FakeAnswerabilityProvider
+                    ),
+                },
             ),
         )
 
@@ -581,7 +652,11 @@ def test_unknown_fallback_provider_is_lazy_failure():
                     )
                 ),
             },
-            answerability={},
+            answerability={
+                "answerability-a": (
+                    FakeAnswerabilityProvider
+                ),
+            },
         ),
     )
 
@@ -626,7 +701,11 @@ def test_compose_embedding_provider_constructs_only_embedding():
             },
             reranker={},
             question_parser={},
-            answerability={},
+            answerability={
+                "answerability-a": (
+                    FakeAnswerabilityProvider
+                ),
+            },
         ),
     )
 
@@ -672,7 +751,11 @@ def test_compose_reranker_provider_constructs_only_reranker():
                 "reranker-a": create_reranker,
             },
             question_parser={},
-            answerability={},
+            answerability={
+                "answerability-a": (
+                    FakeAnswerabilityProvider
+                ),
+            },
         ),
     )
 
@@ -726,7 +809,11 @@ def test_compose_question_parser_keeps_fallback_lazy():
                 ),
                 "parser-b": create_fallback,
             },
-            answerability={},
+            answerability={
+                "answerability-a": (
+                    FakeAnswerabilityProvider
+                ),
+            },
         ),
     )
 
@@ -804,6 +891,41 @@ def test_unknown_answerability_provider_is_rejected():
                 embedding={},
                 reranker={},
                 question_parser={},
+                answerability={},
+            ),
+        )
+
+def test_unknown_runtime_answerability_provider_is_rejected():
+    with pytest.raises(
+        ValueError,
+        match=(
+            "Unknown answerability provider: "
+            "missing."
+        ),
+    ):
+        compose_runtime_providers(
+            _runtime_config(
+                answerability_provider="missing",
+            ),
+            ProviderFactories(
+                embedding={
+                    "embedding-a": (
+                        FakeEmbeddingProvider
+                    ),
+                },
+                reranker={
+                    "reranker-a": (
+                        FakeRerankerProvider
+                    ),
+                },
+                question_parser={
+                    "parser-a": lambda model: (
+                        FakeQuestionParseProvider(
+                            model,
+                            _usable_parse(),
+                        )
+                    ),
+                },
                 answerability={},
             ),
         )
