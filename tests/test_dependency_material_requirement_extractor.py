@@ -850,3 +850,371 @@ def test_empty_question_is_rejected():
         extractor.extract(
             "   "
         )
+
+def test_main_relation_includes_xcomp_action():
+    parse = QuestionParse(
+        tokens=(
+            ParsedToken(
+                index=0,
+                text="Members",
+                lemma="member",
+                pos="NOUN",
+                tag="NNS",
+                dependency="nsubj",
+                head_index=1,
+                is_stop=False,
+                is_punct=False,
+                is_alpha=True,
+            ),
+            ParsedToken(
+                index=1,
+                text="have",
+                lemma="have",
+                pos="VERB",
+                tag="VBP",
+                dependency="ROOT",
+                head_index=1,
+                is_stop=False,
+                is_punct=False,
+                is_alpha=True,
+            ),
+            ParsedToken(
+                index=2,
+                text="to",
+                lemma="to",
+                pos="PART",
+                tag="TO",
+                dependency="aux",
+                head_index=3,
+                is_stop=True,
+                is_punct=False,
+                is_alpha=True,
+            ),
+            ParsedToken(
+                index=3,
+                text="submit",
+                lemma="submit",
+                pos="VERB",
+                tag="VB",
+                dependency="xcomp",
+                head_index=1,
+                is_stop=False,
+                is_punct=False,
+                is_alpha=True,
+            ),
+            ParsedToken(
+                index=4,
+                text="requests",
+                lemma="request",
+                pos="NOUN",
+                tag="NNS",
+                dependency="dobj",
+                head_index=3,
+                is_stop=False,
+                is_punct=False,
+                is_alpha=True,
+            ),
+        ),
+        noun_phrases=(
+            ParsedSpan(
+                text="Members",
+                start_index=0,
+                end_index=1,
+                root_index=0,
+            ),
+            ParsedSpan(
+                text="requests",
+                start_index=4,
+                end_index=5,
+                root_index=4,
+            ),
+        ),
+    )
+
+    extractor = (
+        DependencyMaterialRequirementExtractor(
+            FakeQuestionParser(parse)
+        )
+    )
+
+    result = extractor.extract(
+        "Members have to submit requests"
+    )
+
+    requirements = {
+        (
+            requirement.kind,
+            requirement.text,
+        )
+        for requirement
+        in result.requirements
+    }
+
+    assert (
+        MaterialRequirementKind.RELATION,
+        "have",
+    ) in requirements
+
+    assert (
+        MaterialRequirementKind.RELATION,
+        "submit",
+    ) in requirements
+
+def test_main_relation_includes_coordinated_action():
+    parse = QuestionParse(
+        tokens=(
+            ParsedToken(
+                index=0,
+                text="Members",
+                lemma="member",
+                pos="NOUN",
+                tag="NNS",
+                dependency="nsubj",
+                head_index=1,
+                is_stop=False,
+                is_punct=False,
+                is_alpha=True,
+            ),
+            ParsedToken(
+                index=1,
+                text="apply",
+                lemma="apply",
+                pos="VERB",
+                tag="VBP",
+                dependency="ROOT",
+                head_index=1,
+                is_stop=False,
+                is_punct=False,
+                is_alpha=True,
+            ),
+            ParsedToken(
+                index=2,
+                text="and",
+                lemma="and",
+                pos="CCONJ",
+                tag="CC",
+                dependency="cc",
+                head_index=1,
+                is_stop=True,
+                is_punct=False,
+                is_alpha=True,
+            ),
+            ParsedToken(
+                index=3,
+                text="extend",
+                lemma="extend",
+                pos="VERB",
+                tag="VB",
+                dependency="conj",
+                head_index=1,
+                is_stop=False,
+                is_punct=False,
+                is_alpha=True,
+            ),
+        ),
+        noun_phrases=(
+            ParsedSpan(
+                text="Members",
+                start_index=0,
+                end_index=1,
+                root_index=0,
+            ),
+        ),
+    )
+
+    extractor = (
+        DependencyMaterialRequirementExtractor(
+            FakeQuestionParser(parse)
+        )
+    )
+
+    result = extractor.extract(
+        "Members apply and extend"
+    )
+
+    relations = {
+        requirement.text
+        for requirement
+        in result.requirements
+        if (
+            requirement.kind
+            == MaterialRequirementKind.RELATION
+        )
+    }
+
+    assert relations == {
+        "apply",
+        "extend",
+    }
+
+def test_auxiliary_root_uses_meaningful_adjective_predicate():
+    parse = QuestionParse(
+        tokens=(
+            ParsedToken(
+                index=0,
+                text="Information",
+                lemma="information",
+                pos="NOUN",
+                tag="NN",
+                dependency="nsubj",
+                head_index=2,
+                is_stop=False,
+                is_punct=False,
+                is_alpha=True,
+            ),
+            ParsedToken(
+                index=1,
+                text="should",
+                lemma="should",
+                pos="AUX",
+                tag="MD",
+                dependency="aux",
+                head_index=2,
+                is_stop=True,
+                is_punct=False,
+                is_alpha=True,
+            ),
+            ParsedToken(
+                index=2,
+                text="be",
+                lemma="be",
+                pos="AUX",
+                tag="VB",
+                dependency="ROOT",
+                head_index=2,
+                is_stop=True,
+                is_punct=False,
+                is_alpha=True,
+            ),
+            ParsedToken(
+                index=3,
+                text="available",
+                lemma="available",
+                pos="ADJ",
+                tag="JJ",
+                dependency="acomp",
+                head_index=2,
+                is_stop=False,
+                is_punct=False,
+                is_alpha=True,
+            ),
+        ),
+        noun_phrases=(
+            ParsedSpan(
+                text="Information",
+                start_index=0,
+                end_index=1,
+                root_index=0,
+            ),
+        ),
+    )
+
+    extractor = (
+        DependencyMaterialRequirementExtractor(
+            FakeQuestionParser(parse)
+        )
+    )
+
+    result = extractor.extract(
+        "Information should be available"
+    )
+
+    relations = {
+        requirement.text
+        for requirement
+        in result.requirements
+        if (
+            requirement.kind
+            == MaterialRequirementKind.RELATION
+        )
+    }
+
+    assert relations == {
+        "available",
+    }
+
+def test_condition_verb_is_not_promoted_to_main_relation():
+    parse = QuestionParse(
+        tokens=(
+            ParsedToken(
+                index=0,
+                text="happens",
+                lemma="happen",
+                pos="VERB",
+                tag="VBZ",
+                dependency="ROOT",
+                head_index=0,
+                is_stop=False,
+                is_punct=False,
+                is_alpha=True,
+            ),
+            ParsedToken(
+                index=1,
+                text="when",
+                lemma="when",
+                pos="SCONJ",
+                tag="WRB",
+                dependency="advmod",
+                head_index=3,
+                is_stop=True,
+                is_punct=False,
+                is_alpha=True,
+            ),
+            ParsedToken(
+                index=2,
+                text="members",
+                lemma="member",
+                pos="NOUN",
+                tag="NNS",
+                dependency="nsubj",
+                head_index=3,
+                is_stop=False,
+                is_punct=False,
+                is_alpha=True,
+            ),
+            ParsedToken(
+                index=3,
+                text="fail",
+                lemma="fail",
+                pos="VERB",
+                tag="VBP",
+                dependency="advcl",
+                head_index=0,
+                is_stop=False,
+                is_punct=False,
+                is_alpha=True,
+            ),
+        ),
+        noun_phrases=(
+            ParsedSpan(
+                text="members",
+                start_index=2,
+                end_index=3,
+                root_index=2,
+            ),
+        ),
+    )
+
+    extractor = (
+        DependencyMaterialRequirementExtractor(
+            FakeQuestionParser(parse)
+        )
+    )
+
+    result = extractor.extract(
+        "What happens when members fail?"
+    )
+
+    relations = {
+        requirement.text
+        for requirement
+        in result.requirements
+        if (
+            requirement.kind
+            == MaterialRequirementKind.RELATION
+        )
+    }
+
+    assert relations == {
+        "happen",
+    }

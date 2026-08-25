@@ -8,6 +8,7 @@ from backend.routing.question_parser import (
     ParsedToken,
     QuestionParse,
     QuestionParserService,
+    ParsedToken,
 )
 
 CLAUSE_DEPENDENCIES = frozenset(
@@ -105,17 +106,19 @@ class DependencyMaterialRequirementExtractor:
             )
         )
 
-        for root in parse.roots:
-            if root.pos == "VERB":
-                requirements.append(
-                    MaterialRequirement(
-                        kind=(
-                            MaterialRequirementKind
-                            .RELATION
-                        ),
-                        text=root.lemma,
-                    )
+        for predicate in (
+            self._main_predicate_tokens(
+                parse
+            )
+        ):
+            requirements.append(
+                MaterialRequirement(
+                    kind=(
+                        MaterialRequirementKind.RELATION
+                    ),
+                    text=predicate.lemma,
                 )
+            )
 
         for token in parse.tokens:
             if token.dependency == "neg":
@@ -251,6 +254,119 @@ class DependencyMaterialRequirementExtractor:
             )
 
         return tuple(requirements)
+
+    def _children_of(
+        self,
+        parse: QuestionParse,
+        head_index: int,
+    ) -> tuple[ParsedToken, ...]:
+        return tuple(
+            token
+            for token in parse.tokens
+            if (
+                token.index != head_index
+                and token.head_index
+                == head_index
+            )
+        )
+
+    def _main_predicate_tokens(
+        self,
+        parse: QuestionParse,
+    ) -> tuple[ParsedToken, ...]:
+        roots = parse.roots
+
+        if len(roots) != 1:
+            return ()
+
+        root = roots[0]
+
+        predicates: dict[
+            int,
+            ParsedToken,
+        ] = {}
+
+        def add_predicate(
+            token: ParsedToken,
+        ) -> None:
+            predicates[token.index] = token
+
+        if root.pos == "VERB":
+            add_predicate(root)
+
+        if root.pos == "AUX":
+            root_children = (
+                self._children_of(
+                    parse,
+                    root.index,
+                )
+            )
+
+            for child in root_children:
+                if (
+                    child.dependency == "acomp"
+                    and child.pos
+                    in {
+                        "ADJ",
+                        "VERB",
+                    }
+                ):
+                    add_predicate(child)
+
+            predicate_entities = tuple(
+                child
+                for child in root_children
+                if child.dependency
+                in {
+                    "attr",
+                    "nsubj",
+                    "nsubjpass",
+                }
+            )
+
+            for entity in predicate_entities:
+                for child in self._children_of(
+                    parse,
+                    entity.index,
+                ):
+                    if (
+                        child.dependency == "acl"
+                        and child.pos == "VERB"
+                    ):
+                        add_predicate(child)
+
+        changed = True
+
+        while changed:
+            changed = False
+
+            for predicate in tuple(
+                predicates.values()
+            ):
+                for child in self._children_of(
+                    parse,
+                    predicate.index,
+                ):
+                    if (
+                        child.pos == "VERB"
+                        and child.dependency
+                        in {
+                            "conj",
+                            "xcomp",
+                            "ccomp",
+                        }
+                        and child.index
+                        not in predicates
+                    ):
+                        add_predicate(child)
+                        changed = True
+
+        return tuple(
+            sorted(
+                predicates.values(),
+                key=lambda token: token.index,
+            )
+        )
 
     def _requested_attribute_roots(
         self,
