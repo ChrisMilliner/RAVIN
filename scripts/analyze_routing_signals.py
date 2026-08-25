@@ -1,6 +1,19 @@
+from dataclasses import dataclass
 from pathlib import Path
-from backend.evaluation.dataset import (
-    load_evaluation_questions,
+from statistics import median
+from backend.core.provider_composition import (
+    compose_answerability_provider,
+    compose_embedding_provider,
+    compose_reranker_provider,
+)
+from backend.core.provider_registry import (
+    create_provider_factories,
+)
+from backend.core.runtime_config_loader import (
+    load_runtime_provider_config,
+)
+from backend.evaluation.routing_dataset import (
+    load_routing_evaluation_questions,
 )
 from backend.ingestion.acquisition import (
     PolicyLink,
@@ -17,18 +30,14 @@ from backend.retrieval.production import (
     build_production_retrieval_index,
     retrieve_grounded_context,
 )
+from backend.routing.answerability import (
+    score_answerability,
+)
+from backend.routing.models import (
+    EvidenceSufficiency,
+)
 from backend.routing.signals import (
     extract_evidence_signals,
-)
-from backend.core.provider_composition import (
-    compose_embedding_provider,
-    compose_reranker_provider,
-)
-from backend.core.provider_registry import (
-    create_provider_factories,
-)
-from backend.core.runtime_config_loader import (
-    load_runtime_provider_config,
 )
 
 POLICIES = (
@@ -40,8 +49,25 @@ POLICIES = (
     ("340", "Admissions Procedure"),
 )
 DATASET_PATH = Path(
-    "evaluation/retrieval_baseline.json"
+    "evaluation/routing_baseline.json"
 )
+
+@dataclass(frozen=True)
+class SignalObservation:
+    question_id: str
+    question: str
+    expected_intent: str
+    expected_sufficiency: EvidenceSufficiency
+    top_score: float | None
+    second_score: float | None
+    score_margin: float | None
+    context_block_count: int
+    distinct_policy_count: int
+    answerability_scores: tuple[
+        float,
+        ...
+    ]
+    strongest_answerability: float | None
 
 def format_score(
     score: float | None,
@@ -51,9 +77,292 @@ def format_score(
 
     return f"{score:.6f}"
 
+def format_distribution(
+    values: tuple[
+        float | int,
+        ...
+    ],
+) -> str:
+    if not values:
+        return "N/A"
+
+    return (
+        f"min={min(values):.6f}, "
+        f"median={median(values):.6f}, "
+        f"max={max(values):.6f}"
+    )
+
+
+def format_heading(
+    heading_path: tuple[
+        str,
+        ...
+    ],
+) -> str:
+    if not heading_path:
+        return "(document root)"
+
+    return " > ".join(
+        heading_path
+    )
+
+def print_observation_summary(
+    observations: tuple[
+        SignalObservation,
+        ...
+    ],
+) -> None:
+    print()
+    print("=" * 72)
+    print("=== EXPECTED SUFFICIENCY DISTRIBUTIONS ===")
+
+    for expected in (
+        EvidenceSufficiency.SUFFICIENT,
+        EvidenceSufficiency.INSUFFICIENT,
+    ):
+        group = tuple(
+            observation
+            for observation in observations
+            if (
+                observation.expected_sufficiency
+                == expected
+            )
+        )
+
+        top_scores = tuple(
+            observation.top_score
+            for observation in group
+            if observation.top_score is not None
+        )
+
+        margins = tuple(
+            observation.score_margin
+            for observation in group
+            if observation.score_margin is not None
+        )
+
+        answerability_scores = tuple(
+            observation.strongest_answerability
+            for observation in group
+            if (
+                observation.strongest_answerability
+                is not None
+            )
+        )
+
+        context_counts = tuple(
+            observation.context_block_count
+            for observation in group
+        )
+
+        policy_counts = tuple(
+            observation.distinct_policy_count
+            for observation in group
+        )
+
+        print()
+        print(
+            expected.value.upper(),
+            f"({len(group)} questions)",
+        )
+
+        print(
+            "Top retrieval score:",
+            format_distribution(
+                top_scores
+            ),
+        )
+
+        print(
+            "Retrieval score margin:",
+            format_distribution(
+                margins
+            ),
+        )
+
+        print(
+            "Strongest answerability:",
+            format_distribution(
+                answerability_scores
+            ),
+        )
+
+        print(
+            "Context block count:",
+            format_distribution(
+                context_counts
+            ),
+        )
+
+        print(
+            "Distinct policy count:",
+            format_distribution(
+                policy_counts
+            ),
+        )
+
+def print_boundary_cases(
+    observations: tuple[
+        SignalObservation,
+        ...
+    ],
+) -> None:
+    sufficient = tuple(
+        observation
+        for observation in observations
+        if (
+            observation.expected_sufficiency
+            == EvidenceSufficiency.SUFFICIENT
+        )
+    )
+
+    insufficient = tuple(
+        observation
+        for observation in observations
+        if (
+            observation.expected_sufficiency
+            == EvidenceSufficiency.INSUFFICIENT
+        )
+    )
+
+    sufficient_by_answerability = sorted(
+        sufficient,
+        key=lambda observation: (
+            observation.strongest_answerability
+            if (
+                observation.strongest_answerability
+                is not None
+            )
+            else float("inf")
+        ),
+    )
+
+    insufficient_by_answerability = sorted(
+        insufficient,
+        key=lambda observation: (
+            observation.strongest_answerability
+            if (
+                observation.strongest_answerability
+                is not None
+            )
+            else float("-inf")
+        ),
+        reverse=True,
+    )
+
+    sufficient_by_retrieval = sorted(
+        sufficient,
+        key=lambda observation: (
+            observation.top_score
+            if observation.top_score is not None
+            else float("inf")
+        ),
+    )
+
+    insufficient_by_retrieval = sorted(
+        insufficient,
+        key=lambda observation: (
+            observation.top_score
+            if observation.top_score is not None
+            else float("-inf")
+        ),
+        reverse=True,
+    )
+
+    print()
+    print("=" * 72)
+    print("=== ANSWERABILITY BOUNDARY CASES ===")
+
+    print()
+    print(
+        "Highest answerability among expected "
+        "INSUFFICIENT:"
+    )
+
+    for observation in (
+        insufficient_by_answerability[:5]
+    ):
+        print(
+            observation.question_id,
+            "|",
+            format_score(
+                observation.strongest_answerability
+            ),
+            "|",
+            observation.question,
+        )
+
+    print()
+    print(
+        "Lowest answerability among expected "
+        "SUFFICIENT:"
+    )
+
+    for observation in (
+        sufficient_by_answerability[:5]
+    ):
+        print(
+            observation.question_id,
+            "|",
+            format_score(
+                observation.strongest_answerability
+            ),
+            "|",
+            observation.question,
+        )
+
+    print()
+    print("=" * 72)
+    print("=== RETRIEVAL BOUNDARY CASES ===")
+
+    print()
+    print(
+        "Highest retrieval score among expected "
+        "INSUFFICIENT:"
+    )
+
+    for observation in (
+        insufficient_by_retrieval[:5]
+    ):
+        print(
+            observation.question_id,
+            "|",
+            format_score(
+                observation.top_score
+            ),
+            "|",
+            observation.question,
+        )
+
+    print()
+    print(
+        "Lowest retrieval score among expected "
+        "SUFFICIENT:"
+    )
+
+    for observation in (
+        sufficient_by_retrieval[:5]
+    ):
+        print(
+            observation.question_id,
+            "|",
+            format_score(
+                observation.top_score
+            ),
+            "|",
+            observation.question,
+        )
+
 def main() -> None:
     print(
-        "=== RAVIN ROUTING SIGNAL ANALYSIS ==="
+        "=== RAVIN EVIDENCE SUFFICIENCY "
+        "SIGNAL ANALYSIS ==="
+    )
+
+    print()
+    print(
+        "Measurement only - no sufficiency "
+        "thresholds or predictions are applied."
     )
 
     print()
@@ -71,7 +380,9 @@ def main() -> None:
             ),
         )
 
-        policy = acquire_policy(link)
+        policy = acquire_policy(
+            link
+        )
 
         ingestion_result = process_policy(
             policy
@@ -122,12 +433,19 @@ def main() -> None:
         .reranker
     )
 
+    answerability_config = (
+        runtime_provider_config
+        .answerability
+    )
+
     print()
     print("=== EMBEDDING PROVIDER ===")
+
     print(
         "Provider:",
         embedding_config.provider,
     )
+
     print(
         "Model:",
         embedding_config.model,
@@ -155,10 +473,12 @@ def main() -> None:
 
     print()
     print("=== RERANKER PROVIDER ===")
+
     print(
         "Provider:",
         reranker_config.provider,
     )
+
     print(
         "Model:",
         reranker_config.model,
@@ -171,6 +491,26 @@ def main() -> None:
         )
     )
 
+    print()
+    print("=== ANSWERABILITY PROVIDER ===")
+
+    print(
+        "Provider:",
+        answerability_config.provider,
+    )
+
+    print(
+        "Model:",
+        answerability_config.model,
+    )
+
+    answerability_provider = (
+        compose_answerability_provider(
+            answerability_config,
+            provider_factories,
+        )
+    )
+
     retrieval_config = (
         ProductionRetrievalConfig()
     )
@@ -179,20 +519,67 @@ def main() -> None:
         ContextAssemblyConfig()
     )
 
-    questions = load_evaluation_questions(
-        DATASET_PATH
+    all_questions = (
+        load_routing_evaluation_questions(
+            DATASET_PATH
+        )
+    )
+
+    clear_questions = tuple(
+        question
+        for question in all_questions
+        if (
+            question.expected_sufficiency
+            is not None
+        )
+    )
+
+    ambiguous_count = (
+        len(all_questions)
+        - len(clear_questions)
     )
 
     print()
+    print("=== ROUTING DATASET ===")
+
     print(
-        "Evaluation questions:",
-        len(questions),
+        "Dataset:",
+        DATASET_PATH,
     )
+
+    print(
+        "Total questions:",
+        len(all_questions),
+    )
+
+    print(
+        "Clear sufficiency questions:",
+        len(clear_questions),
+    )
+
+    print(
+        "Ambiguous questions excluded:",
+        ambiguous_count,
+    )
+
+    observations: list[
+        SignalObservation
+    ] = []
 
     print()
     print("=== SIGNAL RESULTS ===")
 
-    for question in questions:
+    for question in clear_questions:
+        expected_sufficiency = (
+            question.expected_sufficiency
+        )
+
+        if expected_sufficiency is None:
+            raise RuntimeError(
+                "Clear sufficiency analysis "
+                "received an ambiguous question."
+            )
+
         result = retrieve_grounded_context(
             index,
             query=question.question,
@@ -214,6 +601,46 @@ def main() -> None:
             result
         )
 
+        evidence_texts = tuple(
+            block.text
+            for block in result.context.blocks
+        )
+
+        answerability_scores: tuple[
+            float,
+            ...
+        ] = ()
+
+        strongest_answerability: (
+            float | None
+        ) = None
+
+        if evidence_texts:
+            answerability_result = (
+                score_answerability(
+                    question.question,
+                    evidence_texts,
+                    answerability_provider,
+                )
+            )
+
+            answerability_scores = (
+                answerability_result.scores
+            )
+
+            strongest_answerability = (
+                answerability_result
+                .strongest_score
+            )
+
+        policy_ids = tuple(
+            dict.fromkeys(
+                block.policy_id
+                for block
+                in result.context.blocks
+            )
+        )
+
         print()
         print("-" * 72)
 
@@ -223,8 +650,13 @@ def main() -> None:
         )
 
         print(
-            "Behaviour:",
-            question.behavior.value,
+            "Expected intent:",
+            question.expected_intent.value,
+        )
+
+        print(
+            "Expected sufficiency:",
+            expected_sufficiency.value,
         )
 
         print(
@@ -232,45 +664,149 @@ def main() -> None:
             question.question,
         )
 
+        print()
+        print("Retrieval:")
+
         print(
-            "Retrieved results:",
+            "  Retrieved results:",
             signals.retrieved_count,
         )
 
         print(
-            "Context blocks:",
+            "  Context blocks:",
             signals.context_block_count,
         )
 
         print(
-            "Distinct policies:",
+            "  Distinct policies:",
             signals.distinct_policy_count,
         )
 
         print(
-            "Top score:",
+            "  Policy IDs:",
+            (
+                ", ".join(policy_ids)
+                if policy_ids
+                else "N/A"
+            ),
+        )
+
+        print(
+            "  Top score:",
             format_score(
                 signals.top_score
             ),
         )
 
         print(
-            "Second score:",
+            "  Second score:",
             format_score(
                 signals.second_score
             ),
         )
 
         print(
-            "Score margin:",
+            "  Score margin:",
             format_score(
                 signals.score_margin
             ),
         )
 
+        print()
+        print("Answerability:")
+
+        if answerability_scores:
+            for (
+                position,
+                (
+                    block,
+                    score,
+                ),
+            ) in enumerate(
+                zip(
+                    result.context.blocks,
+                    answerability_scores,
+                ),
+                start=1,
+            ):
+                print(
+                    f"  E{position}: "
+                    f"{score:.6f} "
+                    f"| Policy {block.policy_id} "
+                    f"| {block.policy_title} "
+                    f"| "
+                    f"{format_heading(block.heading_path)}"
+                )
+
+        else:
+            print(
+                "  No grounded evidence blocks."
+            )
+
+        print(
+            "  Strongest:",
+            format_score(
+                strongest_answerability
+            ),
+        )
+
+        observations.append(
+            SignalObservation(
+                question_id=(
+                    question.question_id
+                ),
+                question=question.question,
+                expected_intent=(
+                    question.expected_intent.value
+                ),
+                expected_sufficiency=(
+                    expected_sufficiency
+                ),
+                top_score=signals.top_score,
+                second_score=(
+                    signals.second_score
+                ),
+                score_margin=(
+                    signals.score_margin
+                ),
+                context_block_count=(
+                    signals.context_block_count
+                ),
+                distinct_policy_count=(
+                    signals.distinct_policy_count
+                ),
+                answerability_scores=(
+                    answerability_scores
+                ),
+                strongest_answerability=(
+                    strongest_answerability
+                ),
+            )
+        )
+
+    observations_tuple = tuple(
+        observations
+    )
+
+    print_observation_summary(
+        observations_tuple
+    )
+
+    print_boundary_cases(
+        observations_tuple
+    )
+
     print()
     print("=" * 72)
-    print("SIGNAL ANALYSIS COMPLETE")
+
+    print(
+        "SIGNAL ANALYSIS COMPLETE"
+    )
+
+    print(
+        "No sufficiency thresholds or "
+        "predictions were applied."
+    )
 
 if __name__ == "__main__":
     main()
