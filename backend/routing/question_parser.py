@@ -1,4 +1,5 @@
 from dataclasses import dataclass
+from enum import Enum
 from typing import Callable, Protocol
 
 @dataclass(frozen=True)
@@ -45,6 +46,13 @@ class QuestionParse:
             if token.dependency == "ROOT"
         )
 
+class QuestionParseReliability(
+    str,
+    Enum,
+):
+    RESOLVED = "resolved"
+    UNRESOLVED = "unresolved"
+
 @dataclass(frozen=True)
 class QuestionParseResult:
     primary: QuestionParse
@@ -55,6 +63,46 @@ class QuestionParseResult:
         self,
     ) -> bool:
         return self.fallback is not None
+
+    @property
+    def primary_suspicious(
+        self,
+    ) -> bool:
+        return is_question_parse_suspicious(
+            self.primary
+        )
+
+    @property
+    def fallback_suspicious(
+        self,
+    ) -> bool | None:
+        if self.fallback is None:
+            return None
+
+        return is_question_parse_suspicious(
+            self.fallback
+        )
+
+    @property
+    def reliability(
+        self,
+    ) -> QuestionParseReliability:
+        if not self.primary_suspicious:
+            return (
+                QuestionParseReliability.RESOLVED
+            )
+
+        if (
+            self.fallback is not None
+            and not self.fallback_suspicious
+        ):
+            return (
+                QuestionParseReliability.RESOLVED
+            )
+
+        return (
+            QuestionParseReliability.UNRESOLVED
+        )
 
 class QuestionParserService(
     Protocol

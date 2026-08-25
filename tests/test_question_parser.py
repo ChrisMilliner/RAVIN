@@ -3,6 +3,7 @@ import pytest
 from backend.routing.question_parser import (
     ParsedToken,
     QuestionParse,
+    QuestionParseReliability,
     QuestionParser,
     is_question_parse_suspicious,
 )
@@ -480,3 +481,101 @@ def test_rejects_invalid_fallback_provider_result():
         parser.parse(
             "Question?"
         )
+
+def test_usable_primary_parse_is_resolved():
+    primary = FakeParseProvider(
+        _usable_parse()
+    )
+
+    parser = QuestionParser(
+        primary_provider=primary,
+    )
+
+    result = parser.parse(
+        "Can students apply?"
+    )
+
+    assert not result.primary_suspicious
+    assert result.fallback_suspicious is None
+
+    assert (
+        result.reliability
+        == QuestionParseReliability.RESOLVED
+    )
+
+def test_usable_fallback_resolves_suspicious_primary():
+    primary = FakeParseProvider(
+        _nominal_root_parse()
+    )
+
+    fallback = FakeParseProvider(
+        _usable_parse()
+    )
+
+    parser = QuestionParser(
+        primary_provider=primary,
+        fallback_provider_factory=(
+            lambda: fallback
+        ),
+    )
+
+    result = parser.parse(
+        "How does support work?"
+    )
+
+    assert result.primary_suspicious
+    assert result.fallback_suspicious is False
+
+    assert (
+        result.reliability
+        == QuestionParseReliability.RESOLVED
+    )
+
+def test_suspicious_primary_and_fallback_are_unresolved():
+    primary = FakeParseProvider(
+        _bare_root_object_before_conjoined_verb_parse()
+    )
+
+    fallback = FakeParseProvider(
+        _bare_root_object_before_conjoined_verb_parse()
+    )
+
+    parser = QuestionParser(
+        primary_provider=primary,
+        fallback_provider_factory=(
+            lambda: fallback
+        ),
+    )
+
+    result = parser.parse(
+        "Question with suspicious structure?"
+    )
+
+    assert result.primary_suspicious
+    assert result.fallback_suspicious is True
+
+    assert (
+        result.reliability
+        == QuestionParseReliability.UNRESOLVED
+    )
+
+def test_suspicious_primary_without_fallback_is_unresolved():
+    primary = FakeParseProvider(
+        _nominal_root_parse()
+    )
+
+    parser = QuestionParser(
+        primary_provider=primary,
+    )
+
+    result = parser.parse(
+        "How does support work?"
+    )
+
+    assert result.primary_suspicious
+    assert result.fallback_suspicious is None
+
+    assert (
+        result.reliability
+        == QuestionParseReliability.UNRESOLVED
+    )
