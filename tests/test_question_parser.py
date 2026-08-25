@@ -107,6 +107,99 @@ def _modal_without_verb_parse(
         noun_phrases=(),
     )
 
+def _bare_root_object_before_conjoined_verb_parse(
+) -> QuestionParse:
+    return QuestionParse(
+        tokens=(
+            _token(
+                index=0,
+                text="benefits",
+                pos="NOUN",
+                dependency="nsubj",
+                head_index=1,
+            ),
+            _token(
+                index=1,
+                text="leave",
+                pos="VERB",
+                tag="VB",
+                dependency="ROOT",
+                head_index=1,
+            ),
+            _token(
+                index=2,
+                text="entitlements",
+                pos="NOUN",
+                dependency="dobj",
+                head_index=1,
+            ),
+            _token(
+                index=3,
+                text="and",
+                pos="CCONJ",
+                tag="CC",
+                dependency="cc",
+                head_index=1,
+            ),
+            _token(
+                index=4,
+                text="apply",
+                pos="VERB",
+                tag="VBP",
+                dependency="conj",
+                head_index=1,
+            ),
+        ),
+        noun_phrases=(),
+    )
+
+def _coordinated_verbs_with_auxiliary_parse(
+) -> QuestionParse:
+    return QuestionParse(
+        tokens=(
+            _token(
+                index=0,
+                text="Can",
+                pos="AUX",
+                tag="MD",
+                dependency="aux",
+                head_index=2,
+            ),
+            _token(
+                index=1,
+                text="members",
+                pos="NOUN",
+                dependency="nsubj",
+                head_index=2,
+            ),
+            _token(
+                index=2,
+                text="apply",
+                pos="VERB",
+                tag="VB",
+                dependency="ROOT",
+                head_index=2,
+            ),
+            _token(
+                index=3,
+                text="and",
+                pos="CCONJ",
+                tag="CC",
+                dependency="cc",
+                head_index=2,
+            ),
+            _token(
+                index=4,
+                text="extend",
+                pos="VERB",
+                tag="VB",
+                dependency="conj",
+                head_index=2,
+            ),
+        ),
+        noun_phrases=(),
+    )
+
 def test_usable_parse_is_not_suspicious():
     assert not is_question_parse_suspicious(
         _usable_parse()
@@ -145,6 +238,17 @@ def test_multiple_roots_are_suspicious():
 
     assert is_question_parse_suspicious(
         parse
+    )
+
+def test_bare_root_object_before_conjoined_verb_is_suspicious():
+    assert is_question_parse_suspicious(
+        _bare_root_object_before_conjoined_verb_parse()
+    )
+
+
+def test_normal_coordinated_verbs_are_not_suspicious():
+    assert not is_question_parse_suspicious(
+        _coordinated_verbs_with_auxiliary_parse()
     )
 
 def test_parser_strips_question_before_primary_provider():
@@ -215,6 +319,30 @@ def test_suspicious_primary_parse_uses_fallback():
 
     result = parser.parse(
         "How does support work?"
+    )
+
+    assert result.primary is primary.result
+    assert result.fallback is fallback.result
+    assert result.used_fallback
+
+def test_bare_root_anomaly_uses_fallback():
+    primary = FakeParseProvider(
+        _bare_root_object_before_conjoined_verb_parse()
+    )
+
+    fallback = FakeParseProvider(
+        _usable_parse()
+    )
+
+    parser = QuestionParser(
+        primary_provider=primary,
+        fallback_provider_factory=(
+            lambda: fallback
+        ),
+    )
+
+    result = parser.parse(
+        "Question with suspicious structure?"
     )
 
     assert result.primary is primary.result

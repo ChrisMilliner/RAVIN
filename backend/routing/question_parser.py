@@ -79,6 +79,70 @@ QuestionParseProviderFactory = Callable[
     QuestionParseProvider,
 ]
 
+def _children_of(
+    parse: QuestionParse,
+    head_index: int,
+) -> tuple[ParsedToken, ...]:
+    return tuple(
+        token
+        for token in parse.tokens
+        if (
+            token.index != head_index
+            and token.head_index
+            == head_index
+        )
+    )
+
+def _has_bare_root_object_before_conjoined_verb(
+    parse: QuestionParse,
+    root: ParsedToken,
+) -> bool:
+    if (
+        root.pos != "VERB"
+        or root.tag != "VB"
+    ):
+        return False
+
+    root_children = _children_of(
+        parse,
+        root.index,
+    )
+
+    has_auxiliary = any(
+        child.dependency
+        in {
+            "aux",
+            "auxpass",
+        }
+        for child in root_children
+    )
+
+    if has_auxiliary:
+        return False
+
+    has_object = any(
+        child.dependency
+        in {
+            "dobj",
+            "obj",
+        }
+        for child in root_children
+    )
+
+    has_later_conjoined_verb = any(
+        token.pos == "VERB"
+        and token.dependency == "conj"
+        and token.head_index
+        == root.index
+        and token.index > root.index
+        for token in parse.tokens
+    )
+
+    return (
+        has_object
+        and has_later_conjoined_verb
+    )
+
 def is_question_parse_suspicious(
     parse: QuestionParse,
 ) -> bool:
@@ -105,6 +169,14 @@ def is_question_parse_suspicious(
         root.pos == "AUX"
         and root.tag == "MD"
         and not verbs
+    ):
+        return True
+
+    if (
+        _has_bare_root_object_before_conjoined_verb(
+            parse,
+            root,
+        )
     ):
         return True
 
