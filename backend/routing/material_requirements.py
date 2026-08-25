@@ -7,6 +7,7 @@ class MaterialRequirementKind(
 ):
     CONCEPT = "concept"
     RELATION = "relation"
+    QUALIFIER = "qualifier"
     CONDITION = "condition"
     TEMPORAL = "temporal"
     QUANTITY = "quantity"

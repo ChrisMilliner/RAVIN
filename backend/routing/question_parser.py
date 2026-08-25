@@ -56,6 +56,15 @@ class QuestionParseResult:
     ) -> bool:
         return self.fallback is not None
 
+class QuestionParserService(
+    Protocol
+):
+    def parse(
+        self,
+        question: str,
+    ) -> QuestionParseResult:
+        ...
+
 class QuestionParseProvider(
     Protocol
 ):
