@@ -4,6 +4,9 @@ from backend.routing.material_requirements import (
     MaterialQuestionRequirements,
     MaterialRequirement,
     MaterialRequirementKind,
+    MaterialRequirementExtractionResult,
+    MaterialRequirementResolution,
+    MaterialRequirementSelection,
 )
 
 def test_creates_material_requirement():
@@ -126,4 +129,125 @@ def test_rejects_invalid_requirement_value():
             requirements=(
                 invalid_requirement,
             )
+        )
+
+def _sample_question_requirements(
+) -> MaterialQuestionRequirements:
+    return MaterialQuestionRequirements(
+        requirements=(
+            MaterialRequirement(
+                kind=(
+                    MaterialRequirementKind.CONCEPT
+                ),
+                text="sample concept",
+            ),
+        )
+    )
+
+def test_resolved_primary_extraction_selects_primary():
+    primary = _sample_question_requirements()
+
+    result = MaterialRequirementExtractionResult(
+        primary=primary,
+    )
+
+    assert (
+        result.resolution
+        == MaterialRequirementResolution.RESOLVED
+    )
+
+    assert (
+        result.selection
+        == MaterialRequirementSelection.PRIMARY
+    )
+
+    assert result.active is primary
+
+def test_resolved_fallback_extraction_selects_fallback():
+    primary = _sample_question_requirements()
+
+    fallback = MaterialQuestionRequirements(
+        requirements=(
+            MaterialRequirement(
+                kind=(
+                    MaterialRequirementKind.RELATION
+                ),
+                text="apply",
+            ),
+        )
+    )
+
+    result = MaterialRequirementExtractionResult(
+        primary=primary,
+        fallback=fallback,
+        resolution=(
+            MaterialRequirementResolution.RESOLVED
+        ),
+        selection=(
+            MaterialRequirementSelection.FALLBACK
+        ),
+    )
+
+    assert result.active is fallback
+
+def test_unresolved_extraction_has_no_active_interpretation():
+    primary = _sample_question_requirements()
+
+    fallback = MaterialQuestionRequirements(
+        requirements=(
+            MaterialRequirement(
+                kind=(
+                    MaterialRequirementKind.CONCEPT
+                ),
+                text="alternative concept",
+            ),
+        )
+    )
+
+    result = MaterialRequirementExtractionResult(
+        primary=primary,
+        fallback=fallback,
+        resolution=(
+            MaterialRequirementResolution.UNRESOLVED
+        ),
+        selection=None,
+    )
+
+    assert result.active is None
+
+def test_unresolved_extraction_cannot_select_interpretation():
+    with pytest.raises(
+        ValueError,
+        match=(
+            "Unresolved material requirements "
+            "cannot select an interpretation."
+        ),
+    ):
+        MaterialRequirementExtractionResult(
+            primary=(
+                _sample_question_requirements()
+            ),
+            resolution=(
+                MaterialRequirementResolution.UNRESOLVED
+            ),
+            selection=(
+                MaterialRequirementSelection.PRIMARY
+            ),
+        )
+
+def test_fallback_selection_requires_fallback_requirements():
+    with pytest.raises(
+        ValueError,
+        match=(
+            "Fallback material requirements "
+            "must exist when fallback is selected."
+        ),
+    ):
+        MaterialRequirementExtractionResult(
+            primary=(
+                _sample_question_requirements()
+            ),
+            selection=(
+                MaterialRequirementSelection.FALLBACK
+            ),
         )
