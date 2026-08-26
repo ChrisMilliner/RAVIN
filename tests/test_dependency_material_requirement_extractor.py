@@ -13,6 +13,9 @@ from backend.routing.question_parser import (
     QuestionParse,
     QuestionParseResult,
 )
+from backend.routing.question_structure_resolver import (
+    QuestionStructureResolver,
+)
 
 class FakeParser:
     def __init__(
@@ -1715,3 +1718,91 @@ def test_auxiliary_root_nested_nominal_acl_is_relation_when_no_other_predicate()
         MaterialRequirementKind.RELATION,
         "expose",
     ) in pairs
+
+def test_can_use_shared_question_structure_resolver():
+    parse = QuestionParse(
+        tokens=(
+            ParsedToken(
+                index=0,
+                text="apply",
+                lemma="apply",
+                pos="VERB",
+                tag="VBP",
+                dependency="ROOT",
+                head_index=0,
+                is_stop=False,
+                is_punct=False,
+                is_alpha=True,
+            ),
+        ),
+        noun_phrases=(),
+    )
+
+    parser = FakeParser(
+        QuestionParseResult(
+            primary=parse,
+        )
+    )
+
+    resolver = QuestionStructureResolver(
+        parser
+    )
+
+    extractor = (
+        DependencyMaterialRequirementExtractor(
+            structure_resolver=resolver,
+        )
+    )
+
+    pairs = _pairs(
+        extractor,
+        "Apply?",
+    )
+
+    assert (
+        MaterialRequirementKind.RELATION,
+        "apply",
+    ) in pairs
+
+def test_rejects_parser_when_shared_resolver_is_also_provided():
+    parse = QuestionParse(
+        tokens=(
+            ParsedToken(
+                index=0,
+                text="apply",
+                lemma="apply",
+                pos="VERB",
+                tag="VBP",
+                dependency="ROOT",
+                head_index=0,
+                is_stop=False,
+                is_punct=False,
+                is_alpha=True,
+            ),
+        ),
+        noun_phrases=(),
+    )
+
+    parser = FakeParser(
+        QuestionParseResult(
+            primary=parse,
+        )
+    )
+
+    resolver = QuestionStructureResolver(
+        parser
+    )
+
+    with pytest.raises(
+        ValueError,
+        match=(
+            "Provide either a shared "
+            "question structure resolver "
+            "or parser configuration, "
+            "not both."
+        ),
+    ):
+        DependencyMaterialRequirementExtractor(
+            parser,
+            structure_resolver=resolver,
+        )

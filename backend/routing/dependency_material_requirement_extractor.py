@@ -10,12 +10,14 @@ from backend.routing.question_parser import (
     ParsedSpan,
     ParsedToken,
     QuestionParse,
-    QuestionParseReliability,
     QuestionParserService,
 )
 from backend.routing.question_structure_recovery import (
     QuestionStructureRecoveryProvider,
-    recover_question_structure,
+)
+from backend.routing.question_structure_resolver import (
+    QuestionStructureResolver,
+    QuestionStructureSelection,
 )
 
 CLAUSE_DEPENDENCIES = frozenset(
@@ -37,14 +39,47 @@ INTERROGATIVE_TAGS = frozenset(
 class DependencyMaterialRequirementExtractor:
     def __init__(
         self,
-        parser: QuestionParserService,
+        parser: QuestionParserService | None = None,
         recovery_provider: (
             QuestionStructureRecoveryProvider | None
         ) = None,
+        *,
+        structure_resolver: (
+            QuestionStructureResolver | None
+        ) = None,
     ) -> None:
-        self._parser = parser
-        self._recovery_provider = (
-            recovery_provider
+        if structure_resolver is not None:
+            if (
+                parser is not None
+                or recovery_provider is not None
+            ):
+                raise ValueError(
+                    "Provide either a shared "
+                    "question structure resolver "
+                    "or parser configuration, "
+                    "not both."
+                )
+
+            self._structure_resolver = (
+                structure_resolver
+            )
+
+            return
+
+        if parser is None:
+            raise ValueError(
+                "Parser is required when a "
+                "shared question structure "
+                "resolver is not provided."
+            )
+
+        self._structure_resolver = (
+            QuestionStructureResolver(
+                parser,
+                recovery_provider=(
+                    recovery_provider
+                ),
+            )
         )
 
     def extract(
@@ -58,61 +93,37 @@ class DependencyMaterialRequirementExtractor:
                 "Question cannot be empty."
             )
 
-        parse_result = self._parser.parse(
-            question
+        structure_result = (
+            self._structure_resolver.resolve(
+                question
+            )
         )
 
         primary = (
             self._requirements_from_parse(
-                parse_result.primary
+                structure_result.primary
             )
         )
 
         fallback = None
 
-        if parse_result.fallback is not None:
+        if structure_result.fallback is not None:
             fallback = (
                 self._requirements_from_parse(
-                    parse_result.fallback
+                    structure_result.fallback
                 )
             )
 
-        if (
-            parse_result.reliability
-            == QuestionParseReliability.UNRESOLVED
-        ):
-            recovery = None
+        recovery = None
 
-            if self._recovery_provider is not None:
-                recovered_parse = (
-                    recover_question_structure(
-                        question,
-                        parse_result,
-                        self._recovery_provider,
-                    )
+        if structure_result.recovery is not None:
+            recovery = (
+                self._requirements_from_parse(
+                    structure_result.recovery
                 )
+            )
 
-                if recovered_parse is not None:
-                    recovery = (
-                        self._requirements_from_parse(
-                            recovered_parse
-                        )
-                    )
-
-                    return (
-                        MaterialRequirementExtractionResult(
-                            primary=primary,
-                            fallback=fallback,
-                            recovery=recovery,
-                            resolution=(
-                                MaterialRequirementResolution.RESOLVED
-                            ),
-                            selection=(
-                                MaterialRequirementSelection.RECOVERY
-                            ),
-                        )
-                    )
-
+        if not structure_result.resolved:
             return (
                 MaterialRequirementExtractionResult(
                     primary=primary,
@@ -125,27 +136,37 @@ class DependencyMaterialRequirementExtractor:
                 )
             )
 
-        if not parse_result.primary_suspicious:
-            selection = (
+        selection_map = {
+            QuestionStructureSelection.PRIMARY: (
                 MaterialRequirementSelection.PRIMARY
-            )
-        elif (
-            fallback is not None
-            and parse_result.fallback_suspicious
-            is False
-        ):
-            selection = (
+            ),
+            QuestionStructureSelection.FALLBACK: (
                 MaterialRequirementSelection.FALLBACK
-            )
-        else:
+            ),
+            QuestionStructureSelection.RECOVERY: (
+                MaterialRequirementSelection.RECOVERY
+            ),
+        }
+
+        structure_selection = (
+            structure_result.selection
+        )
+
+        if structure_selection is None:
             raise ValueError(
-                "Resolved question parse did not "
-                "identify a usable interpretation."
+                "Resolved question structure "
+                "did not identify an active "
+                "interpretation."
             )
+
+        selection = selection_map[
+            structure_selection
+        ]
 
         return MaterialRequirementExtractionResult(
             primary=primary,
             fallback=fallback,
+            recovery=recovery,
             resolution=(
                 MaterialRequirementResolution.RESOLVED
             ),
