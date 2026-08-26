@@ -1565,3 +1565,153 @@ def test_resolved_parse_does_not_invoke_recovery():
     )
 
     assert recovery_provider.calls == 0
+
+def test_auxiliary_root_direct_ccomp_is_relation():
+    parse = QuestionParse(
+        tokens=(
+            ParsedToken(
+                index=0,
+                text="are",
+                lemma="be",
+                pos="AUX",
+                tag="VBP",
+                dependency="ROOT",
+                head_index=0,
+                is_stop=True,
+                is_punct=False,
+                is_alpha=True,
+            ),
+            ParsedToken(
+                index=1,
+                text="recorded",
+                lemma="record",
+                pos="VERB",
+                tag="VBN",
+                dependency="ccomp",
+                head_index=0,
+                is_stop=False,
+                is_punct=False,
+                is_alpha=True,
+            ),
+            ParsedToken(
+                index=2,
+                text="requirements",
+                lemma="requirement",
+                pos="NOUN",
+                tag="NNS",
+                dependency="nsubj",
+                head_index=1,
+                is_stop=False,
+                is_punct=False,
+                is_alpha=True,
+            ),
+        ),
+        noun_phrases=(),
+    )
+
+    extractor = (
+        DependencyMaterialRequirementExtractor(
+            FakeParser(
+                QuestionParseResult(
+                    primary=parse,
+                )
+            )
+        )
+    )
+
+    pairs = _pairs(
+        extractor,
+        "Where are requirements recorded?",
+    )
+
+    assert (
+        MaterialRequirementKind.RELATION,
+        "record",
+    ) in pairs
+
+def test_auxiliary_root_nested_nominal_acl_is_relation_when_no_other_predicate():
+    parse = QuestionParse(
+        tokens=(
+            ParsedToken(
+                index=0,
+                text="is",
+                lemma="be",
+                pos="AUX",
+                tag="VBZ",
+                dependency="ROOT",
+                head_index=0,
+                is_stop=True,
+                is_punct=False,
+                is_alpha=True,
+            ),
+            ParsedToken(
+                index=1,
+                text="silk",
+                lemma="silk",
+                pos="NOUN",
+                tag="NN",
+                dependency="attr",
+                head_index=0,
+                is_stop=False,
+                is_punct=False,
+                is_alpha=True,
+            ),
+            ParsedToken(
+                index=2,
+                text="of",
+                lemma="of",
+                pos="ADP",
+                tag="IN",
+                dependency="prep",
+                head_index=1,
+                is_stop=True,
+                is_punct=False,
+                is_alpha=True,
+            ),
+            ParsedToken(
+                index=3,
+                text="hood",
+                lemma="hood",
+                pos="NOUN",
+                tag="NN",
+                dependency="pobj",
+                head_index=2,
+                is_stop=False,
+                is_punct=False,
+                is_alpha=True,
+            ),
+            ParsedToken(
+                index=4,
+                text="exposed",
+                lemma="expose",
+                pos="VERB",
+                tag="VBN",
+                dependency="acl",
+                head_index=3,
+                is_stop=False,
+                is_punct=False,
+                is_alpha=True,
+            ),
+        ),
+        noun_phrases=(),
+    )
+
+    extractor = (
+        DependencyMaterialRequirementExtractor(
+            FakeParser(
+                QuestionParseResult(
+                    primary=parse,
+                )
+            )
+        )
+    )
+
+    pairs = _pairs(
+        extractor,
+        "Which side is the silk of a hood exposed on?",
+    )
+
+    assert (
+        MaterialRequirementKind.RELATION,
+        "expose",
+    ) in pairs

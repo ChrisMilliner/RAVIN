@@ -366,6 +366,42 @@ class DependencyMaterialRequirementExtractor:
             )
         )
 
+    def _descendants_of(
+        self,
+        parse: QuestionParse,
+        head_index: int,
+    ) -> tuple[ParsedToken, ...]:
+        descendant_indexes = {
+            head_index
+        }
+
+        changed = True
+
+        while changed:
+            changed = False
+
+            for token in parse.tokens:
+                if (
+                    token.index
+                    not in descendant_indexes
+                    and token.head_index
+                    in descendant_indexes
+                ):
+                    descendant_indexes.add(
+                        token.index
+                    )
+                    changed = True
+
+        return tuple(
+            token
+            for token in parse.tokens
+            if (
+                token.index
+                in descendant_indexes
+                and token.index != head_index
+            )
+        )
+
     def _main_predicate_tokens(
         self,
         parse: QuestionParse,
@@ -409,6 +445,12 @@ class DependencyMaterialRequirementExtractor:
                 ):
                     add_predicate(child)
 
+                if (
+                    child.dependency == "ccomp"
+                    and child.pos == "VERB"
+                ):
+                    add_predicate(child)
+
             predicate_entities = tuple(
                 child
                 for child in root_children
@@ -430,6 +472,24 @@ class DependencyMaterialRequirementExtractor:
                         and child.pos == "VERB"
                     ):
                         add_predicate(child)
+
+            if not predicates:
+                for entity in predicate_entities:
+                    for descendant in (
+                        self._descendants_of(
+                            parse,
+                            entity.index,
+                        )
+                    ):
+                        if (
+                            descendant.dependency
+                            == "acl"
+                            and descendant.pos
+                            == "VERB"
+                        ):
+                            add_predicate(
+                                descendant
+                            )
 
         changed = True
 
