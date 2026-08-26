@@ -14,6 +14,37 @@ from backend.routing.question_parser import (
     QuestionParseResult,
 )
 
+class FakeParser:
+    def __init__(
+        self,
+        result: QuestionParseResult,
+    ) -> None:
+        self._result = result
+
+    def parse(
+        self,
+        question: str,
+    ) -> QuestionParseResult:
+        return self._result
+
+class FakeRecoveryProvider:
+    def __init__(
+        self,
+        recovered_parse: QuestionParse | None,
+    ) -> None:
+        self._recovered_parse = (
+            recovered_parse
+        )
+        self.calls = 0
+
+    def recover(
+        self,
+        question: str,
+        parse_result: QuestionParseResult,
+    ) -> QuestionParse | None:
+        self.calls += 1
+        return self._recovered_parse
+
 class FakeQuestionParser:
     def __init__(
         self,
@@ -1388,3 +1419,149 @@ def test_condition_verb_is_not_promoted_to_main_relation():
     assert relations == {
         "happen",
     }
+
+def test_unresolved_parse_uses_recovered_interpretation():
+    suspicious = (
+        _suspicious_concept_parse(
+            "broken"
+        )
+    )
+
+    recovered = (
+        _usable_relation_parse()
+    )
+
+    parser = FakeParser(
+        QuestionParseResult(
+            primary=suspicious,
+            fallback=suspicious,
+        )
+    )
+
+    recovery_provider = (
+        FakeRecoveryProvider(
+            recovered
+        )
+    )
+
+    extractor = (
+        DependencyMaterialRequirementExtractor(
+            parser,
+            recovery_provider=(
+                recovery_provider
+            ),
+        )
+    )
+
+    result = extractor.extract(
+        "Can members apply?"
+    )
+
+    assert (
+        result.resolution
+        == MaterialRequirementResolution.RESOLVED
+    )
+
+    assert (
+        result.selection
+        == MaterialRequirementSelection.RECOVERY
+    )
+
+    assert result.recovery is not None
+
+    active = result.active
+
+    assert active is not None
+    assert active is result.recovery
+
+    assert {
+        (
+            requirement.kind,
+            requirement.text,
+        )
+        for requirement
+        in active.requirements
+    } == {
+        (
+            MaterialRequirementKind.RELATION,
+            "apply",
+        )
+    }
+
+    assert recovery_provider.calls == 1
+
+
+def test_failed_recovery_remains_unresolved():
+    suspicious = (
+        _suspicious_concept_parse(
+            "broken"
+        )
+    )
+
+    parser = FakeParser(
+        QuestionParseResult(
+            primary=suspicious,
+            fallback=suspicious,
+        )
+    )
+
+    recovery_provider = (
+        FakeRecoveryProvider(None)
+    )
+
+    extractor = (
+        DependencyMaterialRequirementExtractor(
+            parser,
+            recovery_provider=(
+                recovery_provider
+            ),
+        )
+    )
+
+    result = extractor.extract(
+        "Question?"
+    )
+
+    assert (
+        result.resolution
+        == MaterialRequirementResolution.UNRESOLVED
+    )
+
+    assert result.selection is None
+    assert result.recovery is None
+    assert result.active is None
+    assert recovery_provider.calls == 1
+
+
+def test_resolved_parse_does_not_invoke_recovery():
+    parser = FakeParser(
+        QuestionParseResult(
+            primary=(
+                _usable_relation_parse()
+            )
+        )
+    )
+
+    recovery_provider = (
+        FakeRecoveryProvider(None)
+    )
+
+    extractor = (
+        DependencyMaterialRequirementExtractor(
+            parser,
+            recovery_provider=(
+                recovery_provider
+            ),
+        )
+    )
+
+    result = extractor.extract(
+        "Members apply?"
+    )
+
+    assert (
+        result.selection
+        == MaterialRequirementSelection.PRIMARY
+    )
+
+    assert recovery_provider.calls == 0

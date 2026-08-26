@@ -13,6 +13,10 @@ from backend.routing.question_parser import (
     QuestionParseReliability,
     QuestionParserService,
 )
+from backend.routing.question_structure_recovery import (
+    QuestionStructureRecoveryProvider,
+    recover_question_structure,
+)
 
 CLAUSE_DEPENDENCIES = frozenset(
     {
@@ -34,8 +38,14 @@ class DependencyMaterialRequirementExtractor:
     def __init__(
         self,
         parser: QuestionParserService,
+        recovery_provider: (
+            QuestionStructureRecoveryProvider | None
+        ) = None,
     ) -> None:
         self._parser = parser
+        self._recovery_provider = (
+            recovery_provider
+        )
 
     def extract(
         self,
@@ -71,10 +81,43 @@ class DependencyMaterialRequirementExtractor:
             parse_result.reliability
             == QuestionParseReliability.UNRESOLVED
         ):
+            recovery = None
+
+            if self._recovery_provider is not None:
+                recovered_parse = (
+                    recover_question_structure(
+                        question,
+                        parse_result,
+                        self._recovery_provider,
+                    )
+                )
+
+                if recovered_parse is not None:
+                    recovery = (
+                        self._requirements_from_parse(
+                            recovered_parse
+                        )
+                    )
+
+                    return (
+                        MaterialRequirementExtractionResult(
+                            primary=primary,
+                            fallback=fallback,
+                            recovery=recovery,
+                            resolution=(
+                                MaterialRequirementResolution.RESOLVED
+                            ),
+                            selection=(
+                                MaterialRequirementSelection.RECOVERY
+                            ),
+                        )
+                    )
+
             return (
                 MaterialRequirementExtractionResult(
                     primary=primary,
                     fallback=fallback,
+                    recovery=recovery,
                     resolution=(
                         MaterialRequirementResolution.UNRESOLVED
                     ),

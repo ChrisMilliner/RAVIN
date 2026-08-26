@@ -251,3 +251,89 @@ def test_fallback_selection_requires_fallback_requirements():
                 MaterialRequirementSelection.FALLBACK
             ),
         )
+
+def test_recovery_selection_returns_recovered_requirements():
+    primary = MaterialQuestionRequirements(
+        requirements=(
+            MaterialRequirement(
+                kind=MaterialRequirementKind.CONCEPT,
+                text="incorrect primary",
+            ),
+        )
+    )
+
+    recovery = MaterialQuestionRequirements(
+        requirements=(
+            MaterialRequirement(
+                kind=MaterialRequirementKind.RELATION,
+                text="apply",
+            ),
+        )
+    )
+
+    result = MaterialRequirementExtractionResult(
+        primary=primary,
+        recovery=recovery,
+        resolution=(
+            MaterialRequirementResolution.RESOLVED
+        ),
+        selection=(
+            MaterialRequirementSelection.RECOVERY
+        ),
+    )
+
+    assert result.active is recovery
+
+
+def test_recovery_selection_requires_recovered_requirements():
+    primary = MaterialQuestionRequirements(
+        requirements=(
+            MaterialRequirement(
+                kind=MaterialRequirementKind.CONCEPT,
+                text="primary",
+            ),
+        )
+    )
+
+    with pytest.raises(
+        ValueError,
+        match=(
+            "Recovered material requirements "
+            "must exist when recovery is selected."
+        ),
+    ):
+        MaterialRequirementExtractionResult(
+            primary=primary,
+            resolution=(
+                MaterialRequirementResolution.RESOLVED
+            ),
+            selection=(
+                MaterialRequirementSelection.RECOVERY
+            ),
+        )
+
+
+def test_rejects_invalid_recovered_requirements():
+    primary = MaterialQuestionRequirements(
+        requirements=(
+            MaterialRequirement(
+                kind=MaterialRequirementKind.CONCEPT,
+                text="primary",
+            ),
+        )
+    )
+
+    with pytest.raises(
+        ValueError,
+        match=(
+            "Recovered material requirements "
+            "must be MaterialQuestionRequirements."
+        ),
+    ):
+        MaterialRequirementExtractionResult(
+            primary=primary,
+            recovery=cast(
+                MaterialQuestionRequirements,
+                "invalid",
+            ),
+        )

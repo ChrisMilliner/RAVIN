@@ -31,6 +31,7 @@ class MaterialRequirementSelection(
 ):
     PRIMARY = "primary"
     FALLBACK = "fallback"
+    RECOVERY = "recovery"
 
 @dataclass(frozen=True)
 class MaterialRequirement:
@@ -86,6 +87,9 @@ class MaterialRequirementExtractionResult:
     fallback: (
         MaterialQuestionRequirements | None
     ) = None
+    recovery: (
+        MaterialQuestionRequirements | None
+    ) = None
     resolution: (
         MaterialRequirementResolution
     ) = MaterialRequirementResolution.RESOLVED
@@ -112,6 +116,18 @@ class MaterialRequirementExtractionResult:
         ):
             raise ValueError(
                 "Fallback material requirements "
+                "must be MaterialQuestionRequirements."
+            )
+
+        if (
+            self.recovery is not None
+            and not isinstance(
+                self.recovery,
+                MaterialQuestionRequirements,
+            )
+        ):
+            raise ValueError(
+                "Recovered material requirements "
                 "must be MaterialQuestionRequirements."
             )
 
@@ -168,6 +184,16 @@ class MaterialRequirementExtractionResult:
                 "must exist when fallback is selected."
             )
 
+        if (
+            self.selection
+            == MaterialRequirementSelection.RECOVERY
+            and self.recovery is None
+        ):
+            raise ValueError(
+                "Recovered material requirements "
+                "must exist when recovery is selected."
+            )
+
     @property
     def active(
         self,
@@ -183,5 +209,11 @@ class MaterialRequirementExtractionResult:
             == MaterialRequirementSelection.FALLBACK
         ):
             return self.fallback
+
+        if (
+            self.selection
+            == MaterialRequirementSelection.RECOVERY
+        ):
+            return self.recovery
 
         return self.primary
