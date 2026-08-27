@@ -800,3 +800,221 @@ def test_extracts_nested_prepositional_argument_context_as_scope():
             for item in proposition.objects
         )
     )
+
+def test_splits_coordinated_relations_with_separate_subjects():
+    requirements = MaterialQuestionRequirements(
+        requirements=(
+            _requirement(
+                MaterialRequirementKind.RELATION,
+                "apply",
+            ),
+            _requirement(
+                MaterialRequirementKind.RELATION,
+                "extend",
+            ),
+            _requirement(
+                MaterialRequirementKind.CONCEPT,
+                "students",
+            ),
+            _requirement(
+                MaterialRequirementKind.CONCEPT,
+                "promotion",
+            ),
+            _requirement(
+                MaterialRequirementKind.CONCEPT,
+                "supervisors",
+            ),
+            _requirement(
+                MaterialRequirementKind.CONCEPT,
+                "the deadline",
+            ),
+        )
+    )
+
+    parse = QuestionParse(
+        tokens=(
+            ParsedToken(
+                index=0,
+                text="students",
+                lemma="student",
+                pos="NOUN",
+                tag="NNS",
+                dependency="nsubj",
+                head_index=1,
+                is_stop=False,
+                is_punct=False,
+                is_alpha=True,
+            ),
+            ParsedToken(
+                index=1,
+                text="apply",
+                lemma="apply",
+                pos="VERB",
+                tag="VBP",
+                dependency="ROOT",
+                head_index=1,
+                is_stop=False,
+                is_punct=False,
+                is_alpha=True,
+            ),
+            ParsedToken(
+                index=2,
+                text="for",
+                lemma="for",
+                pos="ADP",
+                tag="IN",
+                dependency="prep",
+                head_index=1,
+                is_stop=True,
+                is_punct=False,
+                is_alpha=True,
+            ),
+            ParsedToken(
+                index=3,
+                text="promotion",
+                lemma="promotion",
+                pos="NOUN",
+                tag="NN",
+                dependency="pobj",
+                head_index=2,
+                is_stop=False,
+                is_punct=False,
+                is_alpha=True,
+            ),
+            ParsedToken(
+                index=4,
+                text="and",
+                lemma="and",
+                pos="CCONJ",
+                tag="CC",
+                dependency="cc",
+                head_index=6,
+                is_stop=True,
+                is_punct=False,
+                is_alpha=True,
+            ),
+            ParsedToken(
+                index=5,
+                text="supervisors",
+                lemma="supervisor",
+                pos="NOUN",
+                tag="NNS",
+                dependency="nsubj",
+                head_index=6,
+                is_stop=False,
+                is_punct=False,
+                is_alpha=True,
+            ),
+            ParsedToken(
+                index=6,
+                text="extend",
+                lemma="extend",
+                pos="VERB",
+                tag="VBP",
+                dependency="conj",
+                head_index=1,
+                is_stop=False,
+                is_punct=False,
+                is_alpha=True,
+            ),
+            ParsedToken(
+                index=7,
+                text="deadline",
+                lemma="deadline",
+                pos="NOUN",
+                tag="NN",
+                dependency="dobj",
+                head_index=6,
+                is_stop=False,
+                is_punct=False,
+                is_alpha=True,
+            ),
+        ),
+        noun_phrases=(
+            ParsedSpan(
+                text="students",
+                start_index=0,
+                end_index=1,
+                root_index=0,
+            ),
+            ParsedSpan(
+                text="promotion",
+                start_index=3,
+                end_index=4,
+                root_index=3,
+            ),
+            ParsedSpan(
+                text="supervisors",
+                start_index=5,
+                end_index=6,
+                root_index=5,
+            ),
+            ParsedSpan(
+                text="the deadline",
+                start_index=7,
+                end_index=8,
+                root_index=7,
+            ),
+        ),
+    )
+
+    result = (
+        DependencyMaterialPropositionExtractor()
+        .extract(
+            (
+                "Students apply for promotion and "
+                "supervisors extend the deadline."
+            ),
+            requirements,
+            parse,
+        )
+    )
+
+    assert len(
+        result.propositions
+    ) == 2
+
+    first = result.propositions[0]
+    second = result.propositions[1]
+
+    assert tuple(
+        item.text
+        for item in first.subjects
+    ) == (
+        "students",
+    )
+
+    assert tuple(
+        item.text
+        for item in first.relations
+    ) == (
+        "apply",
+    )
+
+    assert tuple(
+        item.text
+        for item in first.objects
+    ) == (
+        "promotion",
+    )
+
+    assert tuple(
+        item.text
+        for item in second.subjects
+    ) == (
+        "supervisors",
+    )
+
+    assert tuple(
+        item.text
+        for item in second.relations
+    ) == (
+        "extend",
+    )
+
+    assert tuple(
+        item.text
+        for item in second.objects
+    ) == (
+        "the deadline",
+    )

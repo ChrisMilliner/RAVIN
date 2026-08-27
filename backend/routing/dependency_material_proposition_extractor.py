@@ -124,6 +124,23 @@ class DependencyMaterialPropositionExtractor:
             ...
         ],
     ) -> MaterialQuestionPropositions:
+        independent_groups = (
+            self._independent_relation_groups(
+                relations,
+                parse,
+            )
+        )
+
+        if len(
+            independent_groups
+        ) > 1:
+            return (
+                self._extract_independent_relation_groups(
+                    requirements,
+                    parse,
+                    independent_groups,
+                )
+            )
         relation_tokens = tuple(
             token
             for relation in relations
@@ -306,6 +323,341 @@ class DependencyMaterialPropositionExtractor:
                 ),
             )
         )
+
+    def _extract_independent_relation_groups(
+        self,
+        requirements: MaterialQuestionRequirements,
+        parse: QuestionParse,
+        relation_groups: tuple[
+            tuple[
+                MaterialRequirement,
+                ...
+            ],
+            ...
+        ],
+    ) -> MaterialQuestionPropositions:
+        concepts = self._requirements_of_kind(
+            requirements,
+            MaterialRequirementKind.CONCEPT,
+        )
+
+        all_relation_indexes = {
+            token.index
+            for group in relation_groups
+            for relation in group
+            for token in (
+                self._matching_relation_token(
+                    relation,
+                    parse,
+                ),
+            )
+            if token is not None
+        }
+
+        propositions = []
+
+        for group in relation_groups:
+            group_tokens = tuple(
+                token
+                for relation in group
+                for token in (
+                    self._matching_relation_token(
+                        relation,
+                        parse,
+                    ),
+                )
+                if token is not None
+            )
+
+            group_indexes = {
+                token.index
+                for token in group_tokens
+            }
+
+            group_concepts = tuple(
+                requirement
+                for requirement in concepts
+                if self._concept_belongs_to_relation_group(
+                    requirement,
+                    group_indexes,
+                    all_relation_indexes,
+                    parse,
+                )
+            )
+
+            subjects = []
+            objects = []
+
+            for requirement in group_concepts:
+                span = self._matching_noun_phrase(
+                    requirement,
+                    parse,
+                )
+
+                if span is None:
+                    objects.append(
+                        requirement
+                    )
+                    continue
+
+                root = self._token_by_index(
+                    parse,
+                    span.root_index,
+                )
+
+                if (
+                    self._is_direct_subject_of_relation_chain(
+                        root,
+                        group_indexes,
+                    )
+                ):
+                    subjects.append(
+                        requirement
+                    )
+                else:
+                    objects.append(
+                        requirement
+                    )
+
+            propositions.append(
+                MaterialProposition(
+                    kind=(
+                        MaterialPropositionKind.RELATIONAL
+                    ),
+                    subjects=tuple(
+                        subjects
+                    ),
+                    relations=group,
+                    objects=tuple(
+                        objects
+                    ),
+                )
+            )
+
+        return MaterialQuestionPropositions(
+            propositions=tuple(
+                propositions
+            )
+        )
+
+    def _concept_belongs_to_relation_group(
+        self,
+        requirement: MaterialRequirement,
+        group_indexes: set[int],
+        all_relation_indexes: set[int],
+        parse: QuestionParse,
+    ) -> bool:
+        span = self._matching_noun_phrase(
+            requirement,
+            parse,
+        )
+
+        if span is None:
+            return False
+
+        current = self._token_by_index(
+            parse,
+            span.root_index,
+        )
+
+        visited: set[int] = set()
+
+        while (
+            current.index
+            not in visited
+        ):
+            visited.add(
+                current.index
+            )
+
+            if (
+                current.head_index
+                in group_indexes
+            ):
+                return True
+
+            if (
+                current.head_index
+                in all_relation_indexes
+            ):
+                return False
+
+            if (
+                current.head_index
+                == current.index
+            ):
+                break
+
+            current = self._token_by_index(
+                parse,
+                current.head_index,
+            )
+
+        return False
+
+    def _independent_relation_groups(
+        self,
+        relations: tuple[
+            MaterialRequirement,
+            ...
+        ],
+        parse: QuestionParse,
+    ) -> tuple[
+        tuple[
+            MaterialRequirement,
+            ...
+        ],
+        ...
+    ]:
+        relation_pairs = tuple(
+            (
+                relation,
+                self._matching_relation_token(
+                    relation,
+                    parse,
+                ),
+            )
+            for relation in relations
+        )
+
+        relation_indexes = {
+            token.index
+            for _, token in relation_pairs
+            if token is not None
+        }
+
+        independent_indexes = {
+            token.index
+            for _, token in relation_pairs
+            if (
+                token is not None
+                and token.dependency == "conj"
+                and self._relation_has_own_subject(
+                    token,
+                    parse,
+                )
+            )
+        }
+
+        if not independent_indexes:
+            return (
+                relations,
+            )
+
+        grouped: dict[
+            int | None,
+            list[MaterialRequirement],
+        ] = {
+            None: [],
+        }
+
+        for index in sorted(
+            independent_indexes
+        ):
+            grouped[index] = []
+
+        for (
+            relation,
+            token,
+        ) in relation_pairs:
+            if token is None:
+                grouped[None].append(
+                    relation
+                )
+                continue
+
+            group_index = (
+                self._independent_group_for_relation(
+                    token,
+                    independent_indexes,
+                    relation_indexes,
+                    parse,
+                )
+            )
+
+            grouped[
+                group_index
+            ].append(
+                relation
+            )
+
+        result = []
+
+        if grouped[None]:
+            result.append(
+                tuple(
+                    grouped[None]
+                )
+            )
+
+        for index in sorted(
+            independent_indexes
+        ):
+            if grouped[index]:
+                result.append(
+                    tuple(
+                        grouped[index]
+                    )
+                )
+
+        return tuple(
+            result
+        )
+
+    def _relation_has_own_subject(
+        self,
+        relation: ParsedToken,
+        parse: QuestionParse,
+    ) -> bool:
+        return any(
+            token.dependency
+            in {
+                "nsubj",
+                "nsubjpass",
+            }
+            and token.head_index
+            == relation.index
+            for token in parse.tokens
+        )
+
+    def _independent_group_for_relation(
+        self,
+        relation: ParsedToken,
+        independent_indexes: set[int],
+        relation_indexes: set[int],
+        parse: QuestionParse,
+    ) -> int | None:
+        current = relation
+        visited: set[int] = set()
+
+        while (
+            current.index
+            not in visited
+        ):
+            visited.add(
+                current.index
+            )
+
+            if (
+                current.index
+                in independent_indexes
+            ):
+                return current.index
+
+            if (
+                current.head_index
+                not in relation_indexes
+                or current.head_index
+                == current.index
+            ):
+                break
+
+            current = self._token_by_index(
+                parse,
+                current.head_index,
+            )
+
+        return None
 
     def _requirements_of_kind(
         self,
