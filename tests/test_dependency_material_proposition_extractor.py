@@ -1018,3 +1018,142 @@ def test_splits_coordinated_relations_with_separate_subjects():
     ) == (
         "the deadline",
     )
+
+def test_splits_multiple_requested_attributes_into_separate_propositions():
+    requirements = MaterialQuestionRequirements(
+        requirements=(
+            _requirement(
+                MaterialRequirementKind.RELATION,
+                "result",
+            ),
+            _requirement(
+                MaterialRequirementKind.CONDITION,
+                (
+                    "when staff achieve "
+                    "Professional Equivalence"
+                ),
+            ),
+            _requirement(
+                MaterialRequirementKind.REQUESTED_ATTRIBUTE,
+                "employment benefits",
+            ),
+            _requirement(
+                MaterialRequirementKind.REQUESTED_ATTRIBUTE,
+                "salary changes",
+            ),
+            _requirement(
+                MaterialRequirementKind.REQUESTED_ATTRIBUTE,
+                "career progression rights",
+            ),
+        )
+    )
+
+    parse = QuestionParse(
+        tokens=(
+            ParsedToken(
+                index=0,
+                text="benefits",
+                lemma="benefit",
+                pos="NOUN",
+                tag="NNS",
+                dependency="nsubj",
+                head_index=3,
+                is_stop=False,
+                is_punct=False,
+                is_alpha=True,
+            ),
+            ParsedToken(
+                index=1,
+                text="changes",
+                lemma="change",
+                pos="NOUN",
+                tag="NNS",
+                dependency="conj",
+                head_index=0,
+                is_stop=False,
+                is_punct=False,
+                is_alpha=True,
+            ),
+            ParsedToken(
+                index=2,
+                text="rights",
+                lemma="right",
+                pos="NOUN",
+                tag="NNS",
+                dependency="conj",
+                head_index=0,
+                is_stop=False,
+                is_punct=False,
+                is_alpha=True,
+            ),
+            ParsedToken(
+                index=3,
+                text="result",
+                lemma="result",
+                pos="VERB",
+                tag="VBP",
+                dependency="ROOT",
+                head_index=3,
+                is_stop=False,
+                is_punct=False,
+                is_alpha=True,
+            ),
+        ),
+        noun_phrases=(),
+    )
+
+    result = (
+        DependencyMaterialPropositionExtractor()
+        .extract(
+            (
+                "What employment benefits, salary changes, "
+                "and career progression rights result when "
+                "staff achieve Professional Equivalence?"
+            ),
+            requirements,
+            parse,
+        )
+    )
+
+    assert len(
+        result.propositions
+    ) == 3
+
+    assert tuple(
+        proposition.requested_attributes[0].text
+        for proposition
+        in result.propositions
+    ) == (
+        "employment benefits",
+        "salary changes",
+        "career progression rights",
+    )
+
+    assert all(
+        tuple(
+            condition.text
+            for condition
+            in proposition.conditions
+        )
+        == (
+            (
+                "when staff achieve "
+                "Professional Equivalence"
+            ),
+        )
+        for proposition
+        in result.propositions
+    )
+
+    assert all(
+        tuple(
+            relation.text
+            for relation
+            in proposition.relations
+        )
+        == (
+            "result",
+        )
+        for proposition
+        in result.propositions
+    )

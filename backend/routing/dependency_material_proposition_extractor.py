@@ -1,3 +1,4 @@
+from dataclasses import replace
 from backend.routing.material_propositions import (
     MaterialProposition,
     MaterialPropositionKind,
@@ -34,15 +35,59 @@ class DependencyMaterialPropositionExtractor:
         )
 
         if not relations:
-            return self._extract_information_request(
+            result = self._extract_information_request(
                 requirements,
                 parse,
             )
+        else:
+            result = self._extract_relational(
+                requirements,
+                parse,
+                relations,
+            )
 
-        return self._extract_relational(
-            requirements,
-            parse,
-            relations,
+        return (
+            self._expand_requested_attribute_propositions(
+                result
+            )
+        )
+
+    def _expand_requested_attribute_propositions(
+        self,
+        propositions: MaterialQuestionPropositions,
+    ) -> MaterialQuestionPropositions:
+        expanded: list[
+            MaterialProposition
+        ] = []
+
+        for proposition in propositions.propositions:
+            if (
+                len(
+                    proposition.requested_attributes
+                )
+                <= 1
+            ):
+                expanded.append(
+                    proposition
+                )
+                continue
+
+            for requested_attribute in (
+                proposition.requested_attributes
+            ):
+                expanded.append(
+                    replace(
+                        proposition,
+                        requested_attributes=(
+                            requested_attribute,
+                        ),
+                    )
+                )
+
+        return MaterialQuestionPropositions(
+            propositions=tuple(
+                expanded
+            )
         )
 
     def _extract_information_request(
