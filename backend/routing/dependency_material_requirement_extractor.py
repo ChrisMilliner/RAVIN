@@ -744,12 +744,44 @@ class DependencyMaterialRequirementExtractor:
         parse: QuestionParse,
         span: ParsedSpan,
     ) -> str:
-        return " ".join(
-            token.text
-            for token in self._span_tokens(
+        span_tokens = list(
+            self._span_tokens(
                 parse,
                 span,
             )
+        )
+
+        included_indexes = {
+            token.index
+            for token in span_tokens
+        }
+
+        attached_numeric_modifiers = tuple(
+            token
+            for token in self._children_of(
+                parse,
+                span.root_index,
+            )
+            if (
+                token.dependency == "nummod"
+                and token.index
+                not in included_indexes
+            )
+        )
+
+        combined_tokens = tuple(
+            sorted(
+                (
+                    *span_tokens,
+                    *attached_numeric_modifiers,
+                ),
+                key=lambda token: token.index,
+            )
+        )
+
+        return " ".join(
+            token.text
+            for token in combined_tokens
             if not token.is_punct
         ).strip()
 

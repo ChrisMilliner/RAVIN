@@ -1806,3 +1806,121 @@ def test_rejects_parser_when_shared_resolver_is_also_provided():
             parser,
             structure_resolver=resolver,
         )
+
+def test_concept_preserves_numeric_modifier_attached_to_noun_phrase_root():
+    parse = QuestionParse(
+        tokens=(
+            ParsedToken(
+                index=0,
+                text="student",
+                lemma="student",
+                pos="NOUN",
+                tag="NN",
+                dependency="nsubj",
+                head_index=6,
+                is_stop=False,
+                is_punct=False,
+                is_alpha=True,
+            ),
+            ParsedToken(
+                index=1,
+                text="at",
+                lemma="at",
+                pos="ADP",
+                tag="IN",
+                dependency="prep",
+                head_index=0,
+                is_stop=True,
+                is_punct=False,
+                is_alpha=True,
+            ),
+            ParsedToken(
+                index=2,
+                text="Academic",
+                lemma="Academic",
+                pos="PROPN",
+                tag="NNP",
+                dependency="compound",
+                head_index=4,
+                is_stop=False,
+                is_punct=False,
+                is_alpha=True,
+            ),
+            ParsedToken(
+                index=3,
+                text="Progression",
+                lemma="Progression",
+                pos="PROPN",
+                tag="NNP",
+                dependency="compound",
+                head_index=4,
+                is_stop=False,
+                is_punct=False,
+                is_alpha=True,
+            ),
+            ParsedToken(
+                index=4,
+                text="Stage",
+                lemma="Stage",
+                pos="PROPN",
+                tag="NNP",
+                dependency="pobj",
+                head_index=1,
+                is_stop=False,
+                is_punct=False,
+                is_alpha=True,
+            ),
+            ParsedToken(
+                index=5,
+                text="Three",
+                lemma="Three",
+                pos="PROPN",
+                tag="NNP",
+                dependency="nummod",
+                head_index=4,
+                is_stop=False,
+                is_punct=False,
+                is_alpha=True,
+            ),
+            ParsedToken(
+                index=6,
+                text="have",
+                lemma="have",
+                pos="VERB",
+                tag="VBP",
+                dependency="ROOT",
+                head_index=6,
+                is_stop=False,
+                is_punct=False,
+                is_alpha=True,
+            ),
+        ),
+        noun_phrases=(
+            ParsedSpan(
+                text="Academic Progression Stage",
+                start_index=2,
+                end_index=5,
+                root_index=4,
+            ),
+        ),
+    )
+
+    extractor = (
+        DependencyMaterialRequirementExtractor(
+            FakeParser(
+                QuestionParseResult(
+                    primary=parse,
+                )
+            )
+        )
+    )
+
+    pairs = _pairs(
+        extractor,
+        "A student at Academic Progression Stage Three has time.",
+    )
+
+    assert (
+        MaterialRequirementKind.CONCEPT,
+        "Academic Progression Stage Three",
+    ) in pairs
