@@ -33,6 +33,11 @@ class MaterialProposition:
         ...
     ] = ()
 
+    scopes: tuple[
+        MaterialRequirement,
+        ...
+    ] = ()
+
     qualifiers: tuple[
         MaterialRequirement,
         ...
@@ -72,6 +77,7 @@ class MaterialProposition:
             self.subjects,
             self.relations,
             self.objects,
+            self.scopes,
             self.qualifiers,
             self.conditions,
             self.modalities,
@@ -106,6 +112,12 @@ class MaterialProposition:
             self.relations,
             MaterialRequirementKind.RELATION,
             "relations",
+        )
+
+        self._validate_requirement_kinds(
+            self.scopes,
+            MaterialRequirementKind.CONCEPT,
+            "scopes",
         )
 
         self._validate_requirement_kinds(

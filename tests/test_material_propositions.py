@@ -307,3 +307,67 @@ def test_question_propositions_cannot_be_empty():
         MaterialQuestionPropositions(
             propositions=()
         )
+
+def test_proposition_supports_contextual_scope():
+    proposition = MaterialProposition(
+        kind=(
+            MaterialPropositionKind.RELATIONAL
+        ),
+        subjects=(
+            _requirement(
+                MaterialRequirementKind.CONCEPT,
+                "a student",
+            ),
+        ),
+        relations=(
+            _requirement(
+                MaterialRequirementKind.RELATION,
+                "submit",
+            ),
+        ),
+        objects=(
+            _requirement(
+                MaterialRequirementKind.CONCEPT,
+                "a show cause response",
+            ),
+        ),
+        scopes=(
+            _requirement(
+                MaterialRequirementKind.CONCEPT,
+                "Academic Progression Stage Three",
+            ),
+        ),
+    )
+
+    assert tuple(
+        scope.text
+        for scope in proposition.scopes
+    ) == (
+        "Academic Progression Stage Three",
+    )
+
+def test_scope_field_rejects_wrong_requirement_kind():
+    with pytest.raises(
+        ValueError,
+        match=(
+            "Material proposition scopes "
+            "must contain concept requirements."
+        ),
+    ):
+        MaterialProposition(
+            kind=(
+                MaterialPropositionKind.RELATIONAL
+            ),
+            relations=(
+                _requirement(
+                    MaterialRequirementKind.RELATION,
+                    "submit",
+                ),
+            ),
+            scopes=(
+                _requirement(
+                    MaterialRequirementKind.CONDITION,
+                    "when progress is unsatisfactory",
+                ),
+            ),
+        )
