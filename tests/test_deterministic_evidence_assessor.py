@@ -1,4 +1,5 @@
 from types import SimpleNamespace
+from typing import cast
 import pytest
 import backend.routing.deterministic_evidence_assessor as assessor_module
 from backend.routing.deterministic_evidence_assessor import (
@@ -22,6 +23,18 @@ from backend.routing.proposition_coverage import (
     PropositionCoverageStatus,
     PropositionEvidenceCoverage,
     QuestionEvidenceCoverage,
+)
+from backend.retrieval.production import (
+    GroundedRetrievalResult,
+)
+from backend.routing.dependency_material_requirement_extractor import (
+    DependencyMaterialRequirementExtractor,
+)
+from backend.routing.proposition_coverage_assessor import (
+    PropositionCoverageAssessor,
+)
+from backend.routing.question_structure_resolver import (
+    QuestionStructureResolver,
 )
 
 class FakeStructureResolver:
@@ -164,15 +177,19 @@ def _signals_without_evidence():
         score_margin=None,
     )
 
-def _retrieval_result():
-    return SimpleNamespace(
-        context=SimpleNamespace(
-            blocks=(
-                SimpleNamespace(
-                    text="Evidence text."
-                ),
+def _retrieval_result(
+) -> GroundedRetrievalResult:
+    return cast(
+        GroundedRetrievalResult,
+        SimpleNamespace(
+            context=SimpleNamespace(
+                blocks=(
+                    SimpleNamespace(
+                        text="Evidence text."
+                    ),
+                )
             )
-        )
+        ),
     )
 
 def _assessor(
@@ -182,23 +199,26 @@ def _assessor(
 
     return (
         DeterministicEvidenceSufficiencyAssessor(
-            structure_resolver=(
-                FakeStructureResolver()
+            structure_resolver=cast(
+                QuestionStructureResolver,
+                FakeStructureResolver(),
             ),
-            requirement_extractor=(
-                FakeRequirementExtractor()
+            requirement_extractor=cast(
+                DependencyMaterialRequirementExtractor,
+                FakeRequirementExtractor(),
             ),
             proposition_extractor=(
                 FakePropositionExtractor(
                     propositions
                 )
             ),
-            coverage_assessor=(
+                        coverage_assessor=cast(
+                PropositionCoverageAssessor,
                 FakeCoverageAssessor(
                     _coverage(
                         status
                     )
-                )
+                ),
             ),
         )
     )
@@ -312,25 +332,28 @@ def test_unresolved_structure_is_uncertain(
 
     assessor = (
         DeterministicEvidenceSufficiencyAssessor(
-            structure_resolver=(
+            structure_resolver=cast(
+                QuestionStructureResolver,
                 FakeStructureResolver(
                     active=None
-                )
+                ),
             ),
-            requirement_extractor=(
-                FakeRequirementExtractor()
+            requirement_extractor=cast(
+                DependencyMaterialRequirementExtractor,
+                FakeRequirementExtractor(),
             ),
             proposition_extractor=(
                 FakePropositionExtractor(
                     _propositions()
                 )
             ),
-            coverage_assessor=(
+            coverage_assessor=cast(
+                PropositionCoverageAssessor,
                 FakeCoverageAssessor(
                     _coverage(
                         PropositionCoverageStatus.COVERED
                     )
-                )
+                ),
             ),
         )
     )
