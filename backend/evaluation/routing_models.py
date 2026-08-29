@@ -18,6 +18,9 @@ from backend.routing.models import (
 
 @dataclass(frozen=True)
 class RoutingEvaluationQuestion:
+    """Represent expected intent, sufficiency, and behavior for one routing question.
+    """
+
     question_id: str
     question: str
     expected_intent: QuestionIntent
@@ -169,6 +172,9 @@ DEFAULT_ROUTING_PASS_THRESHOLD = 0.95
 
 @dataclass(frozen=True)
 class RoutingEvaluationConfig:
+    """Configure pass thresholds for routing intent, sufficiency, and behavior.
+    """
+
     intent_pass_threshold: float = (
         DEFAULT_ROUTING_PASS_THRESHOLD
     )
@@ -197,6 +203,9 @@ class RoutingEvaluationConfig:
 
 @dataclass(frozen=True)
 class RoutingPrediction:
+    """Represent routing predictions produced for one evaluation question.
+    """
+
     question_id: str
     predicted_intent: QuestionIntent
     predicted_sufficiency: (
@@ -244,6 +253,9 @@ class RoutingPrediction:
 
 @dataclass(frozen=True)
 class RoutingQuestionEvaluationResult:
+    """Record expected and predicted routing states for one question.
+    """
+
     question_id: str
     expected_intent: QuestionIntent
     predicted_intent: QuestionIntent
@@ -318,6 +330,9 @@ class RoutingQuestionEvaluationResult:
 
 @dataclass(frozen=True)
 class RoutingClassResult:
+    """Record support and correct predictions for one routing class.
+    """
+
     label: str
     support: int
     correct: int
@@ -349,10 +364,15 @@ class RoutingClassResult:
 
     @property
     def accuracy(self) -> float:
+        """Return accuracy for this routing class.
+        """
         return self.correct / self.support
 
 @dataclass(frozen=True)
 class RoutingClassificationResult:
+    """Aggregate overall, macro, and per-class routing classification results.
+    """
+
     overall_accuracy: float
     macro_accuracy: float
     class_results: tuple[
@@ -413,6 +433,8 @@ class RoutingClassificationResult:
 
     @property
     def passed(self) -> bool:
+        """Return whether macro accuracy meets the configured pass threshold.
+        """
         return (
             self.macro_accuracy
             >= self.pass_threshold
@@ -420,6 +442,9 @@ class RoutingClassificationResult:
 
 @dataclass(frozen=True)
 class RoutingEvaluationRunResult:
+    """Aggregate intent, sufficiency, behavior, and per-question routing results.
+    """
+
     question_results: tuple[
         RoutingQuestionEvaluationResult,
         ...
@@ -484,6 +509,8 @@ class RoutingEvaluationRunResult:
 
     @property
     def passed(self) -> bool:
+        """Return whether all three routing evaluation dimensions passed.
+        """
         return (
             self.intent_result.passed
             and self.sufficiency_result.passed

@@ -15,6 +15,9 @@ from typing import Protocol
 
 @dataclass(frozen=True)
 class AnswerabilityResult:
+    """Store proposition-to-evidence answerability scores.
+    """
+
     scores: tuple[
         float,
         ...
@@ -40,6 +43,8 @@ class AnswerabilityResult:
     def strongest_score(
         self,
     ) -> float:
+        """Return the strongest available answerability score.
+        """
         return max(
             self.scores
         )
@@ -47,6 +52,9 @@ class AnswerabilityResult:
 class AnswerabilityProvider(
     Protocol
 ):
+    """Define the framework-neutral proposition answerability scoring contract.
+    """
+
     def score(
         self,
         question: str,
@@ -55,6 +63,8 @@ class AnswerabilityProvider(
             ...
         ],
     ) -> AnswerabilityResult:
+        """Score one question or proposition against each supplied evidence text.
+        """
         ...
 
 def score_answerability(
@@ -65,6 +75,8 @@ def score_answerability(
     ],
     provider: AnswerabilityProvider,
 ) -> AnswerabilityResult:
+    """Validate answerability inputs and return one provider score per evidence text.
+    """
     question = question.strip()
 
     if not question:

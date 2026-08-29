@@ -23,12 +23,17 @@ from backend.routing.question_parser import (
 class MaterialPropositionExtractor(
     Protocol
 ):
+    """Define the contract for extracting material propositions from a question.
+    """
+
     def extract(
         self,
         question: str,
         requirements: MaterialQuestionRequirements,
         parse: QuestionParse,
     ) -> MaterialQuestionPropositions:
+        """Extract propositions from a question, its requirements, and resolved parse.
+        """
         ...
 
 def extract_material_propositions(
@@ -37,6 +42,8 @@ def extract_material_propositions(
     parse: QuestionParse,
     extractor: MaterialPropositionExtractor,
 ) -> MaterialQuestionPropositions:
+    """Validate proposition-extraction inputs and return the extractor result.
+    """
     question = question.strip()
 
     if not question:

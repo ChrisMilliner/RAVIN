@@ -16,16 +16,23 @@ from backend.routing.models import (
 )
 
 class QuestionIntentClassifier(Protocol):
+    """Define the framework-neutral question-intent classification contract.
+    """
+
     def classify(
         self,
         question: str,
     ) -> QuestionIntent:
+        """Classify a question as focused, broad, or ambiguous.
+        """
         ...
 
 def classify_question_intent(
     question: str,
     classifier: QuestionIntentClassifier,
 ) -> QuestionIntent:
+    """Validate a question and invoke the configured deterministic classifier.
+    """
     question = question.strip()
 
     if not question:

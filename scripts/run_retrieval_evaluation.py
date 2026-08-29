@@ -45,6 +45,8 @@ POLICIES = (
 )
 
 def main() -> None:
+    """Run the preliminary command-line retrieval evaluation workflow.
+    """
     print("=== RAVIN RETRIEVAL EVALUATION ===")
     print()
 

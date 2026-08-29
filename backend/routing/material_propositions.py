@@ -21,6 +21,11 @@ class MaterialPropositionKind(
     str,
     Enum,
 ):
+    """Identify RAVIN-defined material proposition categories.
+
+    These values are RAVIN concepts rather than NLP-library dependency labels.
+    """
+
     RELATIONAL = "relational"
     INFORMATION_REQUEST = (
         "information_request"
@@ -28,6 +33,9 @@ class MaterialPropositionKind(
 
 @dataclass(frozen=True)
 class MaterialProposition:
+    """Represent one substantive factual proposition that policy evidence must cover.
+    """
+
     kind: MaterialPropositionKind
 
     subjects: tuple[
@@ -210,6 +218,9 @@ class MaterialProposition:
 
 @dataclass(frozen=True)
 class MaterialQuestionPropositions:
+    """Contain the material propositions extracted from one user question.
+    """
+
     propositions: tuple[
         MaterialProposition,
         ...

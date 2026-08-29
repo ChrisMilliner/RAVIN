@@ -16,6 +16,9 @@ from typing import Callable, Protocol
 
 @dataclass(frozen=True)
 class ParsedToken:
+    """Represent one parser-neutral token and its linguistic attributes.
+    """
+
     index: int
     text: str
     lemma: str
@@ -29,6 +32,9 @@ class ParsedToken:
 
 @dataclass(frozen=True)
 class ParsedSpan:
+    """Represent one parser-neutral noun-phrase span.
+    """
+
     text: str
     start_index: int
     end_index: int
@@ -36,6 +42,9 @@ class ParsedSpan:
 
 @dataclass(frozen=True)
 class QuestionParse:
+    """Represent parser-neutral token and noun-phrase structure for a question.
+    """
+
     tokens: tuple[
         ParsedToken,
         ...
@@ -52,6 +61,8 @@ class QuestionParse:
         ParsedToken,
         ...
     ]:
+        """Return tokens identified as dependency roots.
+        """
         return tuple(
             token
             for token in self.tokens
@@ -62,11 +73,17 @@ class QuestionParseReliability(
     str,
     Enum,
 ):
+    """Represent whether available question structure is resolved or unresolved.
+    """
+
     RESOLVED = "resolved"
     UNRESOLVED = "unresolved"
 
 @dataclass(frozen=True)
 class QuestionParseResult:
+    """Record primary and optional fallback question parses.
+    """
+
     primary: QuestionParse
     fallback: QuestionParse | None = None
 
@@ -74,12 +91,16 @@ class QuestionParseResult:
     def used_fallback(
         self,
     ) -> bool:
+        """Return whether a fallback parse was produced.
+        """
         return self.fallback is not None
 
     @property
     def primary_suspicious(
         self,
     ) -> bool:
+        """Return whether the primary parse triggers RAVIN structural checks.
+        """
         return is_question_parse_suspicious(
             self.primary
         )
@@ -88,6 +109,8 @@ class QuestionParseResult:
     def fallback_suspicious(
         self,
     ) -> bool | None:
+        """Return fallback suspiciousness, or None when no fallback exists.
+        """
         if self.fallback is None:
             return None
 
@@ -99,6 +122,8 @@ class QuestionParseResult:
     def reliability(
         self,
     ) -> QuestionParseReliability:
+        """Return resolved when a usable primary or fallback parse exists.
+        """
         if not self.primary_suspicious:
             return (
                 QuestionParseReliability.RESOLVED
@@ -119,19 +144,29 @@ class QuestionParseResult:
 class QuestionParserService(
     Protocol
 ):
+    """Define the service contract for primary and fallback question parsing.
+    """
+
     def parse(
         self,
         question: str,
     ) -> QuestionParseResult:
+        """Parse a question and return primary and optional fallback analysis.
+        """
         ...
 
 class QuestionParseProvider(
     Protocol
 ):
+    """Define the neutral contract implemented by concrete NLP parser adapters.
+    """
+
     def parse(
         self,
         question: str,
     ) -> QuestionParse:
+        """Convert a question into RAVIN's neutral QuestionParse representation.
+        """
         ...
 
 QuestionParseProviderFactory = Callable[
@@ -206,6 +241,8 @@ def _has_bare_root_object_before_conjoined_verb(
 def is_question_parse_suspicious(
     parse: QuestionParse,
 ) -> bool:
+    """Detect parser structures that require fallback or deterministic recovery.
+    """
     roots = parse.roots
 
     if len(roots) != 1:
@@ -243,6 +280,12 @@ def is_question_parse_suspicious(
     return False
 
 class QuestionParser:
+    """Coordinate primary parsing and lazy fallback parsing.
+
+    Fallback parsing occurs only when RAVIN's structural checks consider the
+    primary parse suspicious.
+    """
+
     def __init__(
         self,
         primary_provider: QuestionParseProvider,
@@ -266,6 +309,8 @@ class QuestionParser:
         self,
         question: str,
     ) -> QuestionParseResult:
+        """Parse a question and invoke fallback parsing only when required.
+        """
         question = question.strip()
 
         if not question:

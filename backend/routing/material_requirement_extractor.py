@@ -18,16 +18,23 @@ from backend.routing.material_requirements import (
 class MaterialRequirementExtractor(
     Protocol
 ):
+    """Define the contract for extracting material requirements from a question.
+    """
+
     def extract(
         self,
         question: str,
     ) -> MaterialRequirementExtractionResult:
+        """Extract the resolved material requirements needed to interpret a question.
+        """
         ...
 
 def extract_material_requirements(
     question: str,
     extractor: MaterialRequirementExtractor,
 ) -> MaterialRequirementExtractionResult:
+    """Validate a question and return the configured requirement extractor result.
+    """
     question = question.strip()
 
     if not question:

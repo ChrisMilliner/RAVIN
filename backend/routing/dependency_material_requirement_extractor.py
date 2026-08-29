@@ -49,6 +49,9 @@ INTERROGATIVE_TAGS = frozenset(
 )
 
 class DependencyMaterialRequirementExtractor:
+    """Extract RAVIN material requirements from resolved question structure.
+    """
+
     def __init__(
         self,
         parser: QuestionParserService | None = None,
@@ -98,6 +101,8 @@ class DependencyMaterialRequirementExtractor:
         self,
         question: str,
     ) -> MaterialRequirementExtractionResult:
+        """Resolve question structure and return primary, fallback, or recovery requirements.
+        """
         question = question.strip()
 
         if not question:

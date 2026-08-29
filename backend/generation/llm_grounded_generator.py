@@ -22,6 +22,12 @@ from backend.llm.provider import (
 )
 
 class LlmGroundedAnswerGenerator:
+    """Generate grounded wording through the configured language-model provider.
+
+    The language model receives an already-selected behavior and supplied
+    evidence and is not responsible for routing or sufficiency decisions.
+    """
+
     def __init__(
         self,
         provider: LanguageModelProvider,
@@ -32,6 +38,8 @@ class LlmGroundedAnswerGenerator:
         self,
         request: GroundedGenerationRequest,
     ) -> GroundedGenerationResult:
+        """Build grounded prompts and return language-model output as a generation result.
+        """
         if not isinstance(
             request,
             GroundedGenerationRequest,

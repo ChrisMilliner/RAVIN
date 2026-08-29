@@ -28,12 +28,17 @@ from backend.routing.question_parser import (
 )
 
 class DependencyMaterialPropositionExtractor:
+    """Derive material propositions from resolved dependency structure.
+    """
+
     def extract(
         self,
         question: str,
         requirements: MaterialQuestionRequirements,
         parse: QuestionParse,
     ) -> MaterialQuestionPropositions:
+        """Extract the independent material propositions that evidence must cover.
+        """
         question = question.strip()
 
         if not question:

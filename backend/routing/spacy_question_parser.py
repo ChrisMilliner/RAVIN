@@ -22,6 +22,9 @@ from backend.routing.question_parser import (
 class SpacyPipeline(
     Protocol
 ):
+    """Define the minimal callable spaCy pipeline interface used by the adapter.
+    """
+
     def __call__(
         self,
         text: str,
@@ -29,6 +32,12 @@ class SpacyPipeline(
         ...
 
 class SpacyQuestionParseProvider:
+    """Adapt spaCy linguistic output into RAVIN's neutral QuestionParse model.
+
+    spaCy supplies token and dependency analysis only; RAVIN defines the
+    higher-level requirement, proposition, recovery, and routing semantics.
+    """
+
     def __init__(
         self,
         pipeline: SpacyPipeline,
@@ -39,6 +48,8 @@ class SpacyQuestionParseProvider:
         self,
         question: str,
     ) -> QuestionParse:
+        """Convert spaCy token and noun-phrase analysis into neutral parse structures.
+        """
         doc = self._pipeline(
             question
         )
@@ -77,6 +88,8 @@ class SpacyQuestionParseProvider:
 def load_spacy_question_parse_provider(
     model_name: str,
 ) -> SpacyQuestionParseProvider:
+    """Load a named spaCy model and wrap it in the neutral RAVIN parser adapter.
+    """
     model_name = model_name.strip()
 
     if not model_name:

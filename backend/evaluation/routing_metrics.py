@@ -72,6 +72,8 @@ def calculate_classification_accuracy(
     expected_labels: tuple[Enum, ...],
     predicted_labels: tuple[Enum, ...],
 ) -> float:
+    """Calculate overall classification accuracy for matching label sequences.
+    """
     _validate_label_sequences(
         expected_labels,
         predicted_labels,
@@ -93,6 +95,8 @@ def calculate_class_accuracy(
     predicted_labels: tuple[Enum, ...],
     label: Enum,
 ) -> float:
+    """Calculate accuracy for one expected classification label.
+    """
     _validate_label_sequences(
         expected_labels,
         predicted_labels,
@@ -131,6 +135,8 @@ def calculate_macro_accuracy(
     predicted_labels: tuple[Enum, ...],
     labels: tuple[Enum, ...],
 ) -> float:
+    """Calculate the unweighted mean accuracy across required classes.
+    """
     _validate_label_sequences(
         expected_labels,
         predicted_labels,
@@ -165,6 +171,8 @@ def meets_classification_quality_gate(
     accuracy: float,
     threshold: float,
 ) -> bool:
+    """Determine whether classification accuracy meets its configured threshold.
+    """
     if not 0.0 <= accuracy <= 1.0:
         raise ValueError(
             "Classification accuracy must be "

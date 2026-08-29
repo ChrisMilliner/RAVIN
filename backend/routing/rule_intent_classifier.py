@@ -108,10 +108,15 @@ def _contains_broad_signal(
     )
 
 class RuleBasedQuestionIntentClassifier:
+    """Classify question intent using explicit deterministic RAVIN rules.
+    """
+
     def classify(
         self,
         question: str,
     ) -> QuestionIntent:
+        """Classify topic-unanchored questions as ambiguous and broad signals as broad.
+        """
         normalized = _normalize_question(
             question
         )

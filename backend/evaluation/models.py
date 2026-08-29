@@ -21,6 +21,9 @@ EvaluationBehavior = AnswerBehavior
 
 @dataclass(frozen=True)
 class ExpectedEvidence:
+    """Describe policy evidence that may satisfy one evaluation expectation.
+    """
+
     policy_id: str
     heading_path: tuple[str, ...]
     allow_descendants: bool = False
@@ -47,6 +50,9 @@ class ExpectedEvidence:
 
 @dataclass(frozen=True)
 class ExpectedEvidenceGroup:
+    """Group alternative evidence locations that satisfy the same required concept.
+    """
+
     group_id: str
     description: str
     alternatives: tuple[ExpectedEvidence, ...]
@@ -84,6 +90,9 @@ class ExpectedEvidenceGroup:
 
 @dataclass(frozen=True)
 class GroundedOverviewGroupResult:
+    """Record whether one required grounded-overview evidence group was covered.
+    """
+
     group_id: str
     covered: bool
 
@@ -105,6 +114,9 @@ class GroundedOverviewGroupResult:
 
 @dataclass(frozen=True)
 class GroundedOverviewQuestionResult:
+    """Record evidence-group coverage for one grounded-overview question.
+    """
+
     question_id: str
     group_results: tuple[
         GroundedOverviewGroupResult,
@@ -150,10 +162,14 @@ class GroundedOverviewQuestionResult:
 
     @property
     def total_groups(self) -> int:
+        """Return the number of required evidence groups for this question.
+        """
         return len(self.group_results)
 
     @property
     def covered_groups(self) -> int:
+        """Return the number of required evidence groups that were covered.
+        """
         return sum(
             1
             for result in self.group_results
@@ -162,6 +178,8 @@ class GroundedOverviewQuestionResult:
 
     @property
     def evidence_coverage(self) -> float:
+        """Return the proportion of required evidence groups that were covered.
+        """
         return (
             self.covered_groups
             / self.total_groups
@@ -169,6 +187,8 @@ class GroundedOverviewQuestionResult:
 
     @property
     def passed(self) -> bool:
+        """Return whether every required evidence group was covered.
+        """
         return (
             self.covered_groups
             == self.total_groups
@@ -176,6 +196,9 @@ class GroundedOverviewQuestionResult:
 
 @dataclass(frozen=True)
 class GroundedOverviewEvaluationConfig:
+    """Configure grounded-overview retrieval depth and question pass threshold.
+    """
+
     top_k: int = DEFAULT_TOP_K
     pass_threshold: float = (
         DEFAULT_GROUNDED_OVERVIEW_PASS_THRESHOLD
@@ -196,6 +219,9 @@ class GroundedOverviewEvaluationConfig:
 
 @dataclass(frozen=True)
 class GroundedOverviewEvaluationResult:
+    """Aggregate grounded-overview evidence coverage across evaluated questions.
+    """
+
     question_results: tuple[
         GroundedOverviewQuestionResult,
         ...
@@ -243,10 +269,14 @@ class GroundedOverviewEvaluationResult:
 
     @property
     def total_questions(self) -> int:
+        """Return the number of evaluated grounded-overview questions.
+        """
         return len(self.question_results)
 
     @property
     def passed_questions(self) -> int:
+        """Return the number of grounded-overview questions with complete coverage.
+        """
         return sum(
             1
             for result in self.question_results
@@ -255,6 +285,8 @@ class GroundedOverviewEvaluationResult:
 
     @property
     def question_pass_rate(self) -> float:
+        """Return the proportion of grounded-overview questions that passed.
+        """
         return (
             self.passed_questions
             / self.total_questions
@@ -262,6 +294,8 @@ class GroundedOverviewEvaluationResult:
 
     @property
     def total_groups(self) -> int:
+        """Return the total number of required evidence groups evaluated.
+        """
         return sum(
             result.total_groups
             for result in self.question_results
@@ -269,6 +303,8 @@ class GroundedOverviewEvaluationResult:
 
     @property
     def covered_groups(self) -> int:
+        """Return the total number of required evidence groups that were covered.
+        """
         return sum(
             result.covered_groups
             for result in self.question_results
@@ -276,6 +312,8 @@ class GroundedOverviewEvaluationResult:
 
     @property
     def evidence_group_coverage(self) -> float:
+        """Return aggregate required-evidence-group coverage.
+        """
         return (
             self.covered_groups
             / self.total_groups
@@ -283,6 +321,8 @@ class GroundedOverviewEvaluationResult:
 
     @property
     def passed(self) -> bool:
+        """Return whether the grounded-overview question pass rate meets its threshold.
+        """
         return (
             self.question_pass_rate
             >= self.pass_threshold
@@ -290,6 +330,9 @@ class GroundedOverviewEvaluationResult:
 
 @dataclass(frozen=True)
 class EvaluationQuestion:
+    """Represent one retrieval evaluation question and its expected evidence.
+    """
+
     question_id: str
     question: str
     expected_evidence: tuple[ExpectedEvidence, ...]
@@ -351,6 +394,9 @@ class EvaluationQuestion:
 
 @dataclass(frozen=True)
 class EvaluationConfig:
+    """Configure retrieval evaluation depth and the required Top-1 threshold.
+    """
+
     top_k: int = DEFAULT_TOP_K
     top_1_pass_threshold: float = (
         DEFAULT_TOP_1_PASS_THRESHOLD
@@ -369,6 +415,9 @@ class EvaluationConfig:
 
 @dataclass(frozen=True)
 class QuestionEvaluationResult:
+    """Record ranked retrieval evidence and first relevant rank for one question.
+    """
+
     question_id: str
     question: str
     first_relevant_rank: int | None
@@ -376,6 +425,11 @@ class QuestionEvaluationResult:
 
 @dataclass(frozen=True)
 class EvaluationPopulation:
+    """Describe the behavior composition of an evaluation dataset.
+
+    Ranking metrics apply only to the appropriate Direct Answer population.
+    """
+
     dataset_questions: int
     direct_answer_questions: int
     grounded_overview_questions: int
@@ -413,6 +467,9 @@ class EvaluationPopulation:
 
 @dataclass(frozen=True)
 class EvaluationRunResult:
+    """Aggregate retrieval metrics, question results, and population information.
+    """
+
     question_results: tuple[QuestionEvaluationResult, ...]
     top_1_accuracy: float
     hit_at_k: float

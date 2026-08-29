@@ -17,15 +17,24 @@ from backend.evaluation.models import (
 )
 
 class DatasetValidationStatus(str, Enum):
+    """Identify whether an evaluation dataset is preliminary or human validated.
+    """
+
     PRELIMINARY = "preliminary"
     HUMAN_VALIDATED = "human-validated"
 
 class ExperimentDirection(str, Enum):
+    """Represent the relative direction of a candidate retrieval experiment.
+    """
+
     IMPROVED = "improved"
     REGRESSED = "regressed"
     UNCHANGED = "unchanged"
 
 class ExperimentSelectionDecision(str, Enum):
+    """Represent whether an experiment candidate is eligible for selection.
+    """
+
     REJECT_BELOW_THRESHOLD = (
         "reject-below-threshold"
     )
@@ -41,6 +50,12 @@ class ExperimentSelectionDecision(str, Enum):
 
 @dataclass(frozen=True)
 class RetrievalExperimentConfig:
+    """Describe a reproducible retrieval experiment and its quality requirements.
+
+    Dataset validation status remains explicit so preliminary scores cannot
+    be mistaken for validated quality evidence.
+    """
+
     experiment_name: str
     baseline_name: str
     candidate_name: str
@@ -82,15 +97,23 @@ class RetrievalExperimentConfig:
 
 @dataclass(frozen=True)
 class MetricComparison:
+    """Store baseline and candidate values for one evaluation metric.
+    """
+
     baseline: float
     candidate: float
 
     @property
     def delta(self) -> float:
+        """Return the candidate metric change relative to the baseline.
+        """
         return self.candidate - self.baseline
 
 @dataclass(frozen=True)
 class QuestionRankChange:
+    """Record how the first relevant rank changed for one evaluation question.
+    """
+
     question_id: str
     baseline_rank: int | None
     candidate_rank: int | None
@@ -119,6 +142,9 @@ class QuestionRankChange:
 
 @dataclass(frozen=True)
 class RetrievalExperimentComparison:
+    """Represent the complete evidence used to compare two retrieval configurations.
+    """
+
     config: RetrievalExperimentConfig
     top_1: MetricComparison
     hit_at_k: MetricComparison

@@ -19,12 +19,18 @@ class PropositionCoverageStatus(
     str,
     Enum,
 ):
+    """Represent covered, partial, or uncovered proposition evidence.
+    """
+
     COVERED = "covered"
     PARTIAL = "partial"
     UNCOVERED = "uncovered"
 
 @dataclass(frozen=True)
 class PropositionEvidenceCoverage:
+    """Record evidence coverage and strongest score for one material proposition.
+    """
+
     proposition: MaterialProposition
     status: PropositionCoverageStatus
 
@@ -108,6 +114,9 @@ class PropositionEvidenceCoverage:
 
 @dataclass(frozen=True)
 class QuestionEvidenceCoverage:
+    """Aggregate proposition-level evidence coverage for a question.
+    """
+
     propositions: tuple[
         PropositionEvidenceCoverage,
         ...
@@ -139,6 +148,8 @@ class QuestionEvidenceCoverage:
     def all_covered(
         self,
     ) -> bool:
+        """Return whether every material proposition is fully covered.
+        """
         return all(
             coverage.status
             == PropositionCoverageStatus.COVERED
@@ -150,6 +161,8 @@ class QuestionEvidenceCoverage:
     def minimum_score(
         self,
     ) -> float:
+        """Return the lowest proposition coverage score.
+        """
         return min(
             coverage.score
             for coverage

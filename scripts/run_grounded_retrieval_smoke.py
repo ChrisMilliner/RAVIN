@@ -55,6 +55,8 @@ SMOKE_QUESTION_IDS = (
 )
 
 def main() -> None:
+    """Run a live development smoke test of production grounded retrieval.
+    """
     print("=== RAVIN GROUNDED RETRIEVAL SMOKE TEST ===")
 
     print()

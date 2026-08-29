@@ -24,6 +24,8 @@ def matches_expected_evidence(
     chunk: PolicyChunk,
     expected: ExpectedEvidence,
 ) -> bool:
+    """Determine whether a policy chunk satisfies one expected-evidence definition.
+    """
     if chunk.policy_id != expected.policy_id:
         return False
 
@@ -58,6 +60,8 @@ def is_expected_evidence_group_covered(
     chunks: tuple[PolicyChunk, ...],
     group: ExpectedEvidenceGroup,
 ) -> bool:
+    """Determine whether any retrieved chunk covers an allowed evidence alternative.
+    """
     return any(
         matches_expected_evidence(
             chunk,

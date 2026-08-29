@@ -40,6 +40,11 @@ def orchestrate_answer_routing(
     intent_classifier: QuestionIntentClassifier,
     evidence_assessor: EvidenceSufficiencyAssessor,
 ) -> RoutingResult:
+    """Coordinate deterministic intent, sufficiency, and final behavior routing.
+
+    Ambiguous questions skip retrieval assessment. Clear questions require a
+    grounded retrieval result before evidence sufficiency is assessed.
+    """
     question = question.strip()
 
     if not question:

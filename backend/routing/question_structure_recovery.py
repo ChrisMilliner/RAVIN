@@ -19,11 +19,16 @@ from backend.routing.question_parser import (
 class QuestionStructureRecoveryProvider(
     Protocol
 ):
+    """Define the contract for bounded deterministic question-structure recovery.
+    """
+
     def recover(
         self,
         question: str,
         parse_result: QuestionParseResult,
     ) -> QuestionParse | None:
+        """Return a supported recovered parse or None when recovery cannot be justified.
+        """
         ...
 
 def recover_question_structure(
@@ -31,6 +36,8 @@ def recover_question_structure(
     parse_result: QuestionParseResult,
     provider: QuestionStructureRecoveryProvider,
 ) -> QuestionParse | None:
+    """Validate and invoke a question-structure recovery provider.
+    """
     question = question.strip()
 
     if not question:

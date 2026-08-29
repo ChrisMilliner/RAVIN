@@ -64,6 +64,9 @@ DATASET_PATH = Path(
 
 @dataclass(frozen=True)
 class SignalObservation:
+    """Record retrieval and answerability signals observed for one development question.
+    """
+
     question_id: str
     question: str
     expected_intent: str
@@ -82,6 +85,8 @@ class SignalObservation:
 def format_score(
     score: float | None,
 ) -> str:
+    """Format an optional diagnostic score for console output.
+    """
     if score is None:
         return "N/A"
 
@@ -93,6 +98,8 @@ def format_distribution(
         ...
     ],
 ) -> str:
+    """Format minimum, median, and maximum diagnostic values.
+    """
     if not values:
         return "N/A"
 
@@ -108,6 +115,8 @@ def format_heading(
         ...
     ],
 ) -> str:
+    """Format a policy heading path for diagnostic output.
+    """
     if not heading_path:
         return "(document root)"
 
@@ -121,6 +130,8 @@ def print_observation_summary(
         ...
     ],
 ) -> None:
+    """Print grouped distributions for measured evidence-sufficiency signals.
+    """
     print()
     print("=" * 72)
     print("=== EXPECTED SUFFICIENCY DISTRIBUTIONS ===")
@@ -216,6 +227,8 @@ def print_boundary_cases(
         ...
     ],
 ) -> None:
+    """Print high-risk sufficient and insufficient diagnostic boundary cases.
+    """
     sufficient = tuple(
         observation
         for observation in observations
@@ -363,6 +376,8 @@ def print_boundary_cases(
         )
 
 def main() -> None:
+    """Acquire development policies and report routing signals without applying gates.
+    """
     print(
         "=== RAVIN EVIDENCE SUFFICIENCY "
         "SIGNAL ANALYSIS ==="

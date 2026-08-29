@@ -15,17 +15,26 @@ from enum import Enum
 from backend.behavior import AnswerBehavior
 
 class QuestionIntent(str, Enum):
+    """Represent whether a question is focused, broad, or ambiguous.
+    """
+
     FOCUSED = "focused"
     BROAD = "broad"
     AMBIGUOUS = "ambiguous"
 
 class EvidenceSufficiency(str, Enum):
+    """Represent sufficient, insufficient, or uncertain grounded evidence.
+    """
+
     SUFFICIENT = "sufficient"
     INSUFFICIENT = "insufficient"
     UNCERTAIN = "uncertain"
 
 @dataclass(frozen=True)
 class QuestionAssessment:
+    """Record deterministic question-intent assessment and clarification information.
+    """
+
     intent: QuestionIntent
     reason: str
     clarification_options: tuple[str, ...] = ()
@@ -67,6 +76,12 @@ class QuestionAssessment:
 
 @dataclass(frozen=True)
 class EvidenceSignals:
+    """Record observable retrieval signals used during evidence assessment.
+
+    Retrieval scores are signals only and do not directly determine answer
+    behavior or constitute evidence-sufficiency decisions.
+    """
+
     retrieved_count: int
     context_block_count: int
     distinct_policy_count: int
@@ -143,6 +158,8 @@ class EvidenceSignals:
 
     @property
     def has_evidence(self) -> bool:
+        """Return whether both ranked retrieval and grounded context are present.
+        """
         return (
             self.retrieved_count > 0
             and self.context_block_count > 0
@@ -150,6 +167,9 @@ class EvidenceSignals:
 
 @dataclass(frozen=True)
 class EvidenceAssessment:
+    """Record evidence sufficiency, supporting signals, and assessment reason.
+    """
+
     sufficiency: EvidenceSufficiency
     signals: EvidenceSignals
     reason: str
@@ -181,6 +201,9 @@ class EvidenceAssessment:
 
 @dataclass(frozen=True)
 class RoutingResult:
+    """Record the final deterministic answer behavior and assessments that caused it.
+    """
+
     behavior: AnswerBehavior
     question_assessment: QuestionAssessment
     evidence_assessment: EvidenceAssessment

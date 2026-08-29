@@ -26,10 +26,16 @@ from backend.generation.grounded_generator import (
 class GroundedGenerationRejectedError(
     RuntimeError
 ):
+    """Signal that generated output failed a mandatory grounding release check.
+    """
+
     pass
 
 @dataclass(frozen=True)
 class ReleasedGroundedAnswer:
+    """Represent generated answer text that passed all required release checks.
+    """
+
     text: str
     cited_evidence_indexes: tuple[int, ...]
 
@@ -63,6 +69,11 @@ def generate_validated_grounded_answer(
         GeneratedClaimGroundingValidator
     ),
 ) -> ReleasedGroundedAnswer:
+    """Generate an answer and enforce citation and claim-grounding validation.
+
+    Any failed validation raises GroundedGenerationRejectedError so
+    unsupported generated content is not released as grounded output.
+    """
     generation_result = (
         generate_grounded_answer(
             request,

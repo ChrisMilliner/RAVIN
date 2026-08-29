@@ -22,6 +22,12 @@ def route_answer(
     question_assessment: QuestionAssessment,
     evidence_assessment: EvidenceAssessment,
 ) -> RoutingResult:
+    """Map deterministic question and evidence assessments to answer behavior.
+
+    Ambiguous questions clarify, unsupported clear questions fail closed,
+    focused supported questions answer directly, and broad supported
+    questions produce grounded overviews.
+    """
     if (
         question_assessment.intent
         == QuestionIntent.AMBIGUOUS

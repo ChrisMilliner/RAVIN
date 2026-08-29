@@ -23,6 +23,9 @@ _EVIDENCE_MARKER_PATTERN = re.compile(
 
 @dataclass(frozen=True)
 class CitationValidationResult:
+    """Represent whether generated evidence citations reference supplied evidence.
+    """
+
     valid: bool
     cited_evidence_indexes: tuple[int, ...]
     reason: str
@@ -47,6 +50,8 @@ def validate_generation_citations(
     request: GroundedGenerationRequest,
     result: GroundedGenerationResult,
 ) -> CitationValidationResult:
+    """Validate that generated citation markers refer only to supplied evidence.
+    """
     if not isinstance(
         request,
         GroundedGenerationRequest,

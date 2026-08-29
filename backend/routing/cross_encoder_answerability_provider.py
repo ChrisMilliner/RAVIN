@@ -18,6 +18,9 @@ from backend.routing.answerability import (
 )
 
 class CrossEncoderAnswerabilityProvider:
+    """Implement proposition answerability scoring through a cross-encoder model.
+    """
+
     def __init__(
         self,
         model_name: str,
@@ -40,6 +43,8 @@ class CrossEncoderAnswerabilityProvider:
             ...
         ],
     ) -> AnswerabilityResult:
+        """Score a non-empty question against each non-empty evidence text.
+        """
         question = question.strip()
 
         if not question:

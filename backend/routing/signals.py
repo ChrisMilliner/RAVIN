@@ -19,6 +19,8 @@ from backend.routing.models import (
 def extract_evidence_signals(
     result: GroundedRetrievalResult,
 ) -> EvidenceSignals:
+    """Summarize ranked retrieval and grounded-context characteristics for assessment.
+    """
     retrieved_count = len(
         result.retrieval_results
     )

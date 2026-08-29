@@ -38,6 +38,12 @@ from backend.routing.signals import (
 )
 
 class DeterministicEvidenceSufficiencyAssessor:
+    """Determine evidence sufficiency using explicit proposition-coverage rules.
+
+    Missing evidence or uncovered propositions are insufficient, partial
+    coverage is uncertain, and only complete material coverage is sufficient.
+    """
+
     def __init__(
         self,
         structure_resolver: QuestionStructureResolver,
@@ -69,6 +75,8 @@ class DeterministicEvidenceSufficiencyAssessor:
         intent: QuestionIntent,
         retrieval_result: GroundedRetrievalResult,
     ) -> EvidenceAssessment:
+        """Assess grounded retrieval evidence against the material question propositions.
+        """
         signals = extract_evidence_signals(
             retrieval_result
         )

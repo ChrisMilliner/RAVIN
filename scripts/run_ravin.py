@@ -178,6 +178,8 @@ def build_ravin_service() -> RavinAnswerService:
 def print_answer(
     result: IntegratedAnswerResult,
 ) -> None:
+    """Print an integrated RAVIN answer and its policy sources.
+    """
     print()
     print(
         "=== RAVIN RESULT ==="
@@ -245,6 +247,8 @@ def ask_question(
     service: RavinAnswerService,
     question: str,
 ) -> None:
+    """Submit one question to a reusable RAVIN service and print the result.
+    """
     question = question.strip()
 
     if not question:
@@ -292,6 +296,8 @@ def _parse_arguments(
     return parser.parse_args()
 
 def main() -> None:
+    """Run the local RAVIN CLI using the shared production service bootstrap.
+    """
     print(
         "=== RAVIN LOCAL BACKEND ==="
     )

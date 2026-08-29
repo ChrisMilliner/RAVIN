@@ -34,6 +34,9 @@ _SENTENCE_PATTERN = re.compile(
 
 @dataclass(frozen=True)
 class ClaimGroundingResult:
+    """Record support evidence and grounding score for one generated factual claim.
+    """
+
     claim: str
     cited_evidence_indexes: tuple[int, ...]
     score: float
@@ -62,6 +65,9 @@ class ClaimGroundingResult:
 
 @dataclass(frozen=True)
 class ClaimGroundingValidationResult:
+    """Aggregate claim-level grounding results for one generated answer.
+    """
+
     valid: bool
     claims: tuple[ClaimGroundingResult, ...]
     reason: str
@@ -80,6 +86,12 @@ class ClaimGroundingValidationResult:
             )
 
 class GeneratedClaimGroundingValidator:
+    """Validate generated factual claims against the evidence they cite.
+
+    Claim support is checked independently of earlier question-answerability
+    assessment so generated wording must itself remain grounded.
+    """
+
     def __init__(
         self,
         entailment_provider: EntailmentProvider,
@@ -125,6 +137,8 @@ class GeneratedClaimGroundingValidator:
         request: GroundedGenerationRequest,
         result: GroundedGenerationResult,
     ) -> ClaimGroundingValidationResult:
+        """Validate every generated claim and fail when citations or support are missing.
+        """
         if not isinstance(
             request,
             GroundedGenerationRequest,

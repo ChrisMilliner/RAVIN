@@ -80,6 +80,11 @@ def compare_retrieval_experiments(
     candidate: EvaluationRunResult,
     config: RetrievalExperimentConfig,
 ) -> RetrievalExperimentComparison:
+    """Compare compatible baseline and candidate retrieval evaluation results.
+
+    The comparison records relative metric changes and applies both the
+    quality threshold and dataset-validation requirement.
+    """
     if baseline.top_k != candidate.top_k:
         raise ValueError(
             "Baseline and candidate must use the same top_k."

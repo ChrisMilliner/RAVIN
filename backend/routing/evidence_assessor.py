@@ -23,6 +23,9 @@ from backend.routing.models import (
 class EvidenceSufficiencyAssessor(
     Protocol
 ):
+    """Define the framework-neutral evidence-sufficiency assessment contract.
+    """
+
     def assess(
         self,
         question: str,
@@ -31,6 +34,8 @@ class EvidenceSufficiencyAssessor(
             GroundedRetrievalResult
         ),
     ) -> EvidenceAssessment:
+        """Assess whether grounded evidence sufficiently covers a clear question.
+        """
         ...
 
 def assess_evidence_sufficiency(
@@ -41,6 +46,11 @@ def assess_evidence_sufficiency(
     ),
     assessor: EvidenceSufficiencyAssessor,
 ) -> EvidenceAssessment:
+    """Validate and invoke evidence assessment for a non-ambiguous question.
+
+    Ambiguous questions are deliberately excluded because they require
+    clarification before evidence sufficiency can be meaningfully assessed.
+    """
     question = question.strip()
 
     if not question:

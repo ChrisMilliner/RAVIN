@@ -35,6 +35,7 @@ from backend.core.provider_registry import (
 from backend.core.runtime_config_loader import (
     load_runtime_provider_config,
 )
+from backend.ingestion.models import PolicyChunk
 
 POLICIES = (
     ("208", "Academic Dress Policy"),
@@ -46,6 +47,8 @@ POLICIES = (
 )
 
 def parse_args() -> argparse.Namespace:
+    """Parse candidate-question arguments for the grounding inspection utility.
+    """
     parser = argparse.ArgumentParser(
         description=(
             "Inspect production retrieval and "
@@ -67,7 +70,9 @@ def parse_args() -> argparse.Namespace:
 
     return parser.parse_args()
 
-def acquire_corpus_chunks():
+def acquire_corpus_chunks() -> tuple[PolicyChunk, ...]:
+    """Acquire and ingest the live policy corpus used by candidate inspection.
+    """
     all_chunks = []
 
     print("=== ACQUIRING LIVE POLICIES ===")
@@ -111,6 +116,8 @@ def acquire_corpus_chunks():
 def inspect_questions(
     questions: tuple[str, ...],
 ) -> None:
+    """Print ranked retrieval and grounded context for candidate questions.
+    """
     print(
         "=== GROUNDING CANDIDATE "
         "INSPECTION ==="
@@ -274,6 +281,8 @@ def inspect_questions(
     )
 
 def main() -> None:
+    """Run candidate grounding inspection from command-line arguments.
+    """
     args = parse_args()
 
     inspect_questions(

@@ -17,6 +17,12 @@ class MaterialRequirementKind(
     str,
     Enum,
 ):
+    """Identify RAVIN-defined material requirement categories.
+
+    Terms such as RELATION, CONDITION, CONCEPT, and REQUESTED_ATTRIBUTE are
+    RAVIN modelling concepts rather than spaCy dependency labels.
+    """
+
     CONCEPT = "concept"
     RELATION = "relation"
     QUALIFIER = "qualifier"
@@ -34,6 +40,9 @@ class MaterialRequirementResolution(
     str,
     Enum,
 ):
+    """Represent whether material question requirements were reliably resolved.
+    """
+
     RESOLVED = "resolved"
     UNRESOLVED = "unresolved"
 
@@ -41,12 +50,18 @@ class MaterialRequirementSelection(
     str,
     Enum,
 ):
+    """Identify the primary, fallback, or recovery requirement interpretation in use.
+    """
+
     PRIMARY = "primary"
     FALLBACK = "fallback"
     RECOVERY = "recovery"
 
 @dataclass(frozen=True)
 class MaterialRequirement:
+    """Represent one typed material requirement extracted from a question.
+    """
+
     kind: MaterialRequirementKind
     text: str
 
@@ -68,6 +83,9 @@ class MaterialRequirement:
 
 @dataclass(frozen=True)
 class MaterialQuestionRequirements:
+    """Contain the material requirements extracted from one question structure.
+    """
+
     requirements: tuple[
         MaterialRequirement,
         ...
@@ -95,6 +113,9 @@ class MaterialQuestionRequirements:
 
 @dataclass(frozen=True)
 class MaterialRequirementExtractionResult:
+    """Record primary, fallback, and recovery requirement interpretations.
+    """
+
     primary: MaterialQuestionRequirements
     fallback: (
         MaterialQuestionRequirements | None
@@ -210,6 +231,8 @@ class MaterialRequirementExtractionResult:
     def active(
         self,
     ) -> MaterialQuestionRequirements | None:
+        """Return the selected requirements, or None when structure remains unresolved.
+        """
         if (
             self.resolution
             == MaterialRequirementResolution.UNRESOLVED

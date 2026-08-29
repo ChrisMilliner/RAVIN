@@ -26,12 +26,18 @@ class QuestionStructureSelection(
     str,
     Enum,
 ):
+    """Identify which primary, fallback, or recovery parse is active.
+    """
+
     PRIMARY = "primary"
     FALLBACK = "fallback"
     RECOVERY = "recovery"
 
 @dataclass(frozen=True)
 class QuestionStructureResolutionResult:
+    """Record all available parses and the structure selected for downstream use.
+    """
+
     primary: QuestionParse
     fallback: QuestionParse | None = None
     recovery: QuestionParse | None = None
@@ -107,6 +113,8 @@ class QuestionStructureResolutionResult:
     def active(
         self,
     ) -> QuestionParse | None:
+        """Return the selected question parse, or None when unresolved.
+        """
         if (
             self.selection
             == QuestionStructureSelection.PRIMARY
@@ -131,9 +139,14 @@ class QuestionStructureResolutionResult:
     def resolved(
         self,
     ) -> bool:
+        """Return whether a usable active question structure exists.
+        """
         return self.active is not None
 
 class QuestionStructureResolver:
+    """Resolve one shared question structure for downstream routing analysis.
+    """
+
     def __init__(
         self,
         parser: QuestionParserService,
@@ -151,6 +164,8 @@ class QuestionStructureResolver:
         self,
         question: str,
     ) -> QuestionStructureResolutionResult:
+        """Parse a question and resolve its active primary, fallback, or recovery structure.
+        """
         question = question.strip()
 
         if not question:

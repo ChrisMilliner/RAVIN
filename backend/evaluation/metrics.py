@@ -12,6 +12,8 @@ reported as satisfying the formal validated accuracy objective.
 def calculate_top_1_accuracy(
     first_relevant_ranks: tuple[int | None, ...],
 ) -> float:
+    """Calculate the proportion of questions with relevant evidence ranked first.
+    """
     if not first_relevant_ranks:
         raise ValueError(
             "Cannot calculate metrics from an empty evaluation set."
@@ -29,6 +31,8 @@ def calculate_hit_at_k(
     first_relevant_ranks: tuple[int | None, ...],
     k: int,
 ) -> float:
+    """Calculate the proportion of questions with relevant evidence within rank k.
+    """
     if not first_relevant_ranks:
         raise ValueError(
             "Cannot calculate metrics from an empty evaluation set."
@@ -50,6 +54,8 @@ def calculate_hit_at_k(
 def calculate_mrr(
     first_relevant_ranks: tuple[int | None, ...],
 ) -> float:
+    """Calculate mean reciprocal rank from first-relevant-result positions.
+    """
     if not first_relevant_ranks:
         raise ValueError(
             "Cannot calculate metrics from an empty evaluation set."
@@ -70,6 +76,8 @@ def meets_top_1_quality_gate(
     top_1_accuracy: float,
     threshold: float,
 ) -> bool:
+    """Determine whether measured Top-1 accuracy meets the configured threshold.
+    """
     if not 0.0 <= top_1_accuracy <= 1.0:
         raise ValueError(
             "Top-1 accuracy must be between 0 and 1."

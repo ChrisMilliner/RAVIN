@@ -228,6 +228,11 @@ def _parse_question(
 def load_evaluation_questions(
     path: str | Path,
 ) -> tuple[EvaluationQuestion, ...]:
+    """Load and validate retrieval evaluation questions from a JSON dataset.
+
+    Malformed, missing, or empty question collections are rejected before
+    evaluation begins.
+    """
     dataset_path = Path(path)
 
     with dataset_path.open(

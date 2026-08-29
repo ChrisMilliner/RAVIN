@@ -30,6 +30,8 @@ from backend.evaluation.models import (
 def calculate_file_sha256(
     file_path: str | Path,
 ) -> str:
+    """Calculate the SHA-256 fingerprint of a file used by evaluation.
+    """
     path = Path(file_path)
 
     hasher = hashlib.sha256()
@@ -46,6 +48,8 @@ def calculate_corpus_sha256(
         ...
     ],
 ) -> str:
+    """Calculate a deterministic fingerprint of the indexed retrieval corpus.
+    """
     if not indexed_chunks:
         raise ValueError(
             "Cannot fingerprint an empty corpus."
@@ -81,6 +85,8 @@ def calculate_corpus_sha256(
     return hasher.hexdigest()
 
 def ensure_clean_git_working_tree() -> None:
+    """Require a clean Git working tree before recording reproducible experiments.
+    """
     result = subprocess.run(
         [
             "git",
@@ -99,6 +105,8 @@ def ensure_clean_git_working_tree() -> None:
         )
 
 def get_repository_commit() -> str:
+    """Return the Git commit identifying the evaluated repository state.
+    """
     result = subprocess.run(
         [
             "git",
@@ -157,6 +165,12 @@ def build_experiment_record(
         GroundedOverviewEvaluationResult | None
     ) = None,
 ) -> dict[str, Any]:
+    """Build the structured reproducibility record for a retrieval experiment.
+
+    The record combines dataset and corpus fingerprints, repository
+    provenance, provider configuration, metrics, gates, and selection
+    decisions.
+    """
     if not policy_ids:
         raise ValueError(
             "Experiment record requires policy IDs."
@@ -652,6 +666,8 @@ def write_experiment_record(
     record: dict[str, Any],
     output_path: str | Path,
 ) -> None:
+    """Write a structured experiment record as formatted JSON.
+    """
     path = Path(output_path)
 
     path.parent.mkdir(

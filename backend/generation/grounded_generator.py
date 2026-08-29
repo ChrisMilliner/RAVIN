@@ -22,6 +22,12 @@ _ALLOWED_GENERATION_BEHAVIORS = {
 
 @dataclass(frozen=True)
 class GroundedGenerationRequest:
+    """Represent the approved inputs supplied to grounded answer generation.
+
+    Generation receives the question, already-selected answer behavior, and
+    approved evidence texts rather than making routing decisions itself.
+    """
+
     question: str
     behavior: AnswerBehavior
     evidence_texts: tuple[str, ...]
@@ -58,6 +64,9 @@ class GroundedGenerationRequest:
 
 @dataclass(frozen=True)
 class GroundedGenerationResult:
+    """Represent raw grounded answer text returned by a generator.
+    """
+
     text: str
 
     def __post_init__(self) -> None:
@@ -67,16 +76,23 @@ class GroundedGenerationResult:
             )
 
 class GroundedAnswerGenerator(Protocol):
+    """Define the framework-neutral grounded answer generation contract.
+    """
+
     def generate(
         self,
         request: GroundedGenerationRequest,
     ) -> GroundedGenerationResult:
+        """Generate answer wording from an approved grounded-generation request.
+        """
         ...
 
 def generate_grounded_answer(
     request: GroundedGenerationRequest,
     generator: GroundedAnswerGenerator,
 ) -> GroundedGenerationResult:
+    """Invoke a grounded generator and validate its returned result type.
+    """
     if not isinstance(
         request,
         GroundedGenerationRequest,

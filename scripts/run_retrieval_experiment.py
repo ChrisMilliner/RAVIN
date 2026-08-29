@@ -94,6 +94,8 @@ BASELINE_RERANK_DEPTH = 5
 def format_rank(
     rank: int | None,
 ) -> str:
+    """Format an optional retrieval rank for experiment output.
+    """
     if rank is None:
         return "NOT FOUND"
 
@@ -103,6 +105,8 @@ def rank_value(
     rank: int | None,
     top_k: int,
 ) -> int:
+    """Convert a missing rank into a value below all ranks within top_k.
+    """
     if rank is None:
         return top_k + 1
 
@@ -112,6 +116,8 @@ def print_evaluation_metrics(
     name: str,
     evaluation: EvaluationRunResult,
 ) -> None:
+    """Print Direct Answer retrieval metrics for one experiment candidate.
+    """
     print()
     print(f"=== {name} ===")
     print(
@@ -131,6 +137,8 @@ def print_grounded_overview_metrics(
     name: str,
     evaluation: GroundedOverviewEvaluationResult,
 ) -> None:
+    """Print grounded-overview question and evidence-group coverage metrics.
+    """
     print()
     print(f"=== {name} ===")
 
@@ -205,6 +213,8 @@ def print_grounded_overview_metrics(
 def print_evaluation_population(
     evaluation: EvaluationRunResult,
 ) -> None:
+    """Print the behavior composition and ranking scope of the evaluation population.
+    """
     population = evaluation.population
 
     print()
@@ -235,6 +245,12 @@ def print_evaluation_population(
     )
 
 def main() -> None:
+    """Run the reproducible retrieval experiment and write its evidence record.
+
+    The workflow compares candidate configurations while preserving the rule
+    that preliminary development data cannot support a validated accuracy
+    claim.
+    """
     ensure_clean_git_working_tree()
 
     runtime_provider_config = (

@@ -26,6 +26,9 @@ _DEFAULT_BASE_URL = (
 _DEFAULT_TIMEOUT_SECONDS = 300.0
 
 class OllamaLanguageModelProvider:
+    """Implement the neutral language-model contract using a local Ollama server.
+    """
+
     def __init__(
         self,
         model_name: str,
@@ -65,6 +68,8 @@ class OllamaLanguageModelProvider:
     def model_name(
         self,
     ) -> str:
+        """Return the configured Ollama model name.
+        """
         return self._model_name
 
     def generate(
@@ -72,6 +77,11 @@ class OllamaLanguageModelProvider:
         system_prompt: str,
         user_prompt: str,
     ) -> str:
+        """Generate text through Ollama's local chat endpoint.
+
+        HTTP, connectivity, timeout, decoding, and malformed-response failures
+        are converted into explicit runtime errors.
+        """
         payload = {
             "model": self._model_name,
             "messages": (

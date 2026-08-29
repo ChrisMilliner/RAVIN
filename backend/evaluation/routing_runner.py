@@ -126,6 +126,11 @@ def run_routing_evaluation(
     predict: RoutingPredictionFunction,
     config: RoutingEvaluationConfig,
 ) -> RoutingEvaluationRunResult:
+    """Evaluate deterministic routing predictions against expected question labels.
+
+    Intent and behavior are evaluated across the relevant population while
+    evidence sufficiency is evaluated only for clear questions.
+    """
     if not questions:
         raise ValueError(
             "Cannot evaluate an empty routing "

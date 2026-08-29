@@ -25,6 +25,9 @@ from backend.routing.proposition_coverage import (
 )
 
 class PropositionCoverageAssessor:
+    """Assess each material proposition against supplied grounded evidence.
+    """
+
     def __init__(
         self,
         answerability_provider: AnswerabilityProvider,
@@ -79,6 +82,8 @@ class PropositionCoverageAssessor:
             ...
         ],
     ) -> QuestionEvidenceCoverage:
+        """Calculate proposition-level coverage for all material question propositions.
+        """
         question = question.strip()
 
         if not question:

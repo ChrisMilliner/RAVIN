@@ -164,6 +164,8 @@ def load_routing_evaluation_questions(
     RoutingEvaluationQuestion,
     ...
 ]:
+    """Load and validate routing questions from a structured JSON dataset.
+    """
     dataset_path = Path(path)
 
     with dataset_path.open(

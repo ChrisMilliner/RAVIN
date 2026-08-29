@@ -29,11 +29,16 @@ INTERROGATIVE_TAGS = frozenset(
 )
 
 class DeterministicQuestionStructureRecoveryProvider:
+    """Recover supported parser failure patterns using bounded deterministic rules.
+    """
+
     def recover(
         self,
         question: str,
         parse_result: QuestionParseResult,
     ) -> QuestionParse | None:
+        """Attempt supported structural recovery only for unresolved question parses.
+        """
         if (
             parse_result.reliability
             != QuestionParseReliability.UNRESOLVED
