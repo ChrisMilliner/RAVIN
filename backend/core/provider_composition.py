@@ -28,6 +28,9 @@ from backend.routing.question_parser import (
 from backend.routing.answerability import (
     AnswerabilityProvider,
 )
+from backend.generation.entailment import (
+    EntailmentProvider,
+)
 
 EmbeddingProviderFactory = Callable[
     [str],
@@ -44,6 +47,10 @@ QuestionParseProviderFactory = Callable[
 AnswerabilityProviderFactory = Callable[
     [str],
     AnswerabilityProvider,
+]
+EntailmentProviderFactory = Callable[
+    [str],
+    EntailmentProvider,
 ]
 LanguageModelProviderFactory = Callable[
     [str],
@@ -71,6 +78,13 @@ class ProviderFactories:
         str,
         AnswerabilityProviderFactory,
     ]
+
+    entailment: Mapping[
+        str,
+        EntailmentProviderFactory,
+    ] = field(
+        default_factory=dict
+    )
 
     language_model: Mapping[
         str,
@@ -144,6 +158,16 @@ def compose_answerability_provider(
         config,
         factories.answerability,
         "answerability",
+    )
+
+def compose_entailment_provider(
+    config: ProviderModelConfig,
+    factories: ProviderFactories,
+) -> EntailmentProvider:
+    return _create_provider(
+        config,
+        factories.entailment,
+        "entailment",
     )
 
 def compose_language_model_provider(

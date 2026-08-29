@@ -7,6 +7,7 @@ from backend.core.provider_composition import (
     compose_reranker_provider,
     compose_runtime_providers,
     compose_language_model_provider,
+    compose_entailment_provider,
 )
 from backend.core.runtime_config import (
     ProviderModelConfig,
@@ -20,6 +21,9 @@ from backend.routing.question_parser import (
 )
 from backend.routing.answerability import (
     AnswerabilityResult,
+)
+from backend.generation.entailment import (
+    EntailmentPair,
 )
 
 class FakeEmbeddingProvider:
@@ -84,6 +88,25 @@ class FakeAnswerabilityProvider:
                 0.5
                 for _ in evidence_texts
             )
+        )
+
+class FakeEntailmentProvider:
+    def __init__(
+        self,
+        model_name: str,
+    ) -> None:
+        self.model_name = model_name
+
+    def score_entailment(
+        self,
+        pairs: tuple[
+            EntailmentPair,
+            ...
+        ],
+    ) -> tuple[float, ...]:
+        return tuple(
+            0.5
+            for _ in pairs
         )
 
 class FakeLanguageModelProvider:
@@ -1116,5 +1139,76 @@ def test_unknown_runtime_language_model_provider_is_rejected():
                     ),
                 },
                 language_model={},
+            ),
+        )
+
+def test_compose_entailment_provider_constructs_only_entailment():
+    created: list[
+        tuple[str, str]
+    ] = []
+
+    def create_entailment(
+        model: str,
+    ) -> FakeEntailmentProvider:
+        created.append(
+            (
+                "entailment",
+                model,
+            )
+        )
+
+        return FakeEntailmentProvider(
+            model
+        )
+
+    provider = compose_entailment_provider(
+        ProviderModelConfig(
+            provider="entailment-a",
+            model="entailment-model",
+        ),
+        ProviderFactories(
+            embedding={},
+            reranker={},
+            question_parser={},
+            answerability={},
+            entailment={
+                "entailment-a": (
+                    create_entailment
+                ),
+            },
+        ),
+    )
+
+    assert created == [
+        (
+            "entailment",
+            "entailment-model",
+        )
+    ]
+
+    assert isinstance(
+        provider,
+        FakeEntailmentProvider,
+    )
+
+def test_unknown_entailment_provider_is_rejected():
+    with pytest.raises(
+        ValueError,
+        match=(
+            "Unknown entailment provider: "
+            "missing."
+        ),
+    ):
+        compose_entailment_provider(
+            ProviderModelConfig(
+                provider="missing",
+                model="entailment-model",
+            ),
+            ProviderFactories(
+                embedding={},
+                reranker={},
+                question_parser={},
+                answerability={},
+                entailment={},
             ),
         )

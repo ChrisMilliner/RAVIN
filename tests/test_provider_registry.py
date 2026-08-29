@@ -5,6 +5,7 @@ from backend.core.provider_registry import (
     create_provider_factories,
     CROSS_ENCODER_ANSWERABILITY_PROVIDER,
     OLLAMA_PROVIDER,
+    CROSS_ENCODER_ENTAILMENT_PROVIDER,
 )
 from backend.retrieval.embeddings import (
     EmbeddingProvider,
@@ -22,6 +23,10 @@ from backend.routing.answerability import (
 )
 from backend.llm.provider import (
     LanguageModelProvider,
+)
+from backend.generation.entailment import (
+    EntailmentPair,
+    EntailmentProvider,
 )
 
 class FakeLanguageModelProvider:
@@ -46,6 +51,19 @@ class FakeAnswerabilityProvider:
                 0.5
                 for _ in evidence_texts
             )
+        )
+
+class FakeEntailmentProvider:
+    def score_entailment(
+        self,
+        pairs: tuple[
+            EntailmentPair,
+            ...
+        ],
+    ) -> tuple[float, ...]:
+        return tuple(
+            0.5
+            for _ in pairs
         )
 
 class FakeEmbeddingProvider:
@@ -113,6 +131,12 @@ def test_registry_exposes_expected_provider_ids():
         factories.answerability
     ) == (
         CROSS_ENCODER_ANSWERABILITY_PROVIDER,
+    )
+
+    assert tuple(
+        factories.entailment
+    ) == (
+        CROSS_ENCODER_ENTAILMENT_PROVIDER,
     )
 
     assert tuple(
@@ -327,6 +351,48 @@ def test_ollama_factory_passes_model_name(
 
     assert received_models == [
         "replacement-generation-model"
+    ]
+
+    assert provider is fake_provider
+
+def test_entailment_factory_passes_model_name(
+    monkeypatch,
+):
+    received_models: list[str] = []
+
+    fake_provider = (
+        FakeEntailmentProvider()
+    )
+
+    def fake_create_entailment(
+        model_name: str,
+    ) -> EntailmentProvider:
+        received_models.append(
+            model_name
+        )
+
+        return fake_provider
+
+    monkeypatch.setattr(
+        (
+            "backend.core.provider_registry."
+            "_create_cross_encoder_entailment_provider"
+        ),
+        fake_create_entailment,
+    )
+
+    factories = create_provider_factories()
+
+    provider = (
+        factories.entailment[
+            CROSS_ENCODER_ENTAILMENT_PROVIDER
+        ](
+            "replacement-entailment-model"
+        )
+    )
+
+    assert received_models == [
+        "replacement-entailment-model"
     ]
 
     assert provider is fake_provider

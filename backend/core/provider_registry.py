@@ -16,6 +16,9 @@ from backend.routing.answerability import (
 from backend.llm.provider import (
     LanguageModelProvider,
 )
+from backend.generation.entailment import (
+    EntailmentProvider,
+)
 
 SENTENCE_TRANSFORMER_PROVIDER = (
     "sentence_transformer"
@@ -40,6 +43,17 @@ def _create_cross_encoder_answerability_provider(
     )
 
     return CrossEncoderAnswerabilityProvider(
+        model_name=model_name,
+    )
+
+def _create_cross_encoder_entailment_provider(
+    model_name: str,
+) -> EntailmentProvider:
+    from backend.generation.cross_encoder_entailment import (
+        CrossEncoderEntailmentProvider,
+    )
+
+    return CrossEncoderEntailmentProvider(
         model_name=model_name,
     )
 
@@ -108,6 +122,11 @@ def create_provider_factories(
         answerability={
             CROSS_ENCODER_ANSWERABILITY_PROVIDER: (
                 _create_cross_encoder_answerability_provider
+            ),
+        },
+        entailment={
+            CROSS_ENCODER_ENTAILMENT_PROVIDER: (
+                _create_cross_encoder_entailment_provider
             ),
         },
         language_model={
