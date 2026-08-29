@@ -81,6 +81,11 @@ def test_runtime_config_preserves_provider_choices():
         model="answerability-model",
     )
 
+    generation = ProviderModelConfig(
+        provider="generation-provider",
+        model="generation-model",
+    )
+
     config = RuntimeProviderConfig(
         retrieval=RetrievalProviderConfig(
             embedding=embedding,
@@ -93,6 +98,7 @@ def test_runtime_config_preserves_provider_choices():
             )
         ),
         answerability=answerability,
+        generation=generation,
     )
 
     assert (
@@ -117,4 +123,8 @@ def test_runtime_config_preserves_provider_choices():
 
     assert config.answerability is (
         answerability
+    )
+
+    assert config.generation is (
+        generation
     )

@@ -188,6 +188,12 @@ def _runtime_config(
     answerability_model: str = (
         "answerability-model-a"
     ),
+    generation_provider: str = (
+        "language-model-a"
+    ),
+    generation_model: str = (
+        "generation-model-a"
+    ),
 ) -> RuntimeProviderConfig:
     fallback = None
 
@@ -223,6 +229,10 @@ def _runtime_config(
         answerability=ProviderModelConfig(
             provider=answerability_provider,
             model=answerability_model,
+        ),
+        generation=ProviderModelConfig(
+            provider=generation_provider,
+            model=generation_model,
         ),
     )
 

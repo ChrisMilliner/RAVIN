@@ -4,6 +4,7 @@ from backend.core.provider_registry import (
     SENTENCE_TRANSFORMER_PROVIDER,
     SPACY_PROVIDER,
     CROSS_ENCODER_ANSWERABILITY_PROVIDER,
+    OLLAMA_PROVIDER,
 )
 from backend.core.runtime_config_loader import (
     DEFAULT_RUNTIME_EMBEDDING_MODEL,
@@ -22,6 +23,9 @@ from backend.core.runtime_config_loader import (
     ANSWERABILITY_PROVIDER_ENV,
     DEFAULT_RUNTIME_ANSWERABILITY_MODEL,
     load_runtime_provider_config,
+    DEFAULT_RUNTIME_GENERATION_MODEL,
+    GENERATION_MODEL_ENV,
+    GENERATION_PROVIDER_ENV,
 )
 
 def test_loads_current_default_runtime_configuration():
@@ -84,6 +88,16 @@ def test_loads_current_default_runtime_configuration():
         == DEFAULT_RUNTIME_ANSWERABILITY_MODEL
     )
 
+    assert (
+        config.generation.provider
+        == OLLAMA_PROVIDER
+    )
+
+    assert (
+        config.generation.model
+        == DEFAULT_RUNTIME_GENERATION_MODEL
+    )
+
 def test_environment_can_replace_all_provider_and_model_choices():
     config = load_runtime_provider_config(
         {
@@ -116,6 +130,12 @@ def test_environment_can_replace_all_provider_and_model_choices():
             ),
             ANSWERABILITY_MODEL_ENV: (
                 "replacement-answerability-model"
+            ),
+                        GENERATION_PROVIDER_ENV: (
+                "replacement-generation-provider"
+            ),
+            GENERATION_MODEL_ENV: (
+                "replacement-generation-model"
             ),
         }
     )
@@ -173,6 +193,16 @@ def test_environment_can_replace_all_provider_and_model_choices():
     assert (
         config.answerability.model
         == "replacement-answerability-model"
+    )
+
+    assert (
+        config.generation.provider
+        == "replacement-generation-provider"
+    )
+
+    assert (
+        config.generation.model
+        == "replacement-generation-model"
     )
 
 def test_environment_can_override_only_one_model():

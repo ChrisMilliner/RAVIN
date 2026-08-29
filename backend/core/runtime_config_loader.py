@@ -5,6 +5,7 @@ from backend.core.provider_registry import (
     SENTENCE_TRANSFORMER_PROVIDER,
     SPACY_PROVIDER,
     CROSS_ENCODER_ANSWERABILITY_PROVIDER,
+    OLLAMA_PROVIDER,
 )
 from backend.core.runtime_config import (
     ProviderModelConfig,
@@ -73,6 +74,19 @@ DEFAULT_RUNTIME_ANSWERABILITY_PROVIDER = (
 )
 DEFAULT_RUNTIME_ANSWERABILITY_MODEL = (
     "cross-encoder/qnli-electra-base"
+)
+GENERATION_PROVIDER_ENV = (
+    "RAVIN_GENERATION_PROVIDER"
+)
+GENERATION_MODEL_ENV = (
+    "RAVIN_GENERATION_MODEL"
+)
+
+DEFAULT_RUNTIME_GENERATION_PROVIDER = (
+    OLLAMA_PROVIDER
+)
+DEFAULT_RUNTIME_GENERATION_MODEL = (
+    "qwen3:4b-instruct"
 )
 
 def _read_setting(
@@ -166,6 +180,19 @@ def load_runtime_provider_config(
         ),
     )
 
+    generation = ProviderModelConfig(
+        provider=_read_setting(
+            source,
+            GENERATION_PROVIDER_ENV,
+            DEFAULT_RUNTIME_GENERATION_PROVIDER,
+        ),
+        model=_read_setting(
+            source,
+            GENERATION_MODEL_ENV,
+            DEFAULT_RUNTIME_GENERATION_MODEL,
+        ),
+    )
+
     return RuntimeProviderConfig(
         retrieval=RetrievalProviderConfig(
             embedding=embedding,
@@ -178,4 +205,5 @@ def load_runtime_provider_config(
             )
         ),
         answerability=answerability,
+        generation=generation,
     )
