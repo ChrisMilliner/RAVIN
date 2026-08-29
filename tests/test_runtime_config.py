@@ -81,6 +81,11 @@ def test_runtime_config_preserves_provider_choices():
         model="answerability-model",
     )
 
+    entailment = ProviderModelConfig(
+        provider="entailment-provider",
+        model="entailment-model",
+    )
+
     generation = ProviderModelConfig(
         provider="generation-provider",
         model="generation-model",
@@ -98,6 +103,7 @@ def test_runtime_config_preserves_provider_choices():
             )
         ),
         answerability=answerability,
+        entailment=entailment,
         generation=generation,
     )
 
@@ -123,6 +129,10 @@ def test_runtime_config_preserves_provider_choices():
 
     assert config.answerability is (
         answerability
+    )
+
+    assert config.entailment is (
+        entailment
     )
 
     assert config.generation is (

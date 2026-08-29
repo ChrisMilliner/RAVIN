@@ -27,6 +27,9 @@ SPACY_PROVIDER = "spacy"
 CROSS_ENCODER_ANSWERABILITY_PROVIDER = (
     "cross_encoder_answerability"
 )
+CROSS_ENCODER_ENTAILMENT_PROVIDER = (
+    "cross_encoder_entailment"
+)
 OLLAMA_PROVIDER = "ollama"
 
 def _create_cross_encoder_answerability_provider(

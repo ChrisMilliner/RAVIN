@@ -6,6 +6,7 @@ from backend.core.provider_registry import (
     SPACY_PROVIDER,
     CROSS_ENCODER_ANSWERABILITY_PROVIDER,
     OLLAMA_PROVIDER,
+    CROSS_ENCODER_ENTAILMENT_PROVIDER,
 )
 from backend.core.runtime_config import (
     ProviderModelConfig,
@@ -74,6 +75,18 @@ DEFAULT_RUNTIME_ANSWERABILITY_PROVIDER = (
 )
 DEFAULT_RUNTIME_ANSWERABILITY_MODEL = (
     "cross-encoder/qnli-electra-base"
+)
+ENTAILMENT_PROVIDER_ENV = (
+    "RAVIN_ENTAILMENT_PROVIDER"
+)
+ENTAILMENT_MODEL_ENV = (
+    "RAVIN_ENTAILMENT_MODEL"
+)
+DEFAULT_RUNTIME_ENTAILMENT_PROVIDER = (
+    CROSS_ENCODER_ENTAILMENT_PROVIDER
+)
+DEFAULT_RUNTIME_ENTAILMENT_MODEL = (
+    "cross-encoder/nli-deberta-v3-base"
 )
 GENERATION_PROVIDER_ENV = (
     "RAVIN_GENERATION_PROVIDER"
@@ -180,6 +193,19 @@ def load_runtime_provider_config(
         ),
     )
 
+    entailment = ProviderModelConfig(
+        provider=_read_setting(
+            source,
+            ENTAILMENT_PROVIDER_ENV,
+            DEFAULT_RUNTIME_ENTAILMENT_PROVIDER,
+        ),
+        model=_read_setting(
+            source,
+            ENTAILMENT_MODEL_ENV,
+            DEFAULT_RUNTIME_ENTAILMENT_MODEL,
+        ),
+    )
+
     generation = ProviderModelConfig(
         provider=_read_setting(
             source,
@@ -205,5 +231,6 @@ def load_runtime_provider_config(
             )
         ),
         answerability=answerability,
+        entailment=entailment,
         generation=generation,
     )

@@ -188,6 +188,12 @@ def _runtime_config(
     answerability_model: str = (
         "answerability-model-a"
     ),
+    entailment_provider: str = (
+        "entailment-a"
+    ),
+    entailment_model: str = (
+        "entailment-model-a"
+    ),
     generation_provider: str = (
         "language-model-a"
     ),
@@ -229,6 +235,10 @@ def _runtime_config(
         answerability=ProviderModelConfig(
             provider=answerability_provider,
             model=answerability_model,
+        ),
+        entailment=ProviderModelConfig(
+            provider=entailment_provider,
+            model=entailment_model,
         ),
         generation=ProviderModelConfig(
             provider=generation_provider,

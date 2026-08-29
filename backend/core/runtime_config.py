@@ -31,4 +31,5 @@ class RuntimeProviderConfig:
     retrieval: RetrievalProviderConfig
     question_parser: QuestionParserProviderConfig
     answerability: ProviderModelConfig
+    entailment: ProviderModelConfig
     generation: ProviderModelConfig

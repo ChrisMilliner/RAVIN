@@ -5,6 +5,7 @@ from backend.core.provider_registry import (
     SPACY_PROVIDER,
     CROSS_ENCODER_ANSWERABILITY_PROVIDER,
     OLLAMA_PROVIDER,
+    CROSS_ENCODER_ENTAILMENT_PROVIDER,
 )
 from backend.core.runtime_config_loader import (
     DEFAULT_RUNTIME_EMBEDDING_MODEL,
@@ -26,6 +27,9 @@ from backend.core.runtime_config_loader import (
     DEFAULT_RUNTIME_GENERATION_MODEL,
     GENERATION_MODEL_ENV,
     GENERATION_PROVIDER_ENV,
+    DEFAULT_RUNTIME_ENTAILMENT_MODEL,
+    ENTAILMENT_MODEL_ENV,
+    ENTAILMENT_PROVIDER_ENV,
 )
 
 def test_loads_current_default_runtime_configuration():
@@ -89,6 +93,16 @@ def test_loads_current_default_runtime_configuration():
     )
 
     assert (
+        config.entailment.provider
+        == CROSS_ENCODER_ENTAILMENT_PROVIDER
+    )
+
+    assert (
+        config.entailment.model
+        == DEFAULT_RUNTIME_ENTAILMENT_MODEL
+    )
+
+    assert (
         config.generation.provider
         == OLLAMA_PROVIDER
     )
@@ -133,6 +147,12 @@ def test_environment_can_replace_all_provider_and_model_choices():
             ),
                         GENERATION_PROVIDER_ENV: (
                 "replacement-generation-provider"
+            ),
+            ENTAILMENT_PROVIDER_ENV: (
+                "replacement-entailment-provider"
+            ),
+            ENTAILMENT_MODEL_ENV: (
+                "replacement-entailment-model"
             ),
             GENERATION_MODEL_ENV: (
                 "replacement-generation-model"
@@ -193,6 +213,16 @@ def test_environment_can_replace_all_provider_and_model_choices():
     assert (
         config.answerability.model
         == "replacement-answerability-model"
+    )
+
+    assert (
+        config.entailment.provider
+        == "replacement-entailment-provider"
+    )
+
+    assert (
+        config.entailment.model
+        == "replacement-entailment-model"
     )
 
     assert (
