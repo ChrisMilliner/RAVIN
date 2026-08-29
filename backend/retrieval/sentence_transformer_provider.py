@@ -15,6 +15,12 @@ from numpy import ndarray
 from sentence_transformers import SentenceTransformer
 
 class SentenceTransformerEmbeddingProvider:
+    """Implement RAVIN embeddings with a Sentence Transformer model.
+
+    The concrete model is loaded when the adapter is constructed and remains
+    behind the neutral EmbeddingProvider contract used by semantic indexing.
+    """
+
     def __init__(
         self,
         model_name: str,
@@ -32,6 +38,10 @@ class SentenceTransformerEmbeddingProvider:
         self,
         texts: tuple[str, ...],
     ) -> tuple[tuple[float, ...], ...]:
+        """Embed policy documents using the model's document encoding operation.
+
+        The returned immutable vectors preserve the input document order.
+        """
         embeddings = cast(
             ndarray,
             self._model.encode_document(
@@ -50,6 +60,11 @@ class SentenceTransformerEmbeddingProvider:
         self,
         text: str,
     ) -> tuple[float, ...]:
+        """Embed a user query using the model's query encoding operation.
+
+        The resulting immutable vector can be compared with indexed document
+        embeddings by the semantic retrieval layer.
+        """
         embedding = cast(
             ndarray,
             self._model.encode_query(

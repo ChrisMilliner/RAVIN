@@ -45,6 +45,13 @@ DEFAULT_PRODUCTION_RERANK_DEPTH = 11
 
 @dataclass(frozen=True)
 class ProductionRetrievalConfig:
+    """Configure the candidate, reranking, and final limits used in production.
+
+    rerank_depth controls how many hybrid candidates reach the reranker,
+    while top_k controls how many reranked results are retained. Semantic
+    and lexical weights configure hybrid candidate scoring.
+    """
+
     top_k: int = DEFAULT_PRODUCTION_TOP_K
     rerank_depth: int = (
         DEFAULT_PRODUCTION_RERANK_DEPTH
@@ -99,6 +106,13 @@ class ProductionRetrievalConfig:
 
 @dataclass(frozen=True)
 class GroundedRetrievalResult:
+    """Represent the complete result of production grounded retrieval.
+
+    The result retains final ranked evidence, the structurally expanded
+    context chunks, structured GroundedContext, and rendered evidence text
+    used by later RAVIN stages.
+    """
+
     retrieval_results: tuple[
         RetrievalResult,
         ...
@@ -114,6 +128,12 @@ def build_production_retrieval_index(
     chunks: tuple[PolicyChunk, ...],
     embedding_provider: EmbeddingProvider,
 ) -> tuple[IndexedPolicyChunk, ...]:
+    """Build the semantic index using the production embedding strategy.
+
+    Production embeddings use policy body text only. The index still
+    retains full retrieval text containing title, heading path, and body for
+    later lexical scoring and reranking.
+    """
     return build_semantic_index(
         chunks,
         embedding_provider,
@@ -132,6 +152,14 @@ def retrieve_policy_evidence(
     reranker_provider: RerankerProvider,
     config: ProductionRetrievalConfig,
 ) -> tuple[RetrievalResult, ...]:
+    """Run the production candidate retrieval and reranking sequence.
+
+    Hybrid retrieval first selects rerank_depth candidates using semantic
+    and lexical signals. The configured reranker then reorders those
+    candidates and only the final top_k results are returned.
+
+    The resulting rank is evidence discovery, not a sufficiency decision.
+    """
     hybrid_results = search_hybrid_index(
         indexed_chunks,
         query=query,
@@ -160,6 +188,16 @@ def retrieve_grounded_context(
     retrieval_config: ProductionRetrievalConfig,
     context_config: ContextAssemblyConfig,
 ) -> GroundedRetrievalResult:
+    """Retrieve ranked policy evidence and assemble its grounded context.
+
+    The function performs production evidence retrieval, expands selected
+    chunks with bounded structural neighbours, builds traceable context
+    blocks, and renders those blocks for downstream assessment and
+    generation.
+
+    The result contains both ranked seeds and the expanded context so later
+    stages can retain retrieval provenance.
+    """
     retrieval_results = retrieve_policy_evidence(
         indexed_chunks,
         query=query,

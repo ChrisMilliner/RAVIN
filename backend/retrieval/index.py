@@ -27,6 +27,12 @@ def cosine_similarity(
     first: tuple[float, ...],
     second: tuple[float, ...],
 ) -> float:
+    """Calculate cosine similarity between two embedding vectors.
+
+    Both vectors must be non-empty, have equal dimensions, and have
+    non-zero magnitude. The resulting value measures vector direction
+    similarity rather than policy evidence sufficiency.
+    """
     if not first or not second:
         raise ValueError(
             "Embedding vectors cannot be empty."
@@ -89,6 +95,15 @@ def build_semantic_index(
     embedding_provider: EmbeddingProvider,
     embedding_text_strategy: str = RETRIEVAL_TEXT_EMBEDDING,
 ) -> tuple[IndexedPolicyChunk, ...]:
+    """Embed policy chunks and construct the in-memory semantic index.
+
+    Retrieval text is retained for later lexical scoring and reranking while
+    the configured embedding-text strategy determines what text is sent to
+    the embedding provider.
+
+    The provider must return exactly one non-empty vector for each input
+    chunk.
+    """
     if not chunks:
         raise ValueError(
             "Cannot build semantic index from an empty chunk collection."
@@ -144,6 +159,14 @@ def search_semantic_index(
     embedding_provider: EmbeddingProvider,
     top_k: int = 5,
 ) -> tuple[RetrievalResult, ...]:
+    """Rank indexed policy chunks by query-to-chunk cosine similarity.
+
+    The query is embedded once and compared with each stored chunk vector.
+    Results are returned in descending similarity order up to top_k.
+
+    This function provides semantic-only retrieval and does not perform the
+    production hybrid or reranking stages.
+    """
     query = query.strip()
 
     if not query:

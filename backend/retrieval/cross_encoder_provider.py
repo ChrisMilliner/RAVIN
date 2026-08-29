@@ -15,6 +15,12 @@ from numpy import ndarray
 from sentence_transformers import CrossEncoder
 
 class CrossEncoderRerankerProvider:
+    """Implement retrieval reranking with a Sentence Transformers CrossEncoder.
+
+    The concrete cross-encoder model is loaded when the adapter is created
+    and remains behind RAVIN's framework-neutral RerankerProvider contract.
+    """
+
     def __init__(
         self,
         model_name: str,
@@ -33,6 +39,11 @@ class CrossEncoderRerankerProvider:
         query: str,
         documents: tuple[str, ...],
     ) -> tuple[float, ...]:
+        """Score candidate documents against a non-empty user query.
+
+        One cross-encoder score is returned for each supplied document in the
+        same order. Empty queries and empty document collections are rejected.
+        """
         if not query.strip():
             raise ValueError(
                 "Query cannot be empty."

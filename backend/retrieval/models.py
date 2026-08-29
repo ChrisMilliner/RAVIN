@@ -14,11 +14,23 @@ from backend.ingestion.models import PolicyChunk
 
 @dataclass(frozen=True)
 class IndexedPolicyChunk:
+    """Associate a policy chunk with its retrieval text and embedding vector.
+
+    The model keeps the original traceable PolicyChunk alongside the
+    representations required by semantic, lexical, and reranking stages.
+    """
+
     chunk: PolicyChunk
     retrieval_text: str
     embedding: tuple[float, ...]
 
 @dataclass(frozen=True)
 class RetrievalResult:
+    """Represent one ranked policy chunk and its current retrieval score.
+
+    The meaning of score depends on the retrieval stage that produced the
+    result, such as semantic, hybrid, or reranker scoring.
+    """
+
     chunk: PolicyChunk
     score: float
