@@ -4,6 +4,7 @@ from backend.core.provider_registry import (
     SPACY_PROVIDER,
     create_provider_factories,
     CROSS_ENCODER_ANSWERABILITY_PROVIDER,
+    OLLAMA_PROVIDER,
 )
 from backend.retrieval.embeddings import (
     EmbeddingProvider,
@@ -19,6 +20,17 @@ from backend.routing.answerability import (
     AnswerabilityResult,
     AnswerabilityProvider,
 )
+from backend.llm.provider import (
+    LanguageModelProvider,
+)
+
+class FakeLanguageModelProvider:
+    def generate(
+        self,
+        system_prompt: str,
+        user_prompt: str,
+    ) -> str:
+        return "Generated answer."
 
 class FakeAnswerabilityProvider:
     def score(
@@ -101,6 +113,12 @@ def test_registry_exposes_expected_provider_ids():
         factories.answerability
     ) == (
         CROSS_ENCODER_ANSWERABILITY_PROVIDER,
+    )
+
+    assert tuple(
+        factories.language_model
+    ) == (
+        OLLAMA_PROVIDER,
     )
 
 def test_answerability_factory_passes_model_name(
@@ -267,6 +285,48 @@ def test_parser_factory_passes_model_name(
 
     assert received_models == [
         "replacement-parser-model"
+    ]
+
+    assert provider is fake_provider
+
+def test_ollama_factory_passes_model_name(
+    monkeypatch,
+):
+    received_models: list[str] = []
+
+    fake_provider = (
+        FakeLanguageModelProvider()
+    )
+
+    def fake_create_ollama(
+        model_name: str,
+    ) -> LanguageModelProvider:
+        received_models.append(
+            model_name
+        )
+
+        return fake_provider
+
+    monkeypatch.setattr(
+        (
+            "backend.core.provider_registry."
+            "_create_ollama_provider"
+        ),
+        fake_create_ollama,
+    )
+
+    factories = create_provider_factories()
+
+    provider = (
+        factories.language_model[
+            OLLAMA_PROVIDER
+        ](
+            "replacement-generation-model"
+        )
+    )
+
+    assert received_models == [
+        "replacement-generation-model"
     ]
 
     assert provider is fake_provider

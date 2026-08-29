@@ -13,6 +13,9 @@ from backend.routing.question_parser import (
 from backend.routing.answerability import (
     AnswerabilityProvider,
 )
+from backend.llm.provider import (
+    LanguageModelProvider,
+)
 
 SENTENCE_TRANSFORMER_PROVIDER = (
     "sentence_transformer"
@@ -24,6 +27,7 @@ SPACY_PROVIDER = "spacy"
 CROSS_ENCODER_ANSWERABILITY_PROVIDER = (
     "cross_encoder_answerability"
 )
+OLLAMA_PROVIDER = "ollama"
 
 def _create_cross_encoder_answerability_provider(
     model_name: str,
@@ -69,6 +73,17 @@ def _create_spacy_provider(
         model_name
     )
 
+def _create_ollama_provider(
+    model_name: str,
+) -> LanguageModelProvider:
+    from backend.llm.ollama_provider import (
+        OllamaLanguageModelProvider,
+    )
+
+    return OllamaLanguageModelProvider(
+        model_name=model_name,
+    )
+
 def create_provider_factories(
 ) -> ProviderFactories:
     return ProviderFactories(
@@ -90,6 +105,11 @@ def create_provider_factories(
         answerability={
             CROSS_ENCODER_ANSWERABILITY_PROVIDER: (
                 _create_cross_encoder_answerability_provider
+            ),
+        },
+        language_model={
+            OLLAMA_PROVIDER: (
+                _create_ollama_provider
             ),
         },
 )
