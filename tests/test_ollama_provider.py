@@ -299,3 +299,73 @@ def test_missing_content_is_rejected(
             "System.",
             "User.",
         )
+
+def test_default_timeout_is_five_minutes(
+    monkeypatch,
+):
+    captured = {}
+
+    def fake_urlopen(
+        request,
+        timeout,
+    ):
+        captured["timeout"] = timeout
+
+        return FakeResponse(
+            {
+                "message": {
+                    "content": "Answer."
+                }
+            }
+        )
+
+    monkeypatch.setattr(
+        ollama_module,
+        "urlopen",
+        fake_urlopen,
+    )
+
+    provider = (
+        OllamaLanguageModelProvider(
+            model_name="model"
+        )
+    )
+
+    provider.generate(
+        "System.",
+        "User.",
+    )
+
+    assert captured["timeout"] == 300.0
+
+def test_timeout_is_reported_clearly(
+    monkeypatch,
+):
+    def fake_urlopen(
+        request,
+        timeout,
+    ):
+        raise TimeoutError(
+            "timed out"
+        )
+
+    monkeypatch.setattr(
+        ollama_module,
+        "urlopen",
+        fake_urlopen,
+    )
+
+    provider = (
+        OllamaLanguageModelProvider(
+            model_name="model"
+        )
+    )
+
+    with pytest.raises(
+        RuntimeError,
+        match="Ollama request timed out",
+    ):
+        provider.generate(
+            "System.",
+            "User.",
+        )

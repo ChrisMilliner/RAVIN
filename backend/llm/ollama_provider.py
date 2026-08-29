@@ -11,7 +11,7 @@ from urllib.request import (
 _DEFAULT_BASE_URL = (
     "http://localhost:11434"
 )
-_DEFAULT_TIMEOUT_SECONDS = 120.0
+_DEFAULT_TIMEOUT_SECONDS = 300.0
 
 class OllamaLanguageModelProvider:
     def __init__(
@@ -112,6 +112,11 @@ class OllamaLanguageModelProvider:
         except URLError as error:
             raise RuntimeError(
                 "Ollama could not be reached."
+            ) from error
+
+        except TimeoutError as error:
+            raise RuntimeError(
+                "Ollama request timed out."
             ) from error
 
         try:
