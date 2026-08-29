@@ -92,7 +92,6 @@ def format_distribution(
         f"max={max(values):.6f}"
     )
 
-
 def format_heading(
     heading_path: tuple[
         str,

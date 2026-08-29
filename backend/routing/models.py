@@ -7,7 +7,6 @@ class QuestionIntent(str, Enum):
     BROAD = "broad"
     AMBIGUOUS = "ambiguous"
 
-
 class EvidenceSufficiency(str, Enum):
     SUFFICIENT = "sufficient"
     INSUFFICIENT = "insufficient"

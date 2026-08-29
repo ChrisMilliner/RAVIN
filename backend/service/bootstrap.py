@@ -27,7 +27,6 @@ or RavinAnswerService for every request.
 
 from collections.abc import Callable
 from dataclasses import dataclass
-
 from backend.core.answer_quality_config import (
     AnswerQualityConfig,
 )

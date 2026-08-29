@@ -87,7 +87,6 @@ def ensure_clean_git_working_tree() -> None:
             "Git working tree."
         )
 
-
 def get_repository_commit() -> str:
     result = subprocess.run(
         [
