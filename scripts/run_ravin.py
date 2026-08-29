@@ -1,184 +1,74 @@
 """
-RAVIN local command-line interface.
+HOW FASTAPI SHOULD USE RAVIN
+============================
 
-This file is only the command-line interface for RAVIN. It is not the
-RAG backend itself.
+FastAPI must use the same shared backend bootstrap as this CLI.
 
-The reusable backend is RavinAnswerService.
+The shared startup function is:
 
-Both the command-line interface and the FastAPI application should use
-the same RavinAnswerService. FastAPI must not duplicate RAVIN's
-retrieval, routing, evidence checking, generation, or grounding logic.
+    backend.service.bootstrap.create_current_policy_ravin_service
 
+FastAPI should create the RAVIN service ONCE when the application
+starts:
 
-HOW THIS CLI WORKS
-==================
+    service = create_current_policy_ravin_service()
 
-When this script starts it:
+That startup call:
 
-1. Downloads the current policy documents.
-2. Processes and chunks those policies.
-3. Creates RavinAnswerService.
-4. Builds the retrieval index and loads the configured models once.
-5. Accepts questions from the command line.
-6. Sends each question to:
+    1. Acquires the configured current policies.
+    2. Processes and chunks the policies.
+    3. Loads the configured providers and models.
+    4. Builds the retrieval index.
+    5. Constructs RavinAnswerService.
+    6. Returns the ready-to-use service.
 
-       service.answer(question)
+FastAPI should keep that returned service for the lifetime of the
+application.
 
-7. Prints the returned answer and sources.
-
-The expensive setup work happens once when the application starts.
-It must not happen again for every question.
-
-
-HOW THE FASTAPI APPLICATION SHOULD WORK
-=======================================
-
-FastAPI should be a thin HTTP layer around the same
-RavinAnswerService used here.
-
-The intended structure is:
-
-    FastAPI application starts
-        -> acquire and process the current policy corpus
-        -> create RavinAnswerService once
-        -> keep that service available while the application runs
-
-    Client sends POST /api/questions
-        -> read the question from the request body
-        -> call service.answer(question)
-        -> convert the result to JSON
-        -> return the JSON response
-
-FastAPI should NOT:
-
-- run this CLI script
-- rebuild the retrieval index for each request
-- reload the models for each request
-- perform its own retrieval
-- decide whether evidence is sufficient
-- decide the answer behavior
-- call the LLM directly
-- perform separate grounding logic
-
-Those responsibilities already belong to RavinAnswerService and the
-backend components it uses.
-
-
-EXPECTED FASTAPI REQUEST
-========================
-
-The endpoint should be:
+For each:
 
     POST /api/questions
 
-The request body should contain:
+FastAPI should:
 
-    {
-        "question": "What happens when a student is not making satisfactory academic progress?"
-    }
+    1. Read and validate the question from the JSON request.
+    2. Call:
 
+           result = service.answer(request.question)
 
-EXPECTED FASTAPI PROCESS
-========================
+    3. Convert IntegratedAnswerResult into the agreed JSON response.
+    4. Return that response.
 
-The FastAPI endpoint should do approximately this:
+FastAPI must NOT:
 
-    result = service.answer(
-        request.question
-    )
+    - execute this CLI
+    - acquire policies for every request
+    - rebuild RavinAnswerService for every request
+    - rebuild the retrieval index for every request
+    - load models for every request
+    - perform its own retrieval
+    - decide evidence sufficiency
+    - decide answer behaviour
+    - call the LLM directly
+    - perform separate citation or grounding validation
 
-It should then map the IntegratedAnswerResult returned by the service
-into the agreed API response structure.
+Those responsibilities already belong to the RAVIN backend.
 
+The intended architecture is:
 
-EXPECTED GROUNDED RESPONSE
-==========================
+    current policy sources
+        -> shared bootstrap
+        -> RavinAnswerService
+             |
+             +-> CLI
+             |
+             +-> FastAPI
 
-For a grounded answer, return:
+The CLI is responsible for terminal input and output.
 
-    {
-        "answer": "The grounded answer returned by RAVIN.",
-        "grounded": true,
-        "sources": [
-            {
-                "policy_id": "220",
-                "title": "Academic Progression Review Policy",
-                "heading": "Relevant Section",
-                "url": "https://policies.latrobe.edu.au/..."
-            }
-        ]
-    }
+FastAPI is responsible for HTTP input and output.
 
-
-EXPECTED NO-EVIDENCE RESPONSE
-=============================
-
-If RavinAnswerService determines that the available policy evidence is
-not sufficient, return the result produced by the service:
-
-    {
-        "answer": "I could not find sufficient evidence in the available policy sources.",
-        "grounded": false,
-        "sources": []
-    }
-
-FastAPI should not override that decision or ask an LLM to decide
-whether an answer should be returned.
-
-
-SUGGESTED FASTAPI LIFECYCLE
-===========================
-
-The RAVIN service should be created once when FastAPI starts.
-
-Conceptually:
-
-    application startup
-        -> acquire policy chunks
-        -> create_ravin_answer_service(...)
-        -> store the returned service
-
-    each POST /api/questions request
-        -> validate request
-        -> service.answer(question)
-        -> serialize result
-        -> return response
-
-This avoids rebuilding embeddings, indexes, parsers, rerankers, and
-models for every request.
-
-
-SEPARATION OF RESPONSIBILITIES
-==============================
-
-RavinAnswerService is responsible for:
-
-    retrieval
-    evidence sufficiency
-    question routing
-    grounded generation
-    citation validation
-    claim grounding validation
-    source selection
-
-FastAPI is responsible for:
-
-    receiving HTTP requests
-    validating the API request format
-    calling RavinAnswerService
-    converting the result to JSON
-    returning HTTP responses
-
-The CLI is responsible for:
-
-    accepting terminal input
-    calling RavinAnswerService
-    printing results
-
-This separation means the CLI can later be removed without changing
-the backend, and the FastAPI application can expose the same backend
-to the user interface.
+RavinAnswerService is responsible for RAVIN.
 """
 
 import argparse
@@ -188,123 +78,24 @@ from backend.core.answer_quality_config import (
 from backend.core.runtime_config_loader import (
     load_runtime_provider_config,
 )
-from backend.ingestion.acquisition import (
-    PolicyLink,
-    acquire_policy,
-)
-from backend.ingestion.models import (
-    PolicyChunk,
-)
-from backend.ingestion.processor import (
-    process_policy,
-)
 from backend.service.answer_service import (
     IntegratedAnswerResult,
     RavinAnswerService,
 )
-from backend.service.composition import (
-    create_ravin_answer_service,
+from backend.service.bootstrap import (
+    PolicyLoadProgress,
+    create_current_policy_ravin_service,
 )
 
-POLICIES = (
-    (
-        "208",
-        "Academic Dress Policy",
-    ),
-    (
-        "220",
-        "Academic Progression Review Policy",
-    ),
-    (
-        "76",
-        "Academic Promotions Policy",
-    ),
-    (
-        "420",
-        "Academic Staff Qualifications Policy",
-    ),
-    (
-        "169",
-        "Admissions Policy",
-    ),
-    (
-        "340",
-        "Admissions Procedure",
-    ),
-)
-_POLICY_BASE_URL = (
-    "https://policies.latrobe.edu.au/"
-    "document/view.php?id="
-)
+def build_ravin_service() -> RavinAnswerService:
+    """
+    Build the shared production RAVIN service for this CLI.
 
-def acquire_current_policy_chunks(
-) -> tuple[
-    PolicyChunk,
-    ...
-]:
-    all_chunks: list[
-        PolicyChunk
-    ] = []
+    Policy acquisition, ingestion, chunking, model composition, and
+    retrieval-index construction are performed through the shared
+    backend bootstrap also intended for the FastAPI application.
+    """
 
-    print(
-        "=== ACQUIRING CURRENT POLICIES ==="
-    )
-
-    for policy_id, title in POLICIES:
-        link = PolicyLink(
-            policy_id=policy_id,
-            title=title,
-            url=(
-                f"{_POLICY_BASE_URL}"
-                f"{policy_id}"
-            ),
-        )
-
-        policy = acquire_policy(
-            link
-        )
-
-        result = process_policy(
-            policy
-        )
-
-        if not result.chunks:
-            raise RuntimeError(
-                "Policy ingestion failed for "
-                f"{policy_id}: {result.error}"
-            )
-
-        print(
-            f"{policy.policy_id} "
-            f"{policy.title} "
-            f"-> {len(result.chunks)} chunks"
-        )
-
-        all_chunks.extend(
-            result.chunks
-        )
-
-    if not all_chunks:
-        raise RuntimeError(
-            "No policy chunks were acquired."
-        )
-
-    print()
-    print(
-        "Total policy chunks -> "
-        f"{len(all_chunks)}"
-    )
-
-    return tuple(
-        all_chunks
-    )
-
-def build_ravin_service(
-    chunks: tuple[
-        PolicyChunk,
-        ...
-    ],
-) -> RavinAnswerService:
     runtime_config = (
         load_runtime_provider_config()
     )
@@ -333,21 +124,51 @@ def build_ravin_service(
         f"{quality_config.status}"
     )
 
+    loaded_chunk_counts: list[int] = []
+
+    def report_policy_loaded(
+        progress: PolicyLoadProgress,
+    ) -> None:
+        loaded_chunk_counts.append(
+            progress.chunk_count
+        )
+
+        print(
+            f"{progress.policy_id} "
+            f"{progress.title} -> "
+            f"{progress.chunk_count} chunks"
+        )
+
     print()
     print(
-        "=== BUILDING RAVIN SERVICE ==="
+        "=== STARTING RAVIN SERVICE ==="
+    )
+
+    print()
+    print(
+        "Acquiring current policies:"
     )
 
     service = (
-        create_ravin_answer_service(
-            chunks,
+        create_current_policy_ravin_service(
             runtime_config=runtime_config,
             answer_quality_config=(
                 quality_config
             ),
+            on_policy_loaded=(
+                report_policy_loaded
+            ),
         )
     )
 
+    print()
+
+    print(
+        "Total policy chunks -> "
+        f"{sum(loaded_chunk_counts)}"
+    )
+
+    print()
     print(
         "RAVIN service ready."
     )
@@ -477,13 +298,7 @@ def main() -> None:
 
     args = _parse_arguments()
 
-    chunks = (
-        acquire_current_policy_chunks()
-    )
-
-    service = build_ravin_service(
-        chunks
-    )
+    service = build_ravin_service()
 
     supplied_question = " ".join(
         args.question
