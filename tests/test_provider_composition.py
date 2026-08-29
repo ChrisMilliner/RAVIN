@@ -331,6 +331,20 @@ def test_composition_passes_configured_models_to_factories():
             model
         )
 
+    def create_entailment(
+        model: str,
+    ) -> FakeEntailmentProvider:
+        created.append(
+            (
+                "entailment",
+                model,
+            )
+        )
+
+        return FakeEntailmentProvider(
+            model
+        )
+
     def create_language_model(
         model: str,
     ) -> FakeLanguageModelProvider:
@@ -368,6 +382,11 @@ def test_composition_passes_configured_models_to_factories():
                     create_answerability
                 ),
             },
+            entailment={
+                "entailment-a": (
+                    create_entailment
+                ),
+            },
             language_model={
                 "language-model-a": (
                     create_language_model
@@ -392,6 +411,10 @@ def test_composition_passes_configured_models_to_factories():
         (
             "answerability",
             "answerability-model-a",
+        ),
+        (
+            "entailment",
+            "entailment-model-a",
         ),
         (
             "language-model",
@@ -453,6 +476,11 @@ def test_configuration_can_select_different_provider_factories():
         answerability={
             "answerability-a": (
                 FakeAnswerabilityProvider
+            ),
+        },
+        entailment={
+            "entailment-a": (
+                FakeEntailmentProvider
             ),
         },
         language_model={
@@ -526,6 +554,11 @@ def test_fallback_parser_is_not_created_during_composition():
                     FakeAnswerabilityProvider
                 ),
             },
+            entailment={
+                "entailment-a": (
+                    FakeEntailmentProvider
+                ),
+            },
             language_model={
                 "language-model-a": (
                     FakeLanguageModelProvider
@@ -592,6 +625,11 @@ def test_fallback_parser_is_created_only_when_required():
             answerability={
                 "answerability-a": (
                     FakeAnswerabilityProvider
+                ),
+            },
+            entailment={
+                "entailment-a": (
+                    FakeEntailmentProvider
                 ),
             },
             language_model={
@@ -751,6 +789,11 @@ def test_unknown_fallback_provider_is_lazy_failure():
             answerability={
                 "answerability-a": (
                     FakeAnswerabilityProvider
+                ),
+            },
+            entailment={
+                "entailment-a": (
+                    FakeEntailmentProvider
                 ),
             },
             language_model={
@@ -1138,6 +1181,11 @@ def test_unknown_runtime_language_model_provider_is_rejected():
                         FakeAnswerabilityProvider
                     ),
                 },
+                entailment={
+                    "entailment-a": (
+                        FakeEntailmentProvider
+                    ),
+                },
                 language_model={},
             ),
         )
@@ -1210,5 +1258,50 @@ def test_unknown_entailment_provider_is_rejected():
                 question_parser={},
                 answerability={},
                 entailment={},
+            ),
+        )
+
+def test_unknown_runtime_entailment_provider_is_rejected():
+    with pytest.raises(
+        ValueError,
+        match=(
+            "Unknown entailment provider: "
+            "missing."
+        ),
+    ):
+        compose_runtime_providers(
+            _runtime_config(
+                entailment_provider="missing",
+            ),
+            ProviderFactories(
+                embedding={
+                    "embedding-a": (
+                        FakeEmbeddingProvider
+                    ),
+                },
+                reranker={
+                    "reranker-a": (
+                        FakeRerankerProvider
+                    ),
+                },
+                question_parser={
+                    "parser-a": lambda model: (
+                        FakeQuestionParseProvider(
+                            model,
+                            _usable_parse(),
+                        )
+                    ),
+                },
+                answerability={
+                    "answerability-a": (
+                        FakeAnswerabilityProvider
+                    ),
+                },
+                entailment={},
+                language_model={
+                    "language-model-a": (
+                        FakeLanguageModelProvider
+                    ),
+                },
             ),
         )

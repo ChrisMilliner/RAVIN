@@ -99,6 +99,7 @@ class ComposedProviders:
     reranker: RerankerProvider
     question_parser: QuestionParser
     answerability: AnswerabilityProvider
+    entailment: EntailmentProvider
     language_model: LanguageModelProvider
 
 ProviderType = TypeVar(
@@ -232,6 +233,12 @@ def compose_runtime_providers(
         answerability=(
             compose_answerability_provider(
                 config.answerability,
+                factories,
+            )
+        ),
+        entailment=(
+            compose_entailment_provider(
+                config.entailment,
                 factories,
             )
         ),
