@@ -13,6 +13,12 @@ from backend.ingestion.fixtures import INGESTION_FIXTURES
 from backend.ingestion.processor import process_policy
 
 def main() -> None:
+    """Run the standalone ingestion demonstration over development fixtures.
+
+    The command prints acquisition-independent ingestion outcomes and
+    produced chunks for manual inspection. It is a development demonstration
+    rather than the production RAVIN application entry point.
+    """
     print()
     print("RAVIN Policy Ingestion Reference Pipeline")
     print("=" * 42)

@@ -15,6 +15,7 @@ from dataclasses import dataclass
 from urllib.parse import urljoin, urlparse, parse_qs
 import requests
 from bs4 import BeautifulSoup
+from bs4.element import Tag
 from backend.ingestion.models import (
     PolicyContentUnit,
     RawPolicyContent,
@@ -31,23 +32,48 @@ HEADING_LEVELS = {
 
 @dataclass(frozen=True)
 class PolicyLink:
+    """Represent a discoverable policy document and its source location.
+
+    The policy identifier is retained separately from the title and URL so
+    acquisition, ingestion, retrieval, and later source citation can refer
+    to the same policy consistently.
+    """
+
     policy_id: str
     title: str
     url: str
 
 @dataclass(frozen=True)
 class PolicyMetadata:
+    """Represent status metadata acquired separately from policy body content.
+
+    Status is required by the ingestion quality controls, while effective
+    and review dates preserve source metadata that can be carried into
+    retrieval chunks.
+    """
+
     status: str
     effective_date: str | None
     review_date: str | None
 
 @dataclass(frozen=True)
 class PolicyPageContent:
+    """Represent the policy body extracted from one policy document page.
+
+    The model retains the page title, complete raw text, and heading-aware
+    content units used by downstream normalization and chunking.
+    """
+
     title: str
     raw_text: str
     content_units: tuple[PolicyContentUnit, ...]
 
 def extract_policy_id(url: str) -> str:
+    """Extract the policy identifier from a policy-database URL.
+
+    A ValueError is raised when the URL has no id query parameter because
+    policy identity is required for traceable ingestion and retrieval.
+    """
     query = parse_qs(urlparse(url).query)
 
     policy_ids = query.get("id")
@@ -58,6 +84,12 @@ def extract_policy_id(url: str) -> str:
     return policy_ids[0]
 
 def discover_policy_links(html: str) -> tuple[PolicyLink, ...]:
+    """Discover unique policy-document links from policy-database HTML.
+
+    Only links matching the policy document URL pattern and containing
+    usable link text are retained. Duplicate policy identifiers are reduced
+    to one PolicyLink before the immutable result is returned.
+    """
     soup = BeautifulSoup(html, "html.parser")
 
     links: list[PolicyLink] = []
@@ -105,6 +137,12 @@ def fetch_html(
     url: str,
     timeout_seconds: float = 15.0,
 ) -> str:
+    """Fetch HTML from a policy source with a bounded network timeout.
+
+    HTTP error responses are surfaced through Requests rather than being
+    converted into successful acquisition results, allowing startup and
+    ingestion callers to fail explicitly.
+    """
     response = requests.get(
         url,
         timeout=timeout_seconds,
@@ -115,6 +153,12 @@ def fetch_html(
     return response.text
 
 def extract_policy_metadata(html: str) -> PolicyMetadata:
+    """Extract policy status and date metadata from a status-details page.
+
+    Policy status is mandatory because RAVIN only promotes current policy
+    content through the normal ingestion pipeline. Effective and review
+    dates are retained when available.
+    """
     soup = BeautifulSoup(html, "html.parser")
 
     metadata: dict[str, str] = {}
@@ -147,14 +191,28 @@ def extract_policy_metadata(html: str) -> PolicyMetadata:
     )
 
 def build_status_url(policy_id: str) -> str:
+    """Build the policy status-and-details URL for a policy identifier.
+
+    Keeping status URL construction explicit allows policy body acquisition
+    and policy metadata acquisition to remain separate source operations.
+    """
     return urljoin(
         BASE_URL,
         f"document/status-and-details.php?id={policy_id}",
     )
 
 def extract_policy_content_units(
-    content_element,
+    content_element: Tag,
 ) -> tuple[PolicyContentUnit, ...]:
+    """Extract heading-aware content units from a policy document element.
+
+    Top-level child elements are traversed in source order. Heading elements
+    update the active heading path, while subsequent content is grouped
+    under that structural path until another heading is encountered.
+
+    The resulting units preserve policy structure for chunking, retrieval,
+    context expansion, and evidence citation.
+    """
     units: list[PolicyContentUnit] = []
 
     heading_path: list[str] = []
@@ -205,6 +263,12 @@ def extract_policy_content_units(
     return tuple(units)
 
 def extract_policy_page(html: str) -> PolicyPageContent:
+    """Extract title, text, and structured content from policy page HTML.
+
+    Required title and document-content elements are validated before
+    content is returned. Presentation-only status and navigation elements
+    are removed so they do not contaminate retrievable policy evidence.
+    """
     soup = BeautifulSoup(html, "html.parser")
 
     title_element = soup.find(id="sliph-document-title")
@@ -261,6 +325,12 @@ def build_raw_policy_content(
     policy_html: str,
     status_html: str,
 ) -> RawPolicyContent:
+    """Combine acquired policy body and status metadata into RawPolicyContent.
+
+    The function joins the independently acquired source documents while
+    preserving the original policy identifier, URL, dates, status, raw
+    text, and heading-aware content units.
+    """
     page = extract_policy_page(policy_html)
     metadata = extract_policy_metadata(status_html)
 
@@ -279,6 +349,12 @@ def acquire_policy(
     link: PolicyLink,
     timeout_seconds: float = 15.0,
 ) -> RawPolicyContent:
+    """Acquire one complete raw policy record from its policy link.
+
+    The policy document and status-details pages are fetched separately and
+    then combined into a traceable RawPolicyContent instance. Network or
+    source-validation failures are allowed to propagate to the caller.
+    """
     policy_html = fetch_html(
         link.url,
         timeout_seconds=timeout_seconds,
