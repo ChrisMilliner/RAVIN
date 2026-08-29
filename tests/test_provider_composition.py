@@ -6,6 +6,7 @@ from backend.core.provider_composition import (
     compose_question_parser,
     compose_reranker_provider,
     compose_runtime_providers,
+    compose_language_model_provider,
 )
 from backend.core.runtime_config import (
     ProviderModelConfig,
@@ -84,6 +85,20 @@ class FakeAnswerabilityProvider:
                 for _ in evidence_texts
             )
         )
+
+class FakeLanguageModelProvider:
+    def __init__(
+        self,
+        model_name: str,
+    ) -> None:
+        self.model_name = model_name
+
+    def generate(
+        self,
+        system_prompt: str,
+        user_prompt: str,
+    ) -> str:
+        return "Generated answer."
 
 class FakeQuestionParseProvider:
     def __init__(
@@ -927,5 +942,76 @@ def test_unknown_runtime_answerability_provider_is_rejected():
                     ),
                 },
                 answerability={},
+            ),
+        )
+
+def test_compose_language_model_provider_constructs_only_language_model():
+    created: list[
+        tuple[str, str]
+    ] = []
+
+    def create_language_model(
+        model: str,
+    ) -> FakeLanguageModelProvider:
+        created.append(
+            (
+                "language-model",
+                model,
+            )
+        )
+
+        return FakeLanguageModelProvider(
+            model
+        )
+
+    provider = compose_language_model_provider(
+        ProviderModelConfig(
+            provider="language-model-a",
+            model="generation-model",
+        ),
+        ProviderFactories(
+            embedding={},
+            reranker={},
+            question_parser={},
+            answerability={},
+            language_model={
+                "language-model-a": (
+                    create_language_model
+                ),
+            },
+        ),
+    )
+
+    assert created == [
+        (
+            "language-model",
+            "generation-model",
+        )
+    ]
+
+    assert isinstance(
+        provider,
+        FakeLanguageModelProvider,
+    )
+
+def test_unknown_language_model_provider_is_rejected():
+    with pytest.raises(
+        ValueError,
+        match=(
+            "Unknown language model provider: "
+            "missing."
+        ),
+    ):
+        compose_language_model_provider(
+            ProviderModelConfig(
+                provider="missing",
+                model="generation-model",
+            ),
+            ProviderFactories(
+                embedding={},
+                reranker={},
+                question_parser={},
+                answerability={},
+                language_model={},
             ),
         )

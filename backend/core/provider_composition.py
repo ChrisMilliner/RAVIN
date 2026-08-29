@@ -1,4 +1,7 @@
-from dataclasses import dataclass
+from dataclasses import (
+    dataclass,
+    field,
+)
 from typing import (
     Callable,
     Mapping,
@@ -8,6 +11,9 @@ from backend.core.runtime_config import (
     ProviderModelConfig,
     QuestionParserProviderConfig,
     RuntimeProviderConfig,
+)
+from backend.llm.provider import (
+    LanguageModelProvider,
 )
 from backend.retrieval.embeddings import (
     EmbeddingProvider,
@@ -39,6 +45,10 @@ AnswerabilityProviderFactory = Callable[
     [str],
     AnswerabilityProvider,
 ]
+LanguageModelProviderFactory = Callable[
+    [str],
+    LanguageModelProvider,
+]
 
 @dataclass(frozen=True)
 class ProviderFactories:
@@ -61,6 +71,13 @@ class ProviderFactories:
         str,
         AnswerabilityProviderFactory,
     ]
+
+    language_model: Mapping[
+        str,
+        LanguageModelProviderFactory,
+    ] = field(
+        default_factory=dict
+    )
 
 @dataclass(frozen=True)
 class ComposedProviders:
@@ -126,6 +143,16 @@ def compose_answerability_provider(
         config,
         factories.answerability,
         "answerability",
+    )
+
+def compose_language_model_provider(
+    config: ProviderModelConfig,
+    factories: ProviderFactories,
+) -> LanguageModelProvider:
+    return _create_provider(
+        config,
+        factories.language_model,
+        "language model",
     )
 
 def compose_question_parser(
