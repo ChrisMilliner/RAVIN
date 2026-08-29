@@ -1,3 +1,16 @@
+"""
+Define framework-neutral runtime provider configuration for RAVIN.
+
+The configuration models in this module identify provider and model
+choices without importing the concrete implementation libraries. They
+describe the runtime dependencies required for retrieval, question
+analysis, evidence assessment, generated-claim validation, and grounded
+answer wording.
+
+Keeping configuration neutral allows individual providers and models to
+be replaced without changing the business pipeline.
+"""
+
 from dataclasses import dataclass
 
 @dataclass(frozen=True)

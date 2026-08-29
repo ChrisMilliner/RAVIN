@@ -1,3 +1,14 @@
+"""
+Match retrieved policy evidence against expected evaluation evidence.
+
+This module applies the structured policy, heading, descendant, and
+text requirements defined by evaluation questions to determine whether
+a retrieved result covers the expected evidence.
+
+Evidence matching provides the basis for retrieval metrics and grounded
+overview coverage calculations.
+"""
+
 from backend.evaluation.models import (
     ExpectedEvidence,
     ExpectedEvidenceGroup,

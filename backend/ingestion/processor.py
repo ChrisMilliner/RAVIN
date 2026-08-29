@@ -1,3 +1,15 @@
+"""
+Coordinate conversion of acquired policy content into indexed units.
+
+The processor joins the ingestion stages required to turn acquired
+policy material into a structured ingestion result and PolicyChunk
+collection suitable for retrieval.
+
+It provides the ingestion orchestration boundary while leaving network
+acquisition, text normalization, and retrieval ranking in their
+specialised modules.
+"""
+
 from backend.ingestion.chunking import chunk_policy
 from backend.ingestion.config import (
     DEFAULT_CHUNK_OVERLAP_WORDS,

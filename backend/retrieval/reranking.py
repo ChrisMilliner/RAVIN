@@ -1,3 +1,14 @@
+"""
+Define reranking contracts and candidate reranking behaviour.
+
+This module provides the neutral reranker interface and the logic for
+applying reranker scores to an existing retrieval candidate set.
+Reranking improves the ordering of evidence after initial retrieval.
+
+Concrete cross-encoder technology is supplied through a provider
+adapter rather than embedded in the ranking algorithm.
+"""
+
 from typing import Protocol
 from backend.retrieval.models import (
     RetrievalResult,

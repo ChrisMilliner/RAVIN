@@ -1,3 +1,14 @@
+"""
+Run routing evaluation over a structured question dataset.
+
+This module executes the configured routing pipeline for each evaluation
+question, compares predictions with expected intent, sufficiency, and
+behaviour labels, and aggregates the resulting classification metrics.
+
+Evaluation execution is kept separate from dataset loading and metric
+calculation so each stage can be tested independently.
+"""
+
 from enum import Enum
 from typing import Callable
 from backend.behavior import AnswerBehavior

@@ -1,3 +1,14 @@
+"""
+Coordinate deterministic question assessment and behaviour routing.
+
+The routing orchestrator combines intent classification and
+evidence-sufficiency assessment into the QuestionAssessment consumed by
+the final router.
+
+It coordinates control components only and does not generate user-facing
+answer text.
+"""
+
 from backend.retrieval.production import (
     GroundedRetrievalResult,
 )

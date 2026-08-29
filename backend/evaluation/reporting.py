@@ -1,3 +1,14 @@
+"""
+Create reproducible records for RAVIN retrieval experiments.
+
+This module captures dataset and corpus hashes, repository commit
+identity, evaluation configuration, and experiment results so an
+optimisation decision can be traced back to the exact evaluated state.
+
+Experiment recording requires a clean Git working tree to reduce the
+risk of producing results that cannot later be reproduced.
+"""
+
 import hashlib
 import json
 import subprocess

@@ -1,3 +1,14 @@
+"""
+Compare retrieval evaluation runs and candidate configurations.
+
+This module calculates changes between experiment results so retrieval
+modifications can be assessed against established metrics and
+question-level ranking behaviour.
+
+Comparisons support evidence-based optimisation but do not convert
+development evaluation results into validated production accuracy.
+"""
+
 from backend.evaluation.experiment_models import (
     DatasetValidationStatus,
     ExperimentDirection,

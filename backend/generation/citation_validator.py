@@ -1,3 +1,15 @@
+"""
+Validate evidence citations attached to generated RAVIN answers.
+
+This module performs deterministic checks on the internal evidence
+markers produced during grounded generation. It verifies that factual
+output cites supplied evidence and that cited indexes refer to evidence
+actually available to the generator.
+
+Citation validation forms part of the fail-closed release path and does
+not rely on a language model to decide whether citations are valid.
+"""
+
 import re
 from dataclasses import dataclass
 from backend.generation.grounded_generator import (

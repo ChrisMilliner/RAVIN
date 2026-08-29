@@ -1,3 +1,15 @@
+"""
+Compose the production policy retrieval and context-building pipeline.
+
+This module applies the configured semantic search, hybrid scoring,
+reranking depth, result limits, and grounded-context assembly used by
+RAVIN's application service.
+
+The production retrieval result contains both ranked policy evidence
+and traceable context for downstream evidence assessment. Retrieval
+ranking alone is not treated as proof that a question can be answered.
+"""
+
 from dataclasses import dataclass
 from backend.ingestion.models import PolicyChunk
 from backend.retrieval.context import (

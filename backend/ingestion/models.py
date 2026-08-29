@@ -1,3 +1,15 @@
+"""
+Define the structured data models used during policy ingestion.
+
+These models represent policy content as it progresses from acquired
+source material to parsed content, retrieval chunks, and final
+ingestion results. They retain status and provenance information needed
+to diagnose failures and trace retrieved evidence back to its source.
+
+The models contain ingestion state rather than retrieval or routing
+decisions.
+"""
+
 from dataclasses import dataclass
 from enum import Enum
 

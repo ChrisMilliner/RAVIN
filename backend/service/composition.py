@@ -1,3 +1,16 @@
+"""
+Construct the production RavinAnswerService and its collaborating layers.
+
+This module assembles configured providers with production retrieval,
+question structure resolution, evidence assessment, deterministic
+routing, grounded generation, citation validation, and generated-claim
+grounding.
+
+Composition occurs once during application startup. The resulting
+service is reusable by interfaces such as the CLI and FastAPI without
+duplicating backend architecture or loading models for every request.
+"""
+
 from backend.core.answer_quality_config import (
     AnswerQualityConfig,
     load_answer_quality_config,

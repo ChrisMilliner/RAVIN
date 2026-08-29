@@ -1,3 +1,15 @@
+"""
+Define the contract for deterministic question-structure recovery.
+
+Recovery providers receive question parses that could not be accepted
+with sufficient confidence and may return a supported corrected
+structure for known patterns.
+
+Recovery is bounded and deterministic. It is not a general language
+model fallback and must fail unresolved when no supported recovery rule
+applies.
+"""
+
 from typing import Protocol
 from backend.routing.question_parser import (
     QuestionParse,

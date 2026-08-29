@@ -1,3 +1,15 @@
+"""
+Load and validate structured routing-evaluation datasets.
+
+Routing datasets describe expected question intent, evidence
+sufficiency, and final answer behaviour for development and validation
+runs. The loader converts source records into typed evaluation models
+before routing metrics are calculated.
+
+Dataset status must be retained so preliminary routing data is not
+mistaken for independently validated evidence.
+"""
+
 import json
 from pathlib import Path
 from backend.behavior import AnswerBehavior

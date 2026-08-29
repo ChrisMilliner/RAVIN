@@ -1,3 +1,14 @@
+"""
+Provide the cross-encoder adapter for proposition answerability scoring.
+
+This module implements the neutral AnswerabilityProvider contract using
+a configured cross-encoder question-answerability model. It scores
+material propositions against retrieved evidence blocks.
+
+The concrete model is isolated behind the provider contract so evidence
+assessment logic remains independent of a particular model or library.
+"""
+
 from typing import cast
 import numpy as np
 from numpy import ndarray

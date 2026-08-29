@@ -1,3 +1,15 @@
+"""
+Execute retrieval and grounded-overview evaluation runs.
+
+This module evaluates ranked retrieval results against structured
+expected evidence, calculates question-level ranks and aggregate
+metrics, and assesses evidence-group coverage for broad grounded
+overview questions.
+
+The runner reports measured performance without changing retrieval
+configuration or promoting development results to validated status.
+"""
+
 from typing import Callable
 from backend.evaluation.matching import (
     is_expected_evidence_group_covered,

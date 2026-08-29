@@ -1,3 +1,15 @@
+"""
+Split parsed policy content into retrieval-ready policy chunks.
+
+Chunking preserves policy identity, heading structure, source location,
+and the text needed for semantic and lexical retrieval. The resulting
+PolicyChunk objects provide the stable evidence units indexed by the
+retrieval layer.
+
+Chunk construction does not perform semantic ranking or answer
+generation.
+"""
+
 from backend.ingestion.models import (
     ParsedPolicyContent,
     PolicyChunk,

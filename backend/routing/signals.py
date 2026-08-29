@@ -1,3 +1,14 @@
+"""
+Extract deterministic evidence signals used by routing assessment.
+
+This module derives structured indicators from retrieved evidence so
+routing components can reason about evidence presence and support
+without depending directly on retrieval implementation details.
+
+Signals contribute to deterministic assessment and do not provide
+generated interpretations of policy meaning.
+"""
+
 from backend.retrieval.production import (
     GroundedRetrievalResult,
 )

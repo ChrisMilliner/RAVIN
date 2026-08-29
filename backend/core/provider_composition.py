@@ -1,3 +1,15 @@
+"""
+Compose configured runtime providers behind framework-neutral contracts.
+
+This module converts RAVIN runtime configuration into concrete provider
+instances for embeddings, reranking, question parsing, answerability,
+entailment, and grounded language generation.
+
+Business logic depends on the neutral provider contracts rather than
+specific model libraries or vendors. This keeps provider replacement
+separate from retrieval, routing, generation, and validation logic.
+"""
+
 from dataclasses import (
     dataclass,
     field,

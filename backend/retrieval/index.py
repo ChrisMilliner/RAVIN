@@ -1,3 +1,15 @@
+"""
+Build and search the in-memory semantic policy index.
+
+This module stores policy chunks with their embedding vectors and
+provides cosine-similarity search over the indexed corpus. It contains
+the framework-neutral semantic retrieval mechanics used before hybrid
+scoring and reranking.
+
+Embedding creation is delegated to an EmbeddingProvider so index logic
+does not depend on a specific embedding model.
+"""
+
 from math import sqrt
 from backend.ingestion.models import PolicyChunk
 from backend.retrieval.embeddings import EmbeddingProvider

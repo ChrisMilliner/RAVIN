@@ -1,3 +1,15 @@
+"""
+Define the core states exchanged by RAVIN routing components.
+
+This module contains question intent, evidence sufficiency, assessment,
+evidence-signal, and routing-result models. Together they form the
+deterministic control vocabulary used between question analysis,
+evidence assessment, and answer behaviour selection.
+
+These models record control state and do not perform language
+generation.
+"""
+
 from dataclasses import dataclass
 from enum import Enum
 from backend.behavior import AnswerBehavior

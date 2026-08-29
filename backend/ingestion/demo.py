@@ -1,3 +1,14 @@
+"""
+Provide a development entry point for exercising policy ingestion.
+
+This module supports manual inspection of the acquisition and ingestion
+pipeline outside the production answer service. It is intended for
+development verification and troubleshooting of source processing.
+
+Production interfaces use the shared RAVIN service bootstrap rather
+than this demonstration entry point.
+"""
+
 from backend.ingestion.fixtures import INGESTION_FIXTURES
 from backend.ingestion.processor import process_policy
 

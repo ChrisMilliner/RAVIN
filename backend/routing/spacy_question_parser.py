@@ -1,3 +1,15 @@
+"""
+Provide the spaCy adapter for RAVIN question parsing.
+
+This module translates spaCy token, span, and dependency information
+into RAVIN's neutral question-parse structures. Library-specific model
+loading and parsing remain confined to this adapter.
+
+spaCy provides linguistic analysis only. RAVIN defines the higher-level
+material requirements, proposition logic, recovery strategies, evidence
+assessment, and routing decisions.
+"""
+
 from typing import Protocol
 import spacy
 from spacy.tokens import Doc

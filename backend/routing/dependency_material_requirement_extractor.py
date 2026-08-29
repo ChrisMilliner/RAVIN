@@ -1,3 +1,15 @@
+"""
+Extract material requirements from resolved question structure.
+
+This module derives the significant concepts, relations, conditions,
+requested attributes, and related requirements needed to understand
+what a user is asking.
+
+The extractor uses deterministic dependency information supplied by the
+shared question-structure resolver and does not perform answer routing
+or generation.
+"""
+
 from backend.routing.material_requirements import (
     MaterialQuestionRequirements,
     MaterialRequirement,

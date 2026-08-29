@@ -1,3 +1,14 @@
+"""
+Define retrieval and grounded-overview evaluation data models.
+
+The models in this module represent expected evidence, evaluation
+questions, evaluation populations, per-question results, aggregate
+retrieval results, and grounded-overview evidence coverage.
+
+They preserve enough structured information to trace reported metrics
+back to individual questions and expected policy evidence.
+"""
+
 from dataclasses import dataclass
 from backend.behavior import AnswerBehavior
 from backend.retrieval.models import RetrievalResult

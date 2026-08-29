@@ -39,6 +39,9 @@ SOURCE_ROOTS = (
 EXCLUDED_FILES = {
     Path(__file__).resolve(),
 }
+EXCLUDED_SCRIPT_PREFIXES = (
+    "apply_backend_",
+)
 
 @dataclass(frozen=True)
 class DefinitionAudit:
@@ -92,6 +95,14 @@ def _iter_python_files() -> tuple[
                 continue
 
             if "__pycache__" in path.parts:
+                continue
+
+            if (
+                path.parent == REPOSITORY_ROOT / "scripts"
+                and path.name.startswith(
+                    EXCLUDED_SCRIPT_PREFIXES
+                )
+            ):
                 continue
 
             files.append(

@@ -1,3 +1,14 @@
+"""
+Run the configured RAVIN retrieval evaluation from the command line.
+
+This developer entry point loads the evaluation dataset and policy
+corpus, builds the configured retrieval stack, executes evaluation, and
+prints the resulting retrieval metrics.
+
+Any reported accuracy must be interpreted according to the validation
+status of the dataset used for that run.
+"""
+
 from backend.evaluation.dataset import (
     load_evaluation_questions,
 )

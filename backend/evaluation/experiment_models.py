@@ -1,3 +1,15 @@
+"""
+Define models used to compare RAVIN retrieval experiments.
+
+These models record experiment configuration, dataset validation status,
+metric changes, per-question rank changes, and selection decisions. They
+provide structured evidence for comparing retrieval approaches rather
+than relying on informal observations.
+
+Experiment results remain tied to the dataset and configuration under
+which they were produced.
+"""
+
 from dataclasses import dataclass
 from enum import Enum
 from backend.evaluation.models import (

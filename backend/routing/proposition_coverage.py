@@ -1,3 +1,14 @@
+"""
+Define proposition-level evidence coverage results.
+
+Coverage records how strongly each material proposition is supported by
+retrieved policy context and provides aggregate information used by the
+deterministic evidence-sufficiency assessor.
+
+Coverage thresholds are configurable development or validated control
+parameters and must not be represented as system accuracy results.
+"""
+
 from dataclasses import dataclass
 from enum import Enum
 from backend.routing.material_propositions import (

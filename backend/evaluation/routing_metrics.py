@@ -1,3 +1,15 @@
+"""
+Calculate classification metrics for RAVIN routing evaluation.
+
+This module measures overall and per-class routing performance and
+applies configured classification quality gates. Per-class reporting
+helps expose failures that could otherwise be hidden by aggregate
+accuracy.
+
+Threshold checks describe evaluation performance only for the dataset
+being measured.
+"""
+
 from enum import Enum
 
 def _validate_label_sequences(

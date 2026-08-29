@@ -1,3 +1,16 @@
+"""
+Generate evidence-constrained answer wording with a language model.
+
+This module implements the grounded-generation contract using the
+configured language-model provider. It constructs evidence-labelled
+prompts that require factual statements to reference supplied evidence
+markers.
+
+The language model is restricted to answer wording. Deterministic RAVIN
+components remain responsible for question routing, evidence
+sufficiency, citation validation, and final release decisions.
+"""
+
 from backend.behavior import AnswerBehavior
 from backend.generation.grounded_generator import (
     GroundedGenerationRequest,

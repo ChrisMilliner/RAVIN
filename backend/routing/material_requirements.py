@@ -1,3 +1,15 @@
+"""
+Define RAVIN's structured material-question requirements.
+
+The models in this module represent significant concepts, relations,
+conditions, requested attributes, and resolution information extracted
+from question structure.
+
+Names such as RELATION, CONDITION, CONCEPT, REQUESTED_ATTRIBUTE, and
+RECOVERY are RAVIN-defined modelling terms and must not be presented as
+spaCy dependency labels.
+"""
+
 from dataclasses import dataclass
 from enum import Enum
 

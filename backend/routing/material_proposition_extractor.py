@@ -1,3 +1,14 @@
+"""
+Define the contract for extracting material propositions from questions.
+
+A material proposition represents a substantive factual requirement
+that retrieved evidence must support before RAVIN can safely answer the
+question.
+
+The extraction contract keeps evidence-requirement modelling separate
+from parser implementations and proposition-coverage scoring.
+"""
+
 from typing import Protocol
 from backend.routing.material_propositions import (
     MaterialQuestionPropositions,

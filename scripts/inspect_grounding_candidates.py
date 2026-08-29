@@ -1,3 +1,14 @@
+"""
+Inspect retrieved evidence candidates used by grounding development.
+
+This developer utility acquires the configured policy corpus and
+displays candidate evidence for selected questions. It supports manual
+inspection of retrieval and grounding behaviour during debugging.
+
+It does not provide the production RAVIN user interface or establish
+validated accuracy.
+"""
+
 import argparse
 from backend.ingestion.acquisition import (
     PolicyLink,

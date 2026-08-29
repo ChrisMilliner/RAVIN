@@ -1,3 +1,15 @@
+"""
+Provide the Sentence Transformer adapter for semantic embeddings.
+
+This module implements the framework-neutral EmbeddingProvider contract
+using a configured Sentence Transformer model for policy documents and
+user questions.
+
+The adapter owns library-specific model interaction while semantic
+indexing and retrieval remain independent of the concrete embedding
+implementation.
+"""
+
 from typing import cast
 from numpy import ndarray
 from sentence_transformers import SentenceTransformer

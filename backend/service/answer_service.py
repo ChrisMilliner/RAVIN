@@ -1,3 +1,17 @@
+"""
+Provide the application-facing orchestration service for RAVIN answers.
+
+RavinAnswerService coordinates the completed evidence-first answer
+pipeline for one user question. It combines intent classification,
+grounded retrieval, evidence sufficiency, deterministic behaviour
+routing, grounded generation, release validation, and source mapping.
+
+Application adapters such as the CLI and FastAPI should call this
+service rather than implementing retrieval or control logic themselves.
+Generated output fails closed when required grounding validation does
+not pass.
+"""
+
 from dataclasses import dataclass
 from typing import Callable
 from backend.behavior import AnswerBehavior

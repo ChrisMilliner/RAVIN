@@ -1,3 +1,15 @@
+"""
+Define the framework-neutral question-intent classification contract.
+
+Question intent describes whether a request is focused, broad, or
+ambiguous before final answer behaviour is selected. The classifier
+contract allows deterministic implementations to be used without
+coupling routing orchestration to their internal rules.
+
+Intent classification is a control decision and is not delegated to a
+generative language model.
+"""
+
 from typing import Protocol
 from backend.routing.models import (
     QuestionIntent,

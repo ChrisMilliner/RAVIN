@@ -1,3 +1,15 @@
+"""
+Assemble retrieved policy chunks into traceable grounded context.
+
+This module expands selected retrieval results with appropriate
+structural neighbours, groups related evidence, and renders labelled
+context blocks for downstream evidence assessment and generation.
+
+Context assembly preserves policy and heading provenance and is bounded
+so additional neighbouring text does not grow the supplied evidence
+without control.
+"""
+
 from dataclasses import dataclass
 from backend.ingestion.config import (
     DEFAULT_CHUNK_OVERLAP_WORDS,

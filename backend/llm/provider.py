@@ -1,3 +1,14 @@
+"""
+Define the framework-neutral language-model provider contract.
+
+The protocol in this module gives grounded generation a minimal text
+generation interface without coupling the generation layer to Ollama
+or another model vendor.
+
+Provider neutrality allows the concrete language-model implementation
+to change while preserving the evidence-first RAVIN control pipeline.
+"""
+
 from typing import Protocol
 
 class LanguageModelProvider(Protocol):

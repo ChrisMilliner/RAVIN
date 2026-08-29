@@ -1,3 +1,14 @@
+"""
+Run a development smoke test of grounded policy retrieval.
+
+This utility exercises the production retrieval and context-assembly
+path against current policy material so developers can inspect whether
+the end-to-end retrieval layer can obtain grounded evidence.
+
+A successful smoke run demonstrates integration, not validated
+retrieval accuracy.
+"""
+
 from pathlib import Path
 from backend.evaluation.dataset import (
     load_evaluation_questions,

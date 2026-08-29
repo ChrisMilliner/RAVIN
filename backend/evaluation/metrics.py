@@ -1,3 +1,14 @@
+"""
+Calculate retrieval-quality metrics and the Top-1 quality gate.
+
+This module provides Top-1 accuracy, Hit@K, mean reciprocal rank, and
+quality-gate calculations used by RAVIN retrieval evaluation.
+
+RAVIN's target requires validated Top-1 accuracy of at least 95 percent.
+Results from preliminary or development-only datasets must not be
+reported as satisfying the formal validated accuracy objective.
+"""
+
 def calculate_top_1_accuracy(
     first_relevant_ranks: tuple[int | None, ...],
 ) -> float:

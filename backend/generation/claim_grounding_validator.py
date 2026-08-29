@@ -1,3 +1,15 @@
+"""
+Validate generated factual claims against their cited policy evidence.
+
+This module checks whether generated claims are supported by the
+evidence blocks they cite. It evaluates deterministic support windows
+with the configured entailment provider and retains the strongest
+valid entailment score for each claim.
+
+Claim grounding is separate from question-level evidence sufficiency.
+A generated answer that fails this validation is not released.
+"""
+
 import re
 from dataclasses import dataclass
 from backend.generation.grounded_generator import (

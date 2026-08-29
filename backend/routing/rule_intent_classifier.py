@@ -1,3 +1,15 @@
+"""
+Classify question intent using deterministic RAVIN rules.
+
+This implementation distinguishes focused, broad, and ambiguous
+questions using explicit structural signals rather than generative
+model judgement.
+
+The classifier exists to keep answer-control behaviour explainable,
+repeatable, and testable independently of the language model used for
+grounded wording.
+"""
+
 import re
 from backend.routing.models import (
     QuestionIntent,

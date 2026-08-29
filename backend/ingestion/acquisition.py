@@ -1,3 +1,15 @@
+"""
+Acquire current policy content and metadata from policy web sources.
+
+This module owns the external policy-source boundary. It discovers or
+accepts policy links, fetches policy HTML, extracts identifying
+metadata and structured content units, and produces raw policy content
+for downstream processing.
+
+Network acquisition remains separate from normalization, chunking, and
+retrieval so those stages can be tested independently.
+"""
+
 import re
 from dataclasses import dataclass
 from urllib.parse import urljoin, urlparse, parse_qs

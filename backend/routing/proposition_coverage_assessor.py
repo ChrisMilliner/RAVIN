@@ -1,3 +1,15 @@
+"""
+Assess retrieved evidence against each material question proposition.
+
+This module scores propositions against grounded retrieval context using
+the configured AnswerabilityProvider and classifies each proposition as
+covered, partially covered, or uncovered according to configured
+thresholds.
+
+The resulting coverage is passed to deterministic evidence-sufficiency
+logic rather than directly selecting an answer behaviour.
+"""
+
 from backend.routing.answerability import (
     AnswerabilityProvider,
     score_answerability,

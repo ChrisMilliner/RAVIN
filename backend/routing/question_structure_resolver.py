@@ -1,3 +1,15 @@
+"""
+Resolve the question structure used by downstream routing analysis.
+
+The resolver coordinates primary parsing, configured fallback parsing,
+reliability checks, and optional deterministic recovery. It exposes one
+shared resolved structure so material-requirement and proposition
+extraction operate from the same interpretation of the question.
+
+Unresolved structure remains explicit rather than being silently
+replaced with a generated interpretation.
+"""
+
 from dataclasses import dataclass
 from enum import Enum
 from backend.routing.question_parser import (

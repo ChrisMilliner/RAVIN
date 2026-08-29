@@ -1,3 +1,15 @@
+"""
+Load RAVIN runtime provider configuration from environment settings.
+
+This module resolves the configured provider and model identifiers used
+during application startup. Defaults provide the current local RAVIN
+stack while environment variables allow individual providers or models
+to be replaced.
+
+The loader selects configuration only. Provider construction remains in
+the provider-composition layer.
+"""
+
 import os
 from collections.abc import Mapping
 from backend.core.provider_registry import (

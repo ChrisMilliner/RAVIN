@@ -1,3 +1,15 @@
+"""
+Define neutral question parsing, reliability, and parser-service models.
+
+This module represents parsed tokens, spans, dependency structure,
+parser reliability, and the service that can select between configured
+parser providers. It also contains structural checks used to identify
+parses that may require fallback or deterministic recovery.
+
+The data structures are RAVIN interfaces and remain independent of a
+specific NLP library.
+"""
+
 from dataclasses import dataclass
 from enum import Enum
 from typing import Callable, Protocol

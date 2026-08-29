@@ -1,3 +1,14 @@
+"""
+Select the final RAVIN answer behaviour from assessed control state.
+
+Routing combines question intent and evidence sufficiency to select
+DIRECT_ANSWER, GROUNDED_OVERVIEW, CLARIFY, or NO_GROUNDED_ANSWER.
+
+The mapping is deterministic. Ambiguous questions route to
+clarification, while clear questions with insufficient evidence route
+to a controlled no-grounded-answer response.
+"""
+
 from backend.behavior import AnswerBehavior
 from backend.routing.models import (
     EvidenceAssessment,

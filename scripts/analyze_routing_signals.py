@@ -1,3 +1,13 @@
+"""
+Analyse routing evidence signals during RAVIN development.
+
+This developer utility summarizes score distributions and boundary
+cases so routing behaviour can be inspected when tuning deterministic
+rules or development thresholds.
+
+It is a diagnostic tool and is not part of the production request path.
+"""
+
 from dataclasses import dataclass
 from pathlib import Path
 from statistics import median

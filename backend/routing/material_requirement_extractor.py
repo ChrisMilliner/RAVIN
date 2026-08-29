@@ -1,3 +1,15 @@
+"""
+Define the contract for extracting material question requirements.
+
+Material requirements describe significant structural elements that
+RAVIN identifies in a parsed question before proposition extraction.
+The contract separates requirement extraction from the concrete
+dependency-based implementation.
+
+These structures support deterministic question understanding rather
+than generated interpretation.
+"""
+
 from typing import Protocol
 from backend.routing.material_requirements import (
     MaterialRequirementExtractionResult,

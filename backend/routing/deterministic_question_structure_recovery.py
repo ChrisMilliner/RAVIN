@@ -1,3 +1,15 @@
+"""
+Recover selected malformed question structures with deterministic rules.
+
+This module contains RAVIN-defined recovery strategies for specific
+dependency structures that the configured parser may analyse
+incorrectly. Recovery is attempted only when the primary parse is
+considered unreliable and the supported structural pattern is clear.
+
+These recovery labels and strategies belong to RAVIN and are not spaCy
+dependency labels or generative-model decisions.
+"""
+
 from dataclasses import replace
 from backend.routing.question_parser import (
     ParsedSpan,

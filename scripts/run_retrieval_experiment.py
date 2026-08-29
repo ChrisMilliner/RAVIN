@@ -1,3 +1,14 @@
+"""
+Run and report a reproducible RAVIN retrieval experiment.
+
+This developer utility evaluates a candidate retrieval configuration,
+compares it with the relevant baseline, and reports metric and
+question-level ranking changes used to support optimisation decisions.
+
+Experiment output is development evidence unless the underlying dataset
+and evaluation process have been independently validated.
+"""
+
 from datetime import datetime, timezone
 from backend.evaluation.dataset import (
     load_evaluation_questions,

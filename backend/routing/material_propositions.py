@@ -1,3 +1,15 @@
+"""
+Define RAVIN's material-proposition data model.
+
+Material propositions represent the independent factual requirements
+that must be checked against retrieved evidence. They allow a compound
+question to be assessed proposition by proposition rather than treating
+the entire question as one opaque string.
+
+The proposition categories in this module are RAVIN concepts rather
+than terminology supplied by an NLP library.
+"""
+
 from dataclasses import dataclass
 from enum import Enum
 from backend.routing.material_requirements import (

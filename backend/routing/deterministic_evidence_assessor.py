@@ -1,3 +1,15 @@
+"""
+Convert proposition coverage into deterministic evidence sufficiency.
+
+The assessor maps proposition-level evidence coverage to RAVIN's
+SUFFICIENT, INSUFFICIENT, or UNCERTAIN states. Missing or uncovered
+material propositions prevent a question from being treated as fully
+supported.
+
+This control decision is deterministic. A language model is not
+permitted to override insufficient or uncertain evidence.
+"""
+
 from backend.retrieval.production import (
     GroundedRetrievalResult,
 )

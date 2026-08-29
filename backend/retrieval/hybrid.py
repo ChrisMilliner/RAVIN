@@ -1,3 +1,15 @@
+"""
+Combine semantic and lexical signals for policy retrieval.
+
+This module calculates lexical query coverage and combines it with
+semantic retrieval scores using configured weights. Hybrid scoring
+helps preserve exact policy terminology while retaining semantic
+matching for differently worded questions.
+
+Hybrid retrieval ranks evidence candidates only. It does not determine
+whether the resulting evidence is sufficient to answer a question.
+"""
+
 import re
 from backend.retrieval.embeddings import EmbeddingProvider
 from backend.retrieval.index import cosine_similarity

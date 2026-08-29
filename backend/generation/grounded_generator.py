@@ -1,3 +1,16 @@
+"""
+Define framework-neutral contracts for grounded answer generation.
+
+This module contains the request, result, and generator interfaces used
+after RAVIN has already classified the question, retrieved policy
+evidence, assessed evidence sufficiency, and selected an answer
+behaviour.
+
+Generation is therefore a wording stage rather than a control stage.
+Implementations receive approved evidence and must not independently
+decide routing or evidence sufficiency.
+"""
+
 from dataclasses import dataclass
 from typing import Protocol
 from backend.behavior import AnswerBehavior

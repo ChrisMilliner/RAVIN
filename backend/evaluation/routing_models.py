@@ -1,3 +1,14 @@
+"""
+Define models used by RAVIN routing evaluation.
+
+These models represent routing questions, expected classifications,
+predictions, per-class results, aggregate results, and configured pass
+thresholds for intent, evidence sufficiency, and answer behaviour.
+
+The default development threshold does not constitute a validated
+accuracy result by itself.
+"""
+
 from dataclasses import dataclass
 from backend.behavior import AnswerBehavior
 from backend.routing.models import (

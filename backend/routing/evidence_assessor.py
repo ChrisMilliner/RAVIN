@@ -1,3 +1,16 @@
+"""
+Define the framework-neutral evidence-sufficiency assessment contract.
+
+Evidence sufficiency represents whether retrieved policy evidence is
+adequate to support all material parts of a clear user question. The
+contract separates this control decision from the concrete assessment
+strategy.
+
+RAVIN distinguishes insufficient evidence from ambiguity: a clear
+question with inadequate evidence is not the same as a question that
+requires clarification.
+"""
+
 from typing import Protocol
 from backend.retrieval.production import (
     GroundedRetrievalResult,

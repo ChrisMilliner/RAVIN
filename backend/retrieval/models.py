@@ -1,3 +1,14 @@
+"""
+Define the data models shared by RAVIN retrieval components.
+
+These models associate policy chunks with vector-index information,
+retrieval scores, and ranked retrieval results. They carry the source
+data required by later context assembly and evidence tracing.
+
+The models represent retrieval state and do not make routing or answer
+generation decisions.
+"""
+
 from dataclasses import dataclass
 from backend.ingestion.models import PolicyChunk
 

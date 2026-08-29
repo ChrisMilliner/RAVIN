@@ -1,3 +1,15 @@
+"""
+Enforce final grounding checks before generated answers are released.
+
+This module combines deterministic citation validation with
+generated-claim grounding validation. Generated output is returned only
+when all required release checks pass.
+
+Failures are represented explicitly and allow the application service
+to fail closed rather than expose an answer whose evidence support
+cannot be established.
+"""
+
 from dataclasses import dataclass
 from backend.generation.citation_validator import (
     validate_generation_citations,

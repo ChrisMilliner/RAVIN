@@ -1,3 +1,14 @@
+"""
+Register the concrete provider implementations available to RAVIN.
+
+The registry connects configured provider identifiers to factories for
+the supported embedding, reranking, question parsing, answerability,
+entailment, and language-model adapters.
+
+Concrete third-party libraries are introduced at this composition
+boundary so the rest of the backend can remain provider-neutral.
+"""
+
 from backend.core.provider_composition import (
     ProviderFactories,
 )

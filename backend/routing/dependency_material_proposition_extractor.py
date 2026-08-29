@@ -1,3 +1,15 @@
+"""
+Extract material question propositions from resolved dependency structure.
+
+This module converts resolved grammatical structure into the factual
+propositions that policy evidence must cover for RAVIN to treat a
+question as answerable.
+
+Extraction is deterministic and uses the shared question-structure
+resolution result. It does not ask a generative model to infer what
+evidence is required.
+"""
+
 from dataclasses import replace
 from backend.routing.material_propositions import (
     MaterialProposition,

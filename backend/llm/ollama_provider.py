@@ -1,3 +1,15 @@
+"""
+Provide the local Ollama adapter for RAVIN language generation.
+
+This module implements the framework-neutral language-model contract
+using an Ollama server and a configured local model. It translates
+RAVIN generation requests into the provider-specific HTTP interaction
+and converts provider failures into application-level errors.
+
+Ollama is an adapter choice rather than a dependency of RAVIN business
+logic and can be replaced through provider composition.
+"""
+
 import json
 from urllib.error import (
     HTTPError,

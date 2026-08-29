@@ -1,3 +1,15 @@
+"""
+Define the framework-neutral answerability scoring contract.
+
+Answerability scoring estimates how strongly retrieved policy context
+addresses a material proposition extracted from the user's question.
+The resulting scores support proposition-level evidence coverage
+assessment.
+
+Answerability scores are evidence signals rather than direct answer
+behaviour decisions and are not themselves accuracy measurements.
+"""
+
 from dataclasses import dataclass
 from typing import Protocol
 

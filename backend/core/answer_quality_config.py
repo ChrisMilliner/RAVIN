@@ -1,3 +1,16 @@
+"""
+Load and validate RAVIN answer-quality configuration.
+
+This module owns development and validated quality thresholds used by
+the grounded-answer pipeline, including proposition coverage and
+generated-claim support thresholds. It validates the configuration
+schema before the values are supplied to service composition.
+
+Configured thresholds are control parameters, not accuracy results.
+A development threshold must not be represented as validated system
+accuracy without a separate human-validated evaluation.
+"""
+
 import json
 from dataclasses import dataclass
 from pathlib import Path

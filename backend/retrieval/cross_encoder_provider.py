@@ -1,3 +1,15 @@
+"""
+Provide the cross-encoder adapter used for retrieval reranking.
+
+This module implements the framework-neutral reranker contract with a
+configured cross-encoder model. It scores query and candidate-text
+pairs so initially retrieved policy chunks can be reordered by
+relevance.
+
+The concrete model remains isolated behind the reranker provider
+interface and can be replaced through runtime composition.
+"""
+
 from typing import cast
 from numpy import ndarray
 from sentence_transformers import CrossEncoder
