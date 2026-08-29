@@ -2,6 +2,9 @@ from dataclasses import dataclass
 from backend.generation.citation_validator import (
     validate_generation_citations,
 )
+from backend.generation.claim_grounding_validator import (
+    GeneratedClaimGroundingValidator,
+)
 from backend.generation.grounded_generator import (
     GroundedAnswerGenerator,
     GroundedGenerationRequest,
@@ -44,6 +47,9 @@ class ReleasedGroundedAnswer:
 def generate_validated_grounded_answer(
     request: GroundedGenerationRequest,
     generator: GroundedAnswerGenerator,
+    claim_grounding_validator: (
+        GeneratedClaimGroundingValidator
+    ),
 ) -> ReleasedGroundedAnswer:
     generation_result = (
         generate_grounded_answer(
@@ -52,21 +58,34 @@ def generate_validated_grounded_answer(
         )
     )
 
-    validation = (
+    citation_validation = (
         validate_generation_citations(
             request,
             generation_result,
         )
     )
 
-    if not validation.valid:
+    if not citation_validation.valid:
         raise GroundedGenerationRejectedError(
-            validation.reason
+            citation_validation.reason
+        )
+
+    grounding_validation = (
+        claim_grounding_validator.validate(
+            request,
+            generation_result,
+        )
+    )
+
+    if not grounding_validation.valid:
+        raise GroundedGenerationRejectedError(
+            grounding_validation.reason
         )
 
     return ReleasedGroundedAnswer(
         text=generation_result.text,
         cited_evidence_indexes=(
-            validation.cited_evidence_indexes
+            citation_validation
+            .cited_evidence_indexes
         ),
     )
