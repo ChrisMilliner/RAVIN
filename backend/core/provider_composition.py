@@ -71,6 +71,12 @@ LanguageModelProviderFactory = Callable[
 
 @dataclass(frozen=True)
 class ProviderFactories:
+    """Group the provider factories available during runtime composition.
+
+    Factories isolate construction of concrete model and library adapters
+    from the business components that consume their neutral contracts.
+    """
+
     embedding: Mapping[
         str,
         EmbeddingProviderFactory,
@@ -107,6 +113,13 @@ class ProviderFactories:
 
 @dataclass(frozen=True)
 class ComposedProviders:
+    """Hold the concrete provider instances composed for one RAVIN runtime.
+
+    The collection supplies retrieval, parsing, evidence-assessment,
+    entailment, and generation providers to the application composition
+    layer without exposing provider-selection logic to business services.
+    """
+
     embedding: EmbeddingProvider
     reranker: RerankerProvider
     question_parser: QuestionParser
@@ -147,6 +160,12 @@ def compose_embedding_provider(
     config: ProviderModelConfig,
     factories: ProviderFactories,
 ) -> EmbeddingProvider:
+    """Create the configured embedding provider.
+
+    Provider selection is resolved at the composition boundary so semantic
+    retrieval depends on the neutral embedding contract rather than a
+    specific embedding library or model.
+    """
     return _create_provider(
         config,
         factories.embedding,
@@ -157,6 +176,11 @@ def compose_reranker_provider(
     config: ProviderModelConfig,
     factories: ProviderFactories,
 ) -> RerankerProvider:
+    """Create the configured retrieval reranker provider.
+
+    The returned adapter implements the neutral reranking contract used by
+    production retrieval.
+    """
     return _create_provider(
         config,
         factories.reranker,
@@ -167,6 +191,12 @@ def compose_answerability_provider(
     config: ProviderModelConfig,
     factories: ProviderFactories,
 ) -> AnswerabilityProvider:
+    """Create the configured proposition-answerability provider.
+
+    This provider supplies evidence scores to proposition coverage
+    assessment and does not independently determine final evidence
+    sufficiency or answer behaviour.
+    """
     return _create_provider(
         config,
         factories.answerability,
@@ -177,6 +207,11 @@ def compose_entailment_provider(
     config: ProviderModelConfig,
     factories: ProviderFactories,
 ) -> EntailmentProvider:
+    """Create the configured natural-language-inference entailment provider.
+
+    The provider is used to validate generated factual claims against their
+    cited evidence during the fail-closed release process.
+    """
     return _create_provider(
         config,
         factories.entailment,
@@ -187,6 +222,12 @@ def compose_language_model_provider(
     config: ProviderModelConfig,
     factories: ProviderFactories,
 ) -> LanguageModelProvider:
+    """Create the configured language-model provider for grounded wording.
+
+    The returned provider is used only after deterministic routing has
+    approved grounded generation. It does not control intent, sufficiency,
+    routing, or answer release.
+    """
     return _create_provider(
         config,
         factories.language_model,
@@ -197,6 +238,12 @@ def compose_question_parser(
     config: QuestionParserProviderConfig,
     factories: ProviderFactories,
 ) -> QuestionParser:
+    """Create the configured question-parser service.
+
+    The service combines the primary parser with an optional fallback while
+    exposing RAVIN's framework-neutral question parsing interface to
+    routing components.
+    """
     primary_parser = _create_provider(
         config.primary,
         factories.question_parser,
@@ -229,6 +276,13 @@ def compose_runtime_providers(
     config: RuntimeProviderConfig,
     factories: ProviderFactories,
 ) -> ComposedProviders:
+    """Compose all configured model and parser providers for one RAVIN runtime.
+
+    This is the central provider-composition boundary used during
+    application startup. Business services receive the resulting neutral
+    provider interfaces rather than constructing model implementations
+    themselves.
+    """
     return ComposedProviders(
         embedding=compose_embedding_provider(
             config.retrieval.embedding,

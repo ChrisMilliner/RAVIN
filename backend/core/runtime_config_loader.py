@@ -134,6 +134,12 @@ def _read_setting(
 def load_runtime_provider_config(
     environ: Mapping[str, str] | None = None,
 ) -> RuntimeProviderConfig:
+    """Resolve the runtime provider configuration from defaults and environment.
+
+    Environment overrides allow individual providers or models to be
+    changed without editing retrieval, routing, generation, or service
+    business logic.
+    """
     source = (
         os.environ
         if environ is None

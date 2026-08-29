@@ -59,6 +59,12 @@ _NO_GROUNDED_ANSWER_RESPONSE = (
 
 @dataclass(frozen=True)
 class AnswerSource:
+    """Represent policy-source metadata returned with a grounded answer.
+
+    Source metadata allows application adapters to show which policy and
+    heading support an answer without exposing internal retrieval objects.
+    """
+
     policy_id: str
     title: str
     heading: str
@@ -85,6 +91,13 @@ class AnswerSource:
 
 @dataclass(frozen=True)
 class IntegratedAnswerResult:
+    """Represent the final application-facing result of answering a question.
+
+    The result contains the selected behaviour, user-facing answer text,
+    grounding state, and any policy sources approved for external
+    presentation.
+    """
+
     behavior: AnswerBehavior
     answer: str
     grounded: bool
@@ -143,6 +156,14 @@ class _ResolvedIntentClassifier:
         return self.intent
 
 class RavinAnswerService:
+    """Coordinate RAVIN's evidence-first answer pipeline for application clients.
+
+    A service instance combines retrieval, deterministic routing, grounded
+    generation, release validation, and source mapping. It is intended to
+    be constructed once during application startup and reused by adapters
+    such as the CLI and FastAPI.
+    """
+
     def __init__(
         self,
         retriever: GroundedRetriever,
@@ -171,6 +192,16 @@ class RavinAnswerService:
         self,
         question: str,
     ) -> IntegratedAnswerResult:
+        """Answer one user question through the integrated RAVIN pipeline.
+
+        The method classifies question intent, obtains and assesses grounded
+        evidence when required, selects deterministic behaviour, performs
+        grounded generation only for supported cases, validates generated
+        claims, and maps approved evidence to external source metadata.
+
+        Unsupported generated output fails closed rather than being returned as
+        a grounded answer.
+        """
         question = question.strip()
 
         if not question:

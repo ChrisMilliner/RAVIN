@@ -93,6 +93,16 @@ def create_ravin_answer_service(
         ContextAssemblyConfig | None
     ) = None,
 ) -> RavinAnswerService:
+    """Construct a reusable production RavinAnswerService from policy chunks.
+
+    Runtime configuration is resolved, providers are composed, the
+    retrieval index is built, and the routing and grounded-generation
+    components are connected once at startup.
+
+    Application adapters should reuse the returned service rather than
+    rebuilding models, policy indexes, or backend control components for
+    each request.
+    """
     if not chunks:
         raise ValueError(
             "At least one policy chunk is "

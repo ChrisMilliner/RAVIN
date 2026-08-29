@@ -664,6 +664,142 @@ def _percentage(
         1,
     )
 
+def _subsystem_name(
+    path: Path,
+) -> str:
+    relative = path.relative_to(
+        REPOSITORY_ROOT
+    )
+
+    parts = relative.parts
+
+    if not parts:
+        return "other"
+
+    if parts[0] == "scripts":
+        return "scripts"
+
+    if parts[0] != "backend":
+        return parts[0]
+
+    if len(parts) == 2:
+        return "behavior"
+
+    return parts[1]
+
+def _print_subsystem_summary(
+    definitions: tuple[
+        DefinitionAudit,
+        ...,
+    ],
+) -> None:
+    subsystem_names = sorted(
+        {
+            _subsystem_name(
+                definition.file_path
+            )
+            for definition in definitions
+        }
+    )
+
+    print(
+        "=== PUBLIC API DOCUMENTATION BY SUBSYSTEM ==="
+    )
+
+    print()
+
+    for subsystem in subsystem_names:
+        subset = tuple(
+            definition
+            for definition in definitions
+            if (
+                _subsystem_name(
+                    definition.file_path
+                )
+                == subsystem
+            )
+        )
+
+        documented = sum(
+            definition.has_docstring
+            for definition in subset
+        )
+
+        missing = (
+            len(subset)
+            - documented
+        )
+
+        classes = sum(
+            definition.kind == "class"
+            for definition in subset
+        )
+
+        functions = sum(
+            definition.kind == "function"
+            for definition in subset
+        )
+
+        methods = sum(
+            definition.kind == "method"
+            for definition in subset
+        )
+
+        parameter_issues = sum(
+            definition.parameters_annotated
+            is False
+            for definition in subset
+        )
+
+        return_issues = sum(
+            definition.return_annotated
+            is False
+            for definition in subset
+        )
+
+        print(
+            f"{subsystem}"
+        )
+
+        print(
+            "  documented -> "
+            f"{documented}/"
+            f"{len(subset)} "
+            f"({_percentage(documented, len(subset))}%)"
+        )
+
+        print(
+            "  missing -> "
+            f"{missing}"
+        )
+
+        print(
+            "  classes -> "
+            f"{classes}"
+        )
+
+        print(
+            "  functions -> "
+            f"{functions}"
+        )
+
+        print(
+            "  methods -> "
+            f"{methods}"
+        )
+
+        print(
+            "  parameter type issues -> "
+            f"{parameter_issues}"
+        )
+
+        print(
+            "  return type issues -> "
+            f"{return_issues}"
+        )
+
+        print()
+
 def main() -> int:
     python_files = (
         _iter_python_files()
@@ -782,6 +918,10 @@ def main() -> int:
     )
 
     print()
+    _print_subsystem_summary(
+        definitions
+    )
+
     print(
         "=== MISSING MODULE DOCSTRINGS ==="
     )

@@ -114,6 +114,12 @@ def _create_ollama_provider(
 
 def create_provider_factories(
 ) -> ProviderFactories:
+    """Create the default registry of concrete RAVIN provider factories.
+
+    The registry maps configuration identifiers to adapter constructors for
+    the currently supported runtime technologies while keeping those
+    dependencies outside the business pipeline.
+    """
     return ProviderFactories(
         embedding={
             SENTENCE_TRANSFORMER_PROVIDER: (

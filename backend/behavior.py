@@ -14,6 +14,13 @@ language models do not choose these values.
 from enum import Enum
 
 class AnswerBehavior(str, Enum):
+    """Represent the four answer behaviours RAVIN may expose to a user.
+
+    The value is selected by deterministic routing after question intent
+    and evidence sufficiency have been assessed. A generative language
+    model is not permitted to choose the answer behaviour.
+    """
+
     DIRECT_ANSWER = "direct_answer"
     GROUNDED_OVERVIEW = "grounded_overview"
     CLARIFY = "clarify"

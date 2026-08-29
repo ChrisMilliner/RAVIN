@@ -35,6 +35,13 @@ DEFAULT_ANSWER_QUALITY_CONFIG_PATH = (
 
 @dataclass(frozen=True)
 class AnswerQualityConfig:
+    """Store configured thresholds used by grounded-answer quality controls.
+
+    These values configure proposition coverage and generated-claim
+    grounding decisions. Their presence does not represent measured or
+    validated system accuracy.
+    """
+
     schema_version: int
     status: str
     proposition_covered_threshold: float
@@ -82,6 +89,12 @@ class AnswerQualityConfig:
 def load_answer_quality_config(
     path: str | Path | None = None,
 ) -> AnswerQualityConfig:
+    """Load and validate RAVIN answer-quality settings.
+
+    The loaded values are control thresholds used by the answer pipeline.
+    Development configuration must remain distinguishable from thresholds
+    supported by human-validated evaluation.
+    """
     target_path = (
         DEFAULT_ANSWER_QUALITY_CONFIG_PATH
         if path is None
