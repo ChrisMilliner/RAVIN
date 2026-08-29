@@ -298,6 +298,20 @@ def test_composition_passes_configured_models_to_factories():
             model
         )
 
+    def create_language_model(
+        model: str,
+    ) -> FakeLanguageModelProvider:
+        created.append(
+            (
+                "language-model",
+                model,
+            )
+        )
+
+        return FakeLanguageModelProvider(
+            model
+        )
+
     compose_runtime_providers(
         _runtime_config(),
         ProviderFactories(
@@ -321,6 +335,11 @@ def test_composition_passes_configured_models_to_factories():
                     create_answerability
                 ),
             },
+            language_model={
+                "language-model-a": (
+                    create_language_model
+                ),
+            },
         ),
     )
 
@@ -340,6 +359,10 @@ def test_composition_passes_configured_models_to_factories():
         (
             "answerability",
             "answerability-model-a",
+        ),
+        (
+            "language-model",
+            "generation-model-a",
         ),
     ]
 
@@ -397,6 +420,11 @@ def test_configuration_can_select_different_provider_factories():
         answerability={
             "answerability-a": (
                 FakeAnswerabilityProvider
+            ),
+        },
+        language_model={
+            "language-model-a": (
+                FakeLanguageModelProvider
             ),
         },
     )
@@ -465,6 +493,11 @@ def test_fallback_parser_is_not_created_during_composition():
                     FakeAnswerabilityProvider
                 ),
             },
+            language_model={
+                "language-model-a": (
+                    FakeLanguageModelProvider
+                ),
+            },
         ),
     )
 
@@ -526,6 +559,11 @@ def test_fallback_parser_is_created_only_when_required():
             answerability={
                 "answerability-a": (
                     FakeAnswerabilityProvider
+                ),
+            },
+            language_model={
+                "language-model-a": (
+                    FakeLanguageModelProvider
                 ),
             },
         ),
@@ -680,6 +718,11 @@ def test_unknown_fallback_provider_is_lazy_failure():
             answerability={
                 "answerability-a": (
                     FakeAnswerabilityProvider
+                ),
+            },
+            language_model={
+                "language-model-a": (
+                    FakeLanguageModelProvider
                 ),
             },
         ),
@@ -1022,6 +1065,46 @@ def test_unknown_language_model_provider_is_rejected():
                 reranker={},
                 question_parser={},
                 answerability={},
+                language_model={},
+            ),
+        )
+
+def test_unknown_runtime_language_model_provider_is_rejected():
+    with pytest.raises(
+        ValueError,
+        match=(
+            "Unknown language model provider: "
+            "missing."
+        ),
+    ):
+        compose_runtime_providers(
+            _runtime_config(
+                generation_provider="missing",
+            ),
+            ProviderFactories(
+                embedding={
+                    "embedding-a": (
+                        FakeEmbeddingProvider
+                    ),
+                },
+                reranker={
+                    "reranker-a": (
+                        FakeRerankerProvider
+                    ),
+                },
+                question_parser={
+                    "parser-a": lambda model: (
+                        FakeQuestionParseProvider(
+                            model,
+                            _usable_parse(),
+                        )
+                    ),
+                },
+                answerability={
+                    "answerability-a": (
+                        FakeAnswerabilityProvider
+                    ),
+                },
                 language_model={},
             ),
         )
