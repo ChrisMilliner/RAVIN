@@ -196,8 +196,8 @@ def create_ravin_answer_service(
 
     claim_grounding_validator = (
         GeneratedClaimGroundingValidator(
-            answerability_provider=(
-                providers.answerability
+            entailment_provider=(
+                providers.entailment
             ),
             support_threshold=(
                 resolved_answer_quality_config

@@ -4,9 +4,13 @@ from backend.generation.grounded_generator import (
     GroundedGenerationRequest,
     GroundedGenerationResult,
 )
-from backend.routing.answerability import (
-    AnswerabilityProvider,
-    score_answerability,
+from backend.generation.entailment import (
+    EntailmentPair,
+    EntailmentProvider,
+    score_entailment,
+)
+from backend.generation.evidence_windows import (
+    EvidenceSupportWindowBuilder,
 )
 
 _EVIDENCE_MARKER_PATTERN = re.compile(
@@ -66,8 +70,12 @@ class ClaimGroundingValidationResult:
 class GeneratedClaimGroundingValidator:
     def __init__(
         self,
-        answerability_provider: AnswerabilityProvider,
+        entailment_provider: EntailmentProvider,
         support_threshold: float,
+        window_builder: (
+            EvidenceSupportWindowBuilder
+            | None
+        ) = None,
     ) -> None:
         if not 0.0 <= support_threshold <= 1.0:
             raise ValueError(
@@ -75,9 +83,26 @@ class GeneratedClaimGroundingValidator:
                 "be between 0 and 1."
             )
 
-        self._answerability_provider = (
-            answerability_provider
+        self._entailment_provider = (
+            entailment_provider
         )
+
+        self._support_threshold = (
+            support_threshold
+        )
+
+        self._window_builder = (
+            EvidenceSupportWindowBuilder(
+                max_units=3
+            )
+            if window_builder is None
+            else window_builder
+        )
+        if not 0.0 <= support_threshold <= 1.0:
+            raise ValueError(
+                "Claim grounding threshold must "
+                "be between 0 and 1."
+            )
 
         self._support_threshold = (
             support_threshold
@@ -201,14 +226,29 @@ class GeneratedClaimGroundingValidator:
             for index in cited_indexes
         )
 
-        answerability = score_answerability(
-            clean_claim,
-            cited_evidence,
-            self._answerability_provider,
+        support_windows = tuple(
+            window
+            for evidence_text in cited_evidence
+            for window in self._window_builder.build(
+                evidence_text
+            )
         )
 
-        strongest_score = float(
-            answerability.strongest_score
+        entailment_pairs = tuple(
+            EntailmentPair(
+                premise=window.text,
+                hypothesis=clean_claim,
+            )
+            for window in support_windows
+        )
+
+        entailment_scores = score_entailment(
+            self._entailment_provider,
+            entailment_pairs,
+        )
+
+        strongest_score = max(
+            entailment_scores
         )
 
         return ClaimGroundingResult(

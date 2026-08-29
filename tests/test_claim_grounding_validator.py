@@ -5,39 +5,39 @@ from backend.behavior import (
 from backend.generation.claim_grounding_validator import (
     GeneratedClaimGroundingValidator,
 )
+from backend.generation.entailment import (
+    EntailmentPair,
+)
 from backend.generation.grounded_generator import (
     GroundedGenerationRequest,
     GroundedGenerationResult,
 )
-from backend.routing.answerability import (
-    AnswerabilityResult,
-)
 
-class FakeAnswerabilityProvider:
+class FakeEntailmentProvider:
     def __init__(
         self,
         scores: tuple[float, ...],
     ) -> None:
         self._scores = scores
-        self.questions = []
-        self.evidence_sets = []
+        self.received_pairs: list[
+            tuple[
+                EntailmentPair,
+                ...
+            ]
+        ] = []
 
-    def score(
+    def score_entailment(
         self,
-        question: str,
-        evidence_texts: tuple[str, ...],
-    ) -> AnswerabilityResult:
-        self.questions.append(
-            question
+        pairs: tuple[
+            EntailmentPair,
+            ...
+        ],
+    ) -> tuple[float, ...]:
+        self.received_pairs.append(
+            pairs
         )
 
-        self.evidence_sets.append(
-            evidence_texts
-        )
-
-        return AnswerabilityResult(
-            scores=self._scores
-        )
+        return self._scores
 
 def _request() -> GroundedGenerationRequest:
     return GroundedGenerationRequest(
@@ -61,13 +61,13 @@ def _result(
     )
 
 def test_supported_claim_is_valid():
-    provider = FakeAnswerabilityProvider(
+    provider = FakeEntailmentProvider(
         scores=(0.95,)
     )
 
     validator = (
         GeneratedClaimGroundingValidator(
-            answerability_provider=provider,
+            entailment_provider=provider,
             support_threshold=0.80,
         )
     )
@@ -85,13 +85,13 @@ def test_supported_claim_is_valid():
     assert result.claims[0].score == 0.95
 
 def test_unsupported_claim_is_invalid():
-    provider = FakeAnswerabilityProvider(
+    provider = FakeEntailmentProvider(
         scores=(0.20,)
     )
 
     validator = (
         GeneratedClaimGroundingValidator(
-            answerability_provider=provider,
+            entailment_provider=provider,
             support_threshold=0.80,
         )
     )
@@ -108,13 +108,13 @@ def test_unsupported_claim_is_invalid():
     assert result.claims[0].supported is False
 
 def test_only_cited_evidence_is_scored():
-    provider = FakeAnswerabilityProvider(
+    provider = FakeEntailmentProvider(
         scores=(0.95,)
     )
 
     validator = (
         GeneratedClaimGroundingValidator(
-            answerability_provider=provider,
+            entailment_provider=provider,
             support_threshold=0.80,
         )
     )
@@ -126,20 +126,23 @@ def test_only_cited_evidence_is_scored():
         ),
     )
 
-    assert provider.evidence_sets == [
-        (
-            "Approval must be recorded.",
-        )
-    ]
+    pairs = provider.received_pairs[0]
+
+    assert tuple(
+        pair.premise
+        for pair in pairs
+    ) == (
+        "Approval must be recorded.",
+    )
 
 def test_citation_marker_is_removed_before_scoring():
-    provider = FakeAnswerabilityProvider(
+    provider = FakeEntailmentProvider(
         scores=(0.95,)
     )
 
     validator = (
         GeneratedClaimGroundingValidator(
-            answerability_provider=provider,
+            entailment_provider=provider,
             support_threshold=0.80,
         )
     )
@@ -151,18 +154,23 @@ def test_citation_marker_is_removed_before_scoring():
         ),
     )
 
-    assert provider.questions == [
-        "Approval must be recorded."
-    ]
+    pairs = provider.received_pairs[0]
+
+    assert tuple(
+        pair.hypothesis
+        for pair in pairs
+    ) == (
+        "Approval must be recorded.",
+    )
 
 def test_uncited_claim_is_invalid_without_scoring():
-    provider = FakeAnswerabilityProvider(
+    provider = FakeEntailmentProvider(
         scores=(0.95,)
     )
 
     validator = (
         GeneratedClaimGroundingValidator(
-            answerability_provider=provider,
+            entailment_provider=provider,
             support_threshold=0.80,
         )
     )
@@ -175,16 +183,16 @@ def test_uncited_claim_is_invalid_without_scoring():
     )
 
     assert result.valid is False
-    assert provider.questions == []
+    assert provider.received_pairs == []
 
 def test_unknown_citation_is_invalid_without_scoring():
-    provider = FakeAnswerabilityProvider(
+    provider = FakeEntailmentProvider(
         scores=(0.95,)
     )
 
     validator = (
         GeneratedClaimGroundingValidator(
-            answerability_provider=provider,
+            entailment_provider=provider,
             support_threshold=0.80,
         )
     )
@@ -197,16 +205,16 @@ def test_unknown_citation_is_invalid_without_scoring():
     )
 
     assert result.valid is False
-    assert provider.questions == []
+    assert provider.received_pairs == []
 
 def test_multiple_supported_claims_are_valid():
-    provider = FakeAnswerabilityProvider(
+    provider = FakeEntailmentProvider(
         scores=(0.95,)
     )
 
     validator = (
         GeneratedClaimGroundingValidator(
-            answerability_provider=provider,
+            entailment_provider=provider,
             support_threshold=0.80,
         )
     )
@@ -222,9 +230,116 @@ def test_multiple_supported_claims_are_valid():
 
     assert result.valid is True
     assert len(result.claims) == 2
+    assert len(provider.received_pairs) == 2
+
+def test_three_unit_window_can_support_compound_claim():
+    request = GroundedGenerationRequest(
+        question="How is a review handled?",
+        behavior=(
+            AnswerBehavior.DIRECT_ANSWER
+        ),
+        evidence_texts=(
+            (
+                "Students may seek a review through "
+                "the UAC. "
+                "The review must be requested within "
+                "20 business days. "
+                "The UAC decision is final."
+            ),
+        ),
+    )
+
+    provider = FakeEntailmentProvider(
+        scores=(
+            0.10,
+            0.20,
+            0.97,
+            0.15,
+            0.30,
+            0.40,
+        )
+    )
+
+    validator = (
+        GeneratedClaimGroundingValidator(
+            entailment_provider=provider,
+            support_threshold=0.80,
+        )
+    )
+
+    result = validator.validate(
+        request,
+        _result(
+            (
+                "A review may be sought through "
+                "the UAC within 20 business days, "
+                "and the UAC decision is final "
+                "[E1]."
+            )
+        ),
+    )
+
+    assert result.valid is True
+
+    assert (
+        result.claims[0].score
+        == 0.97
+    )
+
+    pairs = provider.received_pairs[0]
+
+    assert len(pairs) == 6
+
+    assert pairs[2].premise == (
+        "Students may seek a review through "
+        "the UAC. "
+        "The review must be requested within "
+        "20 business days. "
+        "The UAC decision is final."
+    )
+
+def test_strongest_entailment_score_controls_support():
+    provider = FakeEntailmentProvider(
+        scores=(
+            0.10,
+            0.91,
+            0.30,
+        )
+    )
+
+    request = GroundedGenerationRequest(
+        question="What happens?",
+        behavior=(
+            AnswerBehavior.DIRECT_ANSWER
+        ),
+        evidence_texts=(
+            "First rule. Second rule.",
+        ),
+    )
+
+    validator = (
+        GeneratedClaimGroundingValidator(
+            entailment_provider=provider,
+            support_threshold=0.80,
+        )
+    )
+
+    result = validator.validate(
+        request,
+        _result(
+            "The supported rule applies [E1]."
+        ),
+    )
+
+    assert result.valid is True
+
+    assert (
+        result.claims[0].score
+        == 0.91
+    )
 
 def test_invalid_threshold_is_rejected():
-    provider = FakeAnswerabilityProvider(
+    provider = FakeEntailmentProvider(
         scores=(0.95,)
     )
 
@@ -236,6 +351,6 @@ def test_invalid_threshold_is_rejected():
         ),
     ):
         GeneratedClaimGroundingValidator(
-            answerability_provider=provider,
+            entailment_provider=provider,
             support_threshold=1.1,
         )

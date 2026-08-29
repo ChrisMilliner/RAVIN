@@ -66,6 +66,7 @@ def _fake_composed_providers():
         reranker=object(),
         question_parser=object(),
         answerability=object(),
+        entailment=object(),
         language_model=object(),
     )
 
@@ -192,9 +193,13 @@ def test_quality_thresholds_are_used_in_composition(
         return object()
 
     def fake_claim_validator(
-        answerability_provider,
+        entailment_provider,
         support_threshold,
     ):
+        captured[
+            "claim_entailment_provider"
+        ] = entailment_provider
+
         captured[
             "claim_support_threshold"
         ] = support_threshold
@@ -234,6 +239,20 @@ def test_quality_thresholds_are_used_in_composition(
         answer_quality_config=(
             quality_config
         ),
+    )
+
+    assert (
+        captured[
+            "claim_entailment_provider"
+        ]
+        is providers.entailment
+    )
+
+    assert (
+        captured[
+            "claim_support_threshold"
+        ]
+        == 0.84
     )
 
     assert isinstance(

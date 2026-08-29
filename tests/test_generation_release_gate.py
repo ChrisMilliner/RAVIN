@@ -14,8 +14,8 @@ from backend.generation.release_gate import (
     ReleasedGroundedAnswer,
     generate_validated_grounded_answer,
 )
-from backend.routing.answerability import (
-    AnswerabilityResult,
+from backend.generation.entailment import (
+    EntailmentPair,
 )
 
 class FakeGroundedAnswerGenerator:
@@ -36,26 +36,35 @@ class FakeGroundedAnswerGenerator:
             text=self._text
         )
 
-class RecordingAnswerabilityProvider:
+class RecordingEntailmentProvider:
     def __init__(
         self,
         score: float,
     ) -> None:
         self._score = score
+
         self.call_count = 0
 
-    def score(
+        self.received_pairs: list[
+            EntailmentPair
+        ] = []
+
+    def score_entailment(
         self,
-        question: str,
-        evidence_texts: tuple[str, ...],
-    ) -> AnswerabilityResult:
+        pairs: tuple[
+            EntailmentPair,
+            ...
+        ],
+    ) -> tuple[float, ...]:
         self.call_count += 1
 
-        return AnswerabilityResult(
-            scores=tuple(
-                self._score
-                for _ in evidence_texts
-            )
+        self.received_pairs.extend(
+            pairs
+        )
+
+        return tuple(
+            self._score
+            for _ in pairs
         )
 
 def _request() -> GroundedGenerationRequest:
@@ -76,17 +85,22 @@ def _validator(
     score: float = 0.95,
 ) -> tuple[
     GeneratedClaimGroundingValidator,
-    RecordingAnswerabilityProvider,
+    RecordingEntailmentProvider,
 ]:
-    provider = RecordingAnswerabilityProvider(
+    provider = RecordingEntailmentProvider(
         score
     )
 
     validator = (
         GeneratedClaimGroundingValidator(
-            answerability_provider=provider,
+            entailment_provider=provider,
             support_threshold=0.80,
         )
+    )
+
+    return (
+        validator,
+        provider,
     )
 
     return validator, provider

@@ -16,9 +16,6 @@ from backend.retrieval.context import (
 from backend.retrieval.production import (
     GroundedRetrievalResult,
 )
-from backend.routing.answerability import (
-    AnswerabilityResult,
-)
 from backend.routing.models import (
     EvidenceAssessment,
     EvidenceSignals,
@@ -27,6 +24,9 @@ from backend.routing.models import (
 )
 from backend.service.answer_service import (
     RavinAnswerService,
+)
+from backend.generation.entailment import (
+    EntailmentPair,
 )
 
 class FakeIntentClassifier:
@@ -106,23 +106,31 @@ class FakeGroundedGenerator:
             text=self._text
         )
 
-class FakeAnswerabilityProvider:
+class FakeEntailmentProvider:
     def __init__(
         self,
-        score: float = 0.95,
+        score: float,
     ) -> None:
         self._score = score
 
-    def score(
+        self.received_pairs: list[
+            EntailmentPair
+        ] = []
+
+    def score_entailment(
         self,
-        question: str,
-        evidence_texts: tuple[str, ...],
-    ) -> AnswerabilityResult:
-        return AnswerabilityResult(
-            scores=tuple(
-                self._score
-                for _ in evidence_texts
-            )
+        pairs: tuple[
+            EntailmentPair,
+            ...
+        ],
+    ) -> tuple[float, ...]:
+        self.received_pairs.extend(
+            pairs
+        )
+
+        return tuple(
+            self._score
+            for _ in pairs
         )
 
 def _retrieval_result(
@@ -181,8 +189,8 @@ def _claim_validator(
     score: float = 0.95,
 ) -> GeneratedClaimGroundingValidator:
     return GeneratedClaimGroundingValidator(
-        answerability_provider=(
-            FakeAnswerabilityProvider(
+        entailment_provider=(
+            FakeEntailmentProvider(
                 score
             )
         ),
