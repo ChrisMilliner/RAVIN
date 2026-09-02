@@ -1,3 +1,14 @@
+"""
+Run a development smoke test of grounded policy retrieval.
+
+This utility exercises the production retrieval and context-assembly
+path against current policy material so developers can inspect whether
+the end-to-end retrieval layer can obtain grounded evidence.
+
+A successful smoke run demonstrates integration, not validated
+retrieval accuracy.
+"""
+
 from pathlib import Path
 from backend.evaluation.dataset import (
     load_evaluation_questions,
@@ -10,18 +21,20 @@ from backend.ingestion.processor import process_policy
 from backend.retrieval.context import (
     ContextAssemblyConfig,
 )
-from backend.retrieval.cross_encoder_provider import (
-    DEFAULT_RERANKER_MODEL,
-    CrossEncoderRerankerProvider,
-)
 from backend.retrieval.production import (
     ProductionRetrievalConfig,
     build_production_retrieval_index,
     retrieve_grounded_context,
 )
-from backend.retrieval.sentence_transformer_provider import (
-    DEFAULT_EMBEDDING_MODEL,
-    SentenceTransformerEmbeddingProvider,
+from backend.core.provider_composition import (
+    compose_embedding_provider,
+    compose_reranker_provider,
+)
+from backend.core.provider_registry import (
+    create_provider_factories,
+)
+from backend.core.runtime_config_loader import (
+    load_runtime_provider_config,
 )
 
 POLICIES = (
@@ -42,6 +55,8 @@ SMOKE_QUESTION_IDS = (
 )
 
 def main() -> None:
+    """Run a live development smoke test of production grounded retrieval.
+    """
     print("=== RAVIN GROUNDED RETRIEVAL SMOKE TEST ===")
 
     print()
@@ -90,15 +105,42 @@ def main() -> None:
         len(all_chunks),
     )
 
+    runtime_provider_config = (
+        load_runtime_provider_config()
+    )
+
+    provider_factories = (
+        create_provider_factories()
+    )
+
+    embedding_config = (
+        runtime_provider_config
+        .retrieval
+        .embedding
+    )
+
+    reranker_config = (
+        runtime_provider_config
+        .retrieval
+        .reranker
+    )
+
     print()
-    print("=== LOADING EMBEDDING MODEL ===")
+    print("=== EMBEDDING PROVIDER ===")
     print(
-        "Embedding model:",
-        DEFAULT_EMBEDDING_MODEL,
+        "Provider:",
+        embedding_config.provider,
+    )
+    print(
+        "Model:",
+        embedding_config.model,
     )
 
     embedding_provider = (
-        SentenceTransformerEmbeddingProvider()
+        compose_embedding_provider(
+            embedding_config,
+            provider_factories,
+        )
     )
 
     print()
@@ -115,14 +157,21 @@ def main() -> None:
     )
 
     print()
-    print("=== LOADING RERANKER ===")
+    print("=== RERANKER PROVIDER ===")
     print(
-        "Reranker model:",
-        DEFAULT_RERANKER_MODEL,
+        "Provider:",
+        reranker_config.provider,
+    )
+    print(
+        "Model:",
+        reranker_config.model,
     )
 
     reranker_provider = (
-        CrossEncoderRerankerProvider()
+        compose_reranker_provider(
+            reranker_config,
+            provider_factories,
+        )
     )
 
     retrieval_config = (

@@ -1,3 +1,15 @@
+"""
+Assemble retrieved policy chunks into traceable grounded context.
+
+This module expands selected retrieval results with appropriate
+structural neighbours, groups related evidence, and renders labelled
+context blocks for downstream evidence assessment and generation.
+
+Context assembly preserves policy and heading provenance and is bounded
+so additional neighbouring text does not grow the supplied evidence
+without control.
+"""
+
 from dataclasses import dataclass
 from backend.ingestion.config import (
     DEFAULT_CHUNK_OVERLAP_WORDS,
@@ -10,6 +22,13 @@ DEFAULT_MAX_CONTEXT_CHUNKS = 15
 
 @dataclass(frozen=True)
 class ContextAssemblyConfig:
+    """Configure bounded structural expansion of retrieved policy context.
+
+    neighbor_window controls how far context assembly may search around
+    each retrieved chunk within the same policy heading. max_context_chunks
+    places an upper bound on the total selected context.
+    """
+
     neighbor_window: int = (
         DEFAULT_NEIGHBOR_WINDOW
     )
@@ -32,6 +51,13 @@ class ContextAssemblyConfig:
 
 @dataclass(frozen=True)
 class GroundedContextBlock:
+    """Represent one consecutive structural block of grounded policy evidence.
+
+    A block belongs to one policy and heading path and records the inclusive
+    chunk range merged into its text. The retained policy metadata allows
+    the block to remain traceable to its source.
+    """
+
     policy_id: str
     policy_title: str
     source_url: str
@@ -83,6 +109,12 @@ class GroundedContextBlock:
 
 @dataclass(frozen=True)
 class GroundedContext:
+    """Contain the ordered evidence blocks assembled for a grounded question.
+
+    The blocks provide the structured evidence supplied to downstream
+    evidence assessment and grounded answer generation.
+    """
+
     blocks: tuple[
         GroundedContextBlock,
         ...
@@ -90,6 +122,8 @@ class GroundedContext:
 
     @property
     def evidence_count(self) -> int:
+        """Return the number of grounded evidence blocks in this context.
+        """
         return len(self.blocks)
 
 def find_structural_neighbors(
@@ -97,6 +131,12 @@ def find_structural_neighbors(
     anchor: PolicyChunk,
     window: int = DEFAULT_NEIGHBOR_WINDOW,
 ) -> tuple[PolicyChunk, ...]:
+    """Find nearby chunks that share the anchor policy and heading structure.
+
+    Only chunks within the configured index distance are returned, ordered
+    by chunk index. The anchor itself is excluded and a negative window is
+    rejected.
+    """
     if window < 0:
         raise ValueError(
             "Neighbour window cannot be negative."
@@ -133,6 +173,12 @@ def merge_structural_chunk_text(
     chunks: tuple[PolicyChunk, ...],
     overlap_words: int = DEFAULT_CHUNK_OVERLAP_WORDS,
 ) -> str:
+    """Merge a consecutive structural chunk sequence into one evidence text.
+
+    All chunks must belong to the same policy and heading and have
+    consecutive indexes. Expected chunk overlap is removed when present so
+    the resulting evidence block does not repeat duplicated boundary text.
+    """
     if overlap_words < 0:
         raise ValueError(
             "Chunk overlap cannot be negative."
@@ -195,6 +241,15 @@ def assemble_context_chunks(
     ],
     config: ContextAssemblyConfig,
 ) -> tuple[PolicyChunk, ...]:
+    """Expand ranked retrieval seeds with bounded structural neighbours.
+
+    Retrieved seed chunks are preserved first in retrieval order. Additional
+    same-heading neighbours are then added by increasing distance until the
+    configured context limit is reached.
+
+    Duplicate chunks are excluded and the configured maximum cannot be
+    smaller than the number of unique retrieval seeds.
+    """
     selected: list[PolicyChunk] = []
     selected_keys: set[tuple[str, int]] = set()
 
@@ -272,6 +327,13 @@ def build_grounded_context_blocks(
     chunks: tuple[PolicyChunk, ...],
     overlap_words: int = DEFAULT_CHUNK_OVERLAP_WORDS,
 ) -> tuple[GroundedContextBlock, ...]:
+    """Convert selected policy chunks into ordered grounded evidence blocks.
+
+    Chunks are grouped by policy provenance and heading path, split into
+    consecutive runs, and merged with expected overlap removed. Block order
+    retains the earliest selected position of each run so retrieval
+    priority remains visible after structural grouping.
+    """
     if overlap_words < 0:
         raise ValueError(
             "Chunk overlap cannot be negative."
@@ -404,6 +466,11 @@ def build_grounded_context(
     chunks: tuple[PolicyChunk, ...],
     overlap_words: int = DEFAULT_CHUNK_OVERLAP_WORDS,
 ) -> GroundedContext:
+    """Build a GroundedContext from selected policy chunks.
+
+    The function delegates structural grouping and overlap-aware text
+    merging to build_grounded_context_blocks.
+    """
     return GroundedContext(
         blocks=build_grounded_context_blocks(
             chunks,
@@ -414,6 +481,12 @@ def build_grounded_context(
 def render_grounded_context(
     context: GroundedContext,
 ) -> str:
+    """Render grounded evidence blocks into labelled text for downstream use.
+
+    Each block receives an E-number and includes policy identity, title,
+    heading path, chunk range, source URL, and evidence text. These labels
+    allow generated factual claims to reference specific supplied evidence.
+    """
     rendered_blocks: list[str] = []
 
     for position, block in enumerate(

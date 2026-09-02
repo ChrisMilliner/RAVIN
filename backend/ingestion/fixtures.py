@@ -1,3 +1,14 @@
+"""
+Provide deterministic sample material for ingestion development.
+
+The fixtures in this module support repeatable ingestion tests and
+development checks without requiring every test to depend on live
+policy-source availability.
+
+Fixture content is development support data and must not be confused
+with the current production policy corpus.
+"""
+
 from backend.ingestion.models import RawPolicyContent
 
 INGESTION_FIXTURES: tuple[RawPolicyContent, ...] = (

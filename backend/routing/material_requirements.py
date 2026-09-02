@@ -1,0 +1,254 @@
+"""
+Define RAVIN's structured material-question requirements.
+
+The models in this module represent significant concepts, relations,
+conditions, requested attributes, and resolution information extracted
+from question structure.
+
+Names such as RELATION, CONDITION, CONCEPT, REQUESTED_ATTRIBUTE, and
+RECOVERY are RAVIN-defined modelling terms and must not be presented as
+spaCy dependency labels.
+"""
+
+from dataclasses import dataclass
+from enum import Enum
+
+class MaterialRequirementKind(
+    str,
+    Enum,
+):
+    """Identify RAVIN-defined material requirement categories.
+
+    Terms such as RELATION, CONDITION, CONCEPT, and REQUESTED_ATTRIBUTE are
+    RAVIN modelling concepts rather than spaCy dependency labels.
+    """
+
+    CONCEPT = "concept"
+    RELATION = "relation"
+    QUALIFIER = "qualifier"
+    CONDITION = "condition"
+    TEMPORAL = "temporal"
+    QUANTITY = "quantity"
+    MODALITY = "modality"
+    NEGATION = "negation"
+    SCOPE = "scope"
+    REQUESTED_ATTRIBUTE = (
+        "requested_attribute"
+    )
+
+class MaterialRequirementResolution(
+    str,
+    Enum,
+):
+    """Represent whether material question requirements were reliably resolved.
+    """
+
+    RESOLVED = "resolved"
+    UNRESOLVED = "unresolved"
+
+class MaterialRequirementSelection(
+    str,
+    Enum,
+):
+    """Identify the primary, fallback, or recovery requirement interpretation in use.
+    """
+
+    PRIMARY = "primary"
+    FALLBACK = "fallback"
+    RECOVERY = "recovery"
+
+@dataclass(frozen=True)
+class MaterialRequirement:
+    """Represent one typed material requirement extracted from a question.
+    """
+
+    kind: MaterialRequirementKind
+    text: str
+
+    def __post_init__(self) -> None:
+        if not isinstance(
+            self.kind,
+            MaterialRequirementKind,
+        ):
+            raise ValueError(
+                "Material requirement kind must "
+                "be a MaterialRequirementKind."
+            )
+
+        if not self.text.strip():
+            raise ValueError(
+                "Material requirement text "
+                "cannot be empty."
+            )
+
+@dataclass(frozen=True)
+class MaterialQuestionRequirements:
+    """Contain the material requirements extracted from one question structure.
+    """
+
+    requirements: tuple[
+        MaterialRequirement,
+        ...
+    ]
+
+    def __post_init__(self) -> None:
+        if not self.requirements:
+            raise ValueError(
+                "Material question requirements "
+                "cannot be empty."
+            )
+
+        if not all(
+            isinstance(
+                requirement,
+                MaterialRequirement,
+            )
+            for requirement
+            in self.requirements
+        ):
+            raise ValueError(
+                "All question requirements must "
+                "be MaterialRequirement values."
+            )
+
+@dataclass(frozen=True)
+class MaterialRequirementExtractionResult:
+    """Record primary, fallback, and recovery requirement interpretations.
+    """
+
+    primary: MaterialQuestionRequirements
+    fallback: (
+        MaterialQuestionRequirements | None
+    ) = None
+    recovery: (
+        MaterialQuestionRequirements | None
+    ) = None
+    resolution: (
+        MaterialRequirementResolution
+    ) = MaterialRequirementResolution.RESOLVED
+    selection: (
+        MaterialRequirementSelection | None
+    ) = MaterialRequirementSelection.PRIMARY
+
+    def __post_init__(self) -> None:
+        if not isinstance(
+            self.primary,
+            MaterialQuestionRequirements,
+        ):
+            raise ValueError(
+                "Primary material requirements "
+                "must be MaterialQuestionRequirements."
+            )
+
+        if (
+            self.fallback is not None
+            and not isinstance(
+                self.fallback,
+                MaterialQuestionRequirements,
+            )
+        ):
+            raise ValueError(
+                "Fallback material requirements "
+                "must be MaterialQuestionRequirements."
+            )
+
+        if (
+            self.recovery is not None
+            and not isinstance(
+                self.recovery,
+                MaterialQuestionRequirements,
+            )
+        ):
+            raise ValueError(
+                "Recovered material requirements "
+                "must be MaterialQuestionRequirements."
+            )
+
+        if not isinstance(
+            self.resolution,
+            MaterialRequirementResolution,
+        ):
+            raise ValueError(
+                "Material requirement resolution "
+                "must be a "
+                "MaterialRequirementResolution."
+            )
+
+        if (
+            self.selection is not None
+            and not isinstance(
+                self.selection,
+                MaterialRequirementSelection,
+            )
+        ):
+            raise ValueError(
+                "Material requirement selection "
+                "must be a "
+                "MaterialRequirementSelection."
+            )
+
+        if (
+            self.resolution
+            == MaterialRequirementResolution.UNRESOLVED
+            and self.selection is not None
+        ):
+            raise ValueError(
+                "Unresolved material requirements "
+                "cannot select an interpretation."
+            )
+
+        if (
+            self.resolution
+            == MaterialRequirementResolution.RESOLVED
+            and self.selection is None
+        ):
+            raise ValueError(
+                "Resolved material requirements "
+                "must select an interpretation."
+            )
+
+        if (
+            self.selection
+            == MaterialRequirementSelection.FALLBACK
+            and self.fallback is None
+        ):
+            raise ValueError(
+                "Fallback material requirements "
+                "must exist when fallback is selected."
+            )
+
+        if (
+            self.selection
+            == MaterialRequirementSelection.RECOVERY
+            and self.recovery is None
+        ):
+            raise ValueError(
+                "Recovered material requirements "
+                "must exist when recovery is selected."
+            )
+
+    @property
+    def active(
+        self,
+    ) -> MaterialQuestionRequirements | None:
+        """Return the selected requirements, or None when structure remains unresolved.
+        """
+        if (
+            self.resolution
+            == MaterialRequirementResolution.UNRESOLVED
+        ):
+            return None
+
+        if (
+            self.selection
+            == MaterialRequirementSelection.FALLBACK
+        ):
+            return self.fallback
+
+        if (
+            self.selection
+            == MaterialRequirementSelection.RECOVERY
+        ):
+            return self.recovery
+
+        return self.primary
