@@ -1,10 +1,11 @@
 """
 HTTP request/response models for the RAVIN API (COPF-231).
 
-These wrap backend.core's dataclasses (GroundedResponse, RetrievedEvidence)
-into Pydantic models so FastAPI can validate requests and serialise
-responses to JSON. The core dataclasses themselves are untouched -
-conversion happens in backend/api/main.py.
+Updated to wrap backend.service's real IntegratedAnswerResult /
+AnswerSource (from RavinAnswerService.answer()), now that the real
+service exists (merged via PR #9 / COPF-222). No longer wraps the
+earlier backend.core.response.build_grounded_response fixture-based
+pipeline.
 """
 
 from pydantic import BaseModel, Field, field_validator
@@ -19,7 +20,7 @@ class QuestionRequest(BaseModel):
     question: str = Field(
         ...,
         description="A natural-language policy question from the user.",
-        examples=["What is the policy on assignment extensions?"],
+        examples=["What is the current admissions policy?"],
     )
 
     @field_validator("question")
@@ -36,23 +37,29 @@ class QuestionRequest(BaseModel):
 
 
 class SourceReference(BaseModel):
-    """A single supporting policy source, derived from RetrievedEvidence."""
+    """A single supporting policy source, derived from backend.service.AnswerSource."""
 
     policy_id: str
     title: str
-    source_url: str
-    relevance_score: float
+    heading: str
+    url: str
 
 
 class AnswerResponse(BaseModel):
     """
-    HTTP response returned for every question, derived from Chris's
-    GroundedResponse (backend.core.models).
+    HTTP response returned for every question, derived from
+    backend.service.answer_service.IntegratedAnswerResult.
 
-    `grounded` is True when outcome == ResponseOutcome.SUPPORTED,
-    False when outcome == ResponseOutcome.INSUFFICIENT_EVIDENCE.
+    `behavior` is the real routing outcome as a string: one of
+    "direct_answer", "grounded_overview", "clarify", or
+    "no_grounded_answer" (see backend.behavior.AnswerBehavior).
+
+    `grounded` is True only for answer-producing behaviors
+    (direct_answer / grounded_overview); False for clarify and
+    no_grounded_answer.
     """
 
+    behavior: str
     grounded: bool
     answer: str
     sources: list[SourceReference] = Field(default_factory=list)
