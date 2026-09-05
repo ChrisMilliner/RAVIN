@@ -37,6 +37,8 @@ LEXICAL_WEIGHT = 0.15
 RERANKER_MODEL = (
     "cross-encoder/ms-marco-MiniLM-L6-v2"
 )
+EMBEDDING_PROVIDER = "sentence_transformer"
+RERANKER_PROVIDER = "cross_encoder"
 
 def make_indexed_chunk(
     policy_id: str = "208",
@@ -222,12 +224,13 @@ def test_experiment_record_preserves_accuracy_decision():
         generated_at_utc=(
             "2026-08-15T02:00:00+00:00"
         ),
+        embedding_provider=EMBEDDING_PROVIDER,
         embedding_model=EMBEDDING_MODEL,
         semantic_weight=SEMANTIC_WEIGHT,
         lexical_weight=LEXICAL_WEIGHT,
     )
 
-    assert record["schema_version"] == 2
+    assert record["schema_version"] == 3
 
     assert (
         record["candidate_metrics"][
@@ -307,6 +310,7 @@ def test_experiment_record_marks_eligible_decision():
         generated_at_utc=(
             "2026-08-15T02:00:00+00:00"
         ),
+        embedding_provider=EMBEDDING_PROVIDER,
         embedding_model=EMBEDDING_MODEL,
         semantic_weight=SEMANTIC_WEIGHT,
         lexical_weight=LEXICAL_WEIGHT,
@@ -334,6 +338,7 @@ def test_experiment_record_preserves_provenance():
         generated_at_utc=(
             "2026-08-15T02:00:00+00:00"
         ),
+        embedding_provider=EMBEDDING_PROVIDER,
         embedding_model=EMBEDDING_MODEL,
         semantic_weight=SEMANTIC_WEIGHT,
         lexical_weight=LEXICAL_WEIGHT,
@@ -399,6 +404,7 @@ def test_experiment_record_preserves_retrieval_configuration():
         generated_at_utc=(
             "2026-08-15T02:00:00+00:00"
         ),
+        embedding_provider=EMBEDDING_PROVIDER,
         embedding_model=EMBEDDING_MODEL,
         semantic_weight=SEMANTIC_WEIGHT,
         lexical_weight=LEXICAL_WEIGHT,
@@ -476,6 +482,11 @@ def test_experiment_record_preserves_retrieval_configuration():
         == "retrieval-text"
     )
 
+    assert (
+        configuration["embedding_provider"]
+        == EMBEDDING_PROVIDER
+    )
+
 def test_experiment_record_preserves_reranker_configuration():
     comparison = make_comparison()
 
@@ -492,6 +503,7 @@ def test_experiment_record_preserves_reranker_configuration():
         generated_at_utc=(
             "2026-08-15T02:00:00+00:00"
         ),
+        embedding_provider=EMBEDDING_PROVIDER,
         embedding_model=EMBEDDING_MODEL,
         semantic_weight=SEMANTIC_WEIGHT,
         lexical_weight=LEXICAL_WEIGHT,
@@ -509,6 +521,7 @@ def test_experiment_record_preserves_reranker_configuration():
             "cross-encoder"
         ),
         reranker_model=RERANKER_MODEL,
+        reranker_provider=RERANKER_PROVIDER,
         rerank_depth=5,
     )
 
@@ -571,6 +584,13 @@ def test_experiment_record_preserves_reranker_configuration():
         == 5
     )
 
+    assert (
+        configuration["candidate"][
+            "reranker_provider"
+        ]
+        == RERANKER_PROVIDER
+    )
+
 
 def test_experiment_record_preserves_embedding_text_strategies():
     comparison = make_comparison()
@@ -588,6 +608,7 @@ def test_experiment_record_preserves_embedding_text_strategies():
         generated_at_utc=(
             "2026-08-15T02:00:00+00:00"
         ),
+        embedding_provider=EMBEDDING_PROVIDER,
         embedding_model=EMBEDDING_MODEL,
         semantic_weight=SEMANTIC_WEIGHT,
         lexical_weight=LEXICAL_WEIGHT,
@@ -638,6 +659,7 @@ def test_experiment_record_rejects_empty_baseline_embedding_text_strategy():
             generated_at_utc=(
                 "2026-08-15T02:00:00+00:00"
             ),
+            embedding_provider=EMBEDDING_PROVIDER,
             embedding_model=EMBEDDING_MODEL,
             semantic_weight=SEMANTIC_WEIGHT,
             lexical_weight=LEXICAL_WEIGHT,
@@ -665,6 +687,7 @@ def test_experiment_record_rejects_empty_candidate_embedding_text_strategy():
             generated_at_utc=(
                 "2026-08-15T02:00:00+00:00"
             ),
+            embedding_provider=EMBEDDING_PROVIDER,
             embedding_model=EMBEDDING_MODEL,
             semantic_weight=SEMANTIC_WEIGHT,
             lexical_weight=LEXICAL_WEIGHT,
@@ -692,10 +715,12 @@ def test_experiment_record_requires_depth_for_reranker():
             generated_at_utc=(
                 "2026-08-15T02:00:00+00:00"
             ),
+            embedding_provider=EMBEDDING_PROVIDER,
             embedding_model=EMBEDDING_MODEL,
             semantic_weight=SEMANTIC_WEIGHT,
             lexical_weight=LEXICAL_WEIGHT,
             reranker_model=RERANKER_MODEL,
+            reranker_provider=RERANKER_PROVIDER,
         )
 
 
@@ -720,6 +745,7 @@ def test_experiment_record_requires_model_for_rerank_depth():
             generated_at_utc=(
                 "2026-08-15T02:00:00+00:00"
             ),
+            embedding_provider=EMBEDDING_PROVIDER,
             embedding_model=EMBEDDING_MODEL,
             semantic_weight=SEMANTIC_WEIGHT,
             lexical_weight=LEXICAL_WEIGHT,
@@ -822,6 +848,7 @@ def test_experiment_record_preserves_baseline_reranker_configuration():
         generated_at_utc=(
             "2026-08-16T02:00:00+00:00"
         ),
+        embedding_provider=EMBEDDING_PROVIDER,
         embedding_model=EMBEDDING_MODEL,
         semantic_weight=SEMANTIC_WEIGHT,
         lexical_weight=LEXICAL_WEIGHT,
@@ -838,6 +865,9 @@ def test_experiment_record_preserves_baseline_reranker_configuration():
         baseline_reranker_model=(
             RERANKER_MODEL
         ),
+        baseline_reranker_provider=(
+            RERANKER_PROVIDER
+        ),
         baseline_rerank_depth=5,
         candidate_strategy=(
             "hybrid-semantic-lexical-"
@@ -846,6 +876,7 @@ def test_experiment_record_preserves_baseline_reranker_configuration():
         reranker_model=(
             RERANKER_MODEL
         ),
+        reranker_provider=RERANKER_PROVIDER,
         rerank_depth=5,
     )
 
@@ -881,6 +912,20 @@ def test_experiment_record_preserves_baseline_reranker_configuration():
         == 5
     )
 
+    assert (
+        configuration["baseline"][
+            "reranker_provider"
+        ]
+        == RERANKER_PROVIDER
+    )
+
+    assert (
+        configuration["candidate"][
+            "reranker_provider"
+        ]
+        == RERANKER_PROVIDER
+    )
+
 def test_experiment_record_requires_depth_for_baseline_reranker():
     comparison = make_comparison()
 
@@ -902,11 +947,15 @@ def test_experiment_record_requires_depth_for_baseline_reranker():
             generated_at_utc=(
                 "2026-08-16T02:00:00+00:00"
             ),
+            embedding_provider=EMBEDDING_PROVIDER,
             embedding_model=EMBEDDING_MODEL,
             semantic_weight=SEMANTIC_WEIGHT,
             lexical_weight=LEXICAL_WEIGHT,
             baseline_reranker_model=(
                 RERANKER_MODEL
+            ),
+            baseline_reranker_provider=(
+                RERANKER_PROVIDER
             ),
         )
 
@@ -931,6 +980,7 @@ def test_experiment_record_requires_model_for_baseline_rerank_depth():
             generated_at_utc=(
                 "2026-08-16T02:00:00+00:00"
             ),
+            embedding_provider=EMBEDDING_PROVIDER,
             embedding_model=EMBEDDING_MODEL,
             semantic_weight=SEMANTIC_WEIGHT,
             lexical_weight=LEXICAL_WEIGHT,
@@ -953,6 +1003,7 @@ def test_experiment_record_preserves_evaluation_population():
         generated_at_utc=(
             "2026-08-17T08:00:00+00:00"
         ),
+        embedding_provider=EMBEDDING_PROVIDER,
         embedding_model=EMBEDDING_MODEL,
         semantic_weight=SEMANTIC_WEIGHT,
         lexical_weight=LEXICAL_WEIGHT,
@@ -1033,6 +1084,7 @@ def test_experiment_record_preserves_grounded_overview_metrics():
         generated_at_utc=(
             "2026-08-22T02:00:00+00:00"
         ),
+        embedding_provider=EMBEDDING_PROVIDER,
         embedding_model=EMBEDDING_MODEL,
         semantic_weight=SEMANTIC_WEIGHT,
         lexical_weight=LEXICAL_WEIGHT,
@@ -1099,6 +1151,7 @@ def test_experiment_record_requires_overview_config_and_result_together():
             generated_at_utc=(
                 "2026-08-22T02:00:00+00:00"
             ),
+            embedding_provider=EMBEDDING_PROVIDER,
             embedding_model=EMBEDDING_MODEL,
             semantic_weight=SEMANTIC_WEIGHT,
             lexical_weight=LEXICAL_WEIGHT,
@@ -1128,6 +1181,7 @@ def test_experiment_record_rejects_overview_population_mismatch():
             generated_at_utc=(
                 "2026-08-22T02:00:00+00:00"
             ),
+            embedding_provider=EMBEDDING_PROVIDER,
             embedding_model=EMBEDDING_MODEL,
             semantic_weight=SEMANTIC_WEIGHT,
             lexical_weight=LEXICAL_WEIGHT,
@@ -1137,4 +1191,61 @@ def test_experiment_record_rejects_overview_population_mismatch():
             grounded_overview_evaluation=(
                 make_grounded_overview_evaluation()
             ),
+        )
+
+def test_experiment_record_rejects_empty_embedding_provider():
+    comparison = make_comparison()
+
+    with pytest.raises(
+        ValueError,
+        match=(
+            "Embedding provider cannot be empty."
+        ),
+    ):
+        build_experiment_record(
+            comparison=comparison,
+            policy_ids=("208",),
+            chunk_count=1,
+            dataset_path="evaluation/test.json",
+            dataset_sha256="dataset-hash",
+            corpus_sha256="corpus-hash",
+            repository_commit="abc1234",
+            generated_at_utc=(
+                "2026-08-23T02:00:00+00:00"
+            ),
+            embedding_provider="   ",
+            embedding_model=EMBEDDING_MODEL,
+            semantic_weight=SEMANTIC_WEIGHT,
+            lexical_weight=LEXICAL_WEIGHT,
+        )
+
+def test_experiment_record_requires_provider_for_reranker_model():
+    comparison = make_comparison()
+
+    with pytest.raises(
+        ValueError,
+        match=(
+            "Reranker model requires "
+            "a reranker provider."
+        ),
+    ):
+        build_experiment_record(
+            comparison=comparison,
+            policy_ids=("208",),
+            chunk_count=1,
+            dataset_path="evaluation/test.json",
+            dataset_sha256="dataset-hash",
+            corpus_sha256="corpus-hash",
+            repository_commit="abc1234",
+            generated_at_utc=(
+                "2026-08-23T02:00:00+00:00"
+            ),
+            embedding_provider=(
+                EMBEDDING_PROVIDER
+            ),
+            embedding_model=EMBEDDING_MODEL,
+            semantic_weight=SEMANTIC_WEIGHT,
+            lexical_weight=LEXICAL_WEIGHT,
+            reranker_model=RERANKER_MODEL,
+            rerank_depth=5,
         )

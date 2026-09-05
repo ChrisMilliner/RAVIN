@@ -1,0 +1,11 @@
+{
+  "schema_version": 1,
+  "status": "development-not-validated",
+  "proposition_coverage": {
+    "covered_threshold": 0.8,
+    "partial_threshold": 0.4
+  },
+  "claim_grounding": {
+    "support_threshold": 0.8
+  }
+}

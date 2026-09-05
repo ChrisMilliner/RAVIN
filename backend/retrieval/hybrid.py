@@ -1,3 +1,15 @@
+"""
+Combine semantic and lexical signals for policy retrieval.
+
+This module calculates lexical query coverage and combines it with
+semantic retrieval scores using configured weights. Hybrid scoring
+helps preserve exact policy terminology while retaining semantic
+matching for differently worded questions.
+
+Hybrid retrieval ranks evidence candidates only. It does not determine
+whether the resulting evidence is sufficient to answer a question.
+"""
+
 import re
 from backend.retrieval.embeddings import EmbeddingProvider
 from backend.retrieval.index import cosine_similarity
@@ -47,6 +59,11 @@ STOP_WORDS = frozenset(
 def tokenize_lexical_text(
     text: str,
 ) -> frozenset[str]:
+    """Convert text into the lexical token set used by hybrid retrieval.
+
+    Text is case-folded, reduced to alphanumeric tokens, and common stop
+    words are removed before the immutable token set is returned.
+    """
     tokens = re.findall(
         r"[a-z0-9]+",
         text.casefold(),
@@ -62,6 +79,12 @@ def calculate_lexical_coverage(
     query: str,
     retrieval_text: str,
 ) -> float:
+    """Calculate how much of the meaningful query vocabulary appears in text.
+
+    The score is the proportion of non-stop-word query tokens also present
+    in the retrieval text. A query with no remaining lexical tokens receives
+    a score of zero.
+    """
     query_tokens = tokenize_lexical_text(
         query
     )
@@ -92,6 +115,12 @@ def calculate_hybrid_score(
         DEFAULT_LEXICAL_WEIGHT
     ),
 ) -> float:
+    """Combine semantic similarity and lexical coverage into one ranking score.
+
+    Both weights must be non-negative and together sum to one. This
+    weighted score controls candidate ranking only and does not establish
+    whether retrieved evidence is sufficient to answer the question.
+    """
     if semantic_weight < 0.0:
         raise ValueError(
             "Semantic weight cannot be negative."
@@ -133,6 +162,15 @@ def search_hybrid_index(
         DEFAULT_LEXICAL_WEIGHT
     ),
 ) -> tuple[RetrievalResult, ...]:
+    """Search the semantic index using combined semantic and lexical ranking.
+
+    The query is embedded once, each indexed chunk receives cosine
+    similarity and lexical-coverage scores, and the configured weighted
+    hybrid score determines descending result order.
+
+    The function returns at most top_k candidates and rejects empty queries,
+    invalid top_k values, and empty indexes.
+    """
     query = query.strip()
 
     if not query:

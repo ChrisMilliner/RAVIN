@@ -1,3 +1,14 @@
+"""
+Run the configured RAVIN retrieval evaluation from the command line.
+
+This developer entry point loads the evaluation dataset and policy
+corpus, builds the configured retrieval stack, executes evaluation, and
+prints the resulting retrieval metrics.
+
+Any reported accuracy must be interpreted according to the validation
+status of the dataset used for that run.
+"""
+
 from backend.evaluation.dataset import (
     load_evaluation_questions,
 )
@@ -14,8 +25,14 @@ from backend.retrieval.index import (
     build_semantic_index,
     search_semantic_index,
 )
-from backend.retrieval.sentence_transformer_provider import (
-    SentenceTransformerEmbeddingProvider,
+from backend.core.provider_composition import (
+    compose_embedding_provider,
+)
+from backend.core.provider_registry import (
+    create_provider_factories,
+)
+from backend.core.runtime_config_loader import (
+    load_runtime_provider_config,
 )
 
 POLICIES = (
@@ -28,6 +45,8 @@ POLICIES = (
 )
 
 def main() -> None:
+    """Run the preliminary command-line retrieval evaluation workflow.
+    """
     print("=== RAVIN RETRIEVAL EVALUATION ===")
     print()
 
@@ -76,12 +95,40 @@ def main() -> None:
         len(all_chunks),
     )
 
+    runtime_provider_config = (
+        load_runtime_provider_config()
+    )
+
+    provider_factories = (
+        create_provider_factories()
+    )
+
+    embedding_config = (
+        runtime_provider_config
+        .retrieval
+        .embedding
+    )
+
     print()
-    print("=== BUILDING SEMANTIC INDEX ===")
+    print("=== EMBEDDING PROVIDER ===")
+    print(
+        "Provider:",
+        embedding_config.provider,
+    )
+    print(
+        "Model:",
+        embedding_config.model,
+    )
 
     embedding_provider = (
-        SentenceTransformerEmbeddingProvider()
+        compose_embedding_provider(
+            embedding_config,
+            provider_factories,
+        )
     )
+
+    print()
+    print("=== BUILDING SEMANTIC INDEX ===")
 
     semantic_index = build_semantic_index(
         tuple(all_chunks),

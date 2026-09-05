@@ -1,3 +1,14 @@
+"""
+Load and validate structured retrieval-evaluation question datasets.
+
+This module converts evaluation data into typed RAVIN evaluation
+questions and rejects malformed or incomplete records before an
+evaluation run begins.
+
+Dataset loading preserves expected policy and evidence references used
+to determine whether retrieval results match the intended evidence.
+"""
+
 import json
 from pathlib import Path
 from backend.evaluation.models import (
@@ -217,6 +228,11 @@ def _parse_question(
 def load_evaluation_questions(
     path: str | Path,
 ) -> tuple[EvaluationQuestion, ...]:
+    """Load and validate retrieval evaluation questions from a JSON dataset.
+
+    Malformed, missing, or empty question collections are rejected before
+    evaluation begins.
+    """
     dataset_path = Path(path)
 
     with dataset_path.open(

@@ -1,3 +1,15 @@
+"""
+Coordinate conversion of acquired policy content into indexed units.
+
+The processor joins the ingestion stages required to turn acquired
+policy material into a structured ingestion result and PolicyChunk
+collection suitable for retrieval.
+
+It provides the ingestion orchestration boundary while leaving network
+acquisition, text normalization, and retrieval ranking in their
+specialised modules.
+"""
+
 from backend.ingestion.chunking import chunk_policy
 from backend.ingestion.config import (
     DEFAULT_CHUNK_OVERLAP_WORDS,
@@ -17,6 +29,16 @@ def process_policy(
     chunk_size_words: int = DEFAULT_CHUNK_SIZE_WORDS,
     overlap_words: int = DEFAULT_CHUNK_OVERLAP_WORDS,
 ) -> IngestionResult:
+    """Validate, normalize, and chunk one acquired policy.
+
+    Only policies marked current are accepted. Raw and structured text are
+    normalized before chunking, and invalid chunk configuration, empty
+    content, or zero produced chunks result in an explicit failed
+    IngestionResult instead of partially usable evidence.
+
+    Successful results contain the PolicyChunk collection consumed by the
+    retrieval layer.
+    """
     if policy.status.casefold() != "current":
         return IngestionResult(
             status=IngestionStatus.FAILED,
