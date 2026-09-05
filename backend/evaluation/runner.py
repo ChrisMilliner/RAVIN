@@ -1,3 +1,15 @@
+"""
+Execute retrieval and grounded-overview evaluation runs.
+
+This module evaluates ranked retrieval results against structured
+expected evidence, calculates question-level ranks and aggregate
+metrics, and assesses evidence-group coverage for broad grounded
+overview questions.
+
+The runner reports measured performance without changing retrieval
+configuration or promoting development results to validated status.
+"""
+
 from typing import Callable
 from backend.evaluation.matching import (
     is_expected_evidence_group_covered,
@@ -33,6 +45,8 @@ def find_first_relevant_rank(
     results: tuple[RetrievalResult, ...],
     expected_evidence: tuple[ExpectedEvidence, ...],
 ) -> int | None:
+    """Return the first rank containing expected evidence, or None when absent.
+    """
     for rank, result in enumerate(
         results,
         start=1,
@@ -55,6 +69,8 @@ def evaluate_grounded_overview_question(
         ...
     ],
 ) -> GroundedOverviewQuestionResult:
+    """Evaluate required evidence-group coverage for one grounded-overview question.
+    """
     if (
         question.behavior
         != EvaluationBehavior.GROUNDED_OVERVIEW
@@ -98,6 +114,8 @@ def run_grounded_overview_evaluation(
     retrieve: RetrievalFunction,
     config: GroundedOverviewEvaluationConfig,
 ) -> GroundedOverviewEvaluationResult:
+    """Run evidence-group coverage evaluation for grounded-overview questions.
+    """
     overview_questions = tuple(
         question
         for question in questions
@@ -146,6 +164,11 @@ def run_retrieval_evaluation(
     retrieve: RetrievalFunction,
     config: EvaluationConfig,
 ) -> EvaluationRunResult:
+    """Run ranking evaluation over Direct Answer questions.
+
+    The result reports Top-1, Hit@K, and MRR for the ranking population and
+    preserves the complete dataset population separately.
+    """
     if not questions:
         raise ValueError(
             "Cannot evaluate an empty question set."

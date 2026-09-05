@@ -1,3 +1,15 @@
+"""
+Split parsed policy content into retrieval-ready policy chunks.
+
+Chunking preserves policy identity, heading structure, source location,
+and the text needed for semantic and lexical retrieval. The resulting
+PolicyChunk objects provide the stable evidence units indexed by the
+retrieval layer.
+
+Chunk construction does not perform semantic ranking or answer
+generation.
+"""
+
 from backend.ingestion.models import (
     ParsedPolicyContent,
     PolicyChunk,
@@ -58,6 +70,15 @@ def chunk_policy(
     chunk_size_words: int,
     overlap_words: int,
 ) -> tuple[PolicyChunk, ...]:
+    """Split normalized policy content into overlapping retrieval chunks.
+
+    Chunking validates the requested size and overlap, preserves heading
+    paths and policy provenance, and assigns monotonically increasing chunk
+    indexes across the policy.
+
+    When no structured content units exist, the normalized policy text is
+    treated as a single structural unit.
+    """
     _validate_chunk_configuration(
         chunk_size_words,
         overlap_words,

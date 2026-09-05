@@ -1,16 +1,35 @@
+"""
+Provide the cross-encoder adapter used for retrieval reranking.
+
+This module implements the framework-neutral reranker contract with a
+configured cross-encoder model. It scores query and candidate-text
+pairs so initially retrieved policy chunks can be reordered by
+relevance.
+
+The concrete model remains isolated behind the reranker provider
+interface and can be replaced through runtime composition.
+"""
+
 from typing import cast
 from numpy import ndarray
 from sentence_transformers import CrossEncoder
 
-DEFAULT_RERANKER_MODEL = (
-    "cross-encoder/ms-marco-MiniLM-L6-v2"
-)
-
 class CrossEncoderRerankerProvider:
+    """Implement retrieval reranking with a Sentence Transformers CrossEncoder.
+
+    The concrete cross-encoder model is loaded when the adapter is created
+    and remains behind RAVIN's framework-neutral RerankerProvider contract.
+    """
+
     def __init__(
         self,
-        model_name: str = DEFAULT_RERANKER_MODEL,
+        model_name: str,
     ) -> None:
+        if not model_name.strip():
+            raise ValueError(
+                "Reranker model name cannot be empty."
+            )
+
         self._model = CrossEncoder(
             model_name
         )
@@ -20,6 +39,11 @@ class CrossEncoderRerankerProvider:
         query: str,
         documents: tuple[str, ...],
     ) -> tuple[float, ...]:
+        """Score candidate documents against a non-empty user query.
+
+        One cross-encoder score is returned for each supplied document in the
+        same order. Empty queries and empty document collections are rejected.
+        """
         if not query.strip():
             raise ValueError(
                 "Query cannot be empty."

@@ -1,0 +1,406 @@
+{
+  "name": "RAVIN Preliminary Routing Development Baseline v1.0",
+  "status": "preliminary-not-gold-standard",
+  "questions": [
+    {
+      "question_id": "RQ001",
+      "question": "Who approves changes to academic dress?",
+      "expected_intent": "focused",
+      "expected_sufficiency": "sufficient",
+      "expected_behavior": "direct_answer",
+      "notes": "Seeded from retrieval baseline RB001 after manual routing-intent review."
+    },
+    {
+      "question_id": "RQ002",
+      "question": "What happens when a student is not making satisfactory academic progress?",
+      "expected_intent": "broad",
+      "expected_sufficiency": "sufficient",
+      "expected_behavior": "grounded_overview",
+      "notes": "Seeded from retrieval baseline RB002 after manual routing-intent review."
+    },
+    {
+      "question_id": "RQ003",
+      "question": "What are the admission requirements for university applicants?",
+      "expected_intent": "broad",
+      "expected_sufficiency": "sufficient",
+      "expected_behavior": "grounded_overview",
+      "notes": "Seeded from retrieval baseline RB003 after manual routing-intent review."
+    },
+    {
+      "question_id": "RQ004",
+      "question": "Where are the academic dress requirements for a newly approved award course recorded?",
+      "expected_intent": "focused",
+      "expected_sufficiency": "sufficient",
+      "expected_behavior": "direct_answer",
+      "notes": "Seeded from retrieval baseline RB004 after manual routing-intent review."
+    },
+    {
+      "question_id": "RQ005",
+      "question": "Can Aboriginal or Torres Strait Islander graduates wear an additional stole with their academic dress?",
+      "expected_intent": "focused",
+      "expected_sufficiency": "sufficient",
+      "expected_behavior": "direct_answer",
+      "notes": "Seeded from retrieval baseline RB005 after manual routing-intent review."
+    },
+    {
+      "question_id": "RQ006",
+      "question": "Which shoulder is the silk of an academic hood normally exposed on?",
+      "expected_intent": "focused",
+      "expected_sufficiency": "sufficient",
+      "expected_behavior": "direct_answer",
+      "notes": "Seeded from retrieval baseline RB006 after manual routing-intent review."
+    },
+    {
+      "question_id": "RQ007",
+      "question": "What is required when requesting a change to the University's approved academic dress?",
+      "expected_intent": "focused",
+      "expected_sufficiency": "sufficient",
+      "expected_behavior": "direct_answer",
+      "notes": "Seeded from retrieval baseline RB007 after manual routing-intent review."
+    },
+    {
+      "question_id": "RQ008",
+      "question": "What happens if a student passes every subject in which they are enrolled?",
+      "expected_intent": "focused",
+      "expected_sufficiency": "sufficient",
+      "expected_behavior": "direct_answer",
+      "notes": "Seeded from retrieval baseline RB008 after manual routing-intent review."
+    },
+    {
+      "question_id": "RQ009",
+      "question": "How long does a student at Academic Progression Stage Three have to submit a show cause response?",
+      "expected_intent": "focused",
+      "expected_sufficiency": "sufficient",
+      "expected_behavior": "direct_answer",
+      "notes": "Seeded from retrieval baseline RB009 after manual routing-intent review."
+    },
+    {
+      "question_id": "RQ010",
+      "question": "What is the maximum enrolment load normally applied to a student at Academic Progression Stage Two?",
+      "expected_intent": "focused",
+      "expected_sufficiency": "sufficient",
+      "expected_behavior": "direct_answer",
+      "notes": "Seeded from retrieval baseline RB010 after manual routing-intent review."
+    },
+    {
+      "question_id": "RQ011",
+      "question": "If a student transfers to another course while an enrolment sanction is still active, what happens to the sanction?",
+      "expected_intent": "focused",
+      "expected_sufficiency": "sufficient",
+      "expected_behavior": "direct_answer",
+      "notes": "Seeded from retrieval baseline RB011 after manual routing-intent review."
+    },
+    {
+      "question_id": "RQ012",
+      "question": "Can fixed-term academic staff apply for promotion, and does a promotion extend their fixed-term appointment?",
+      "expected_intent": "focused",
+      "expected_sufficiency": "sufficient",
+      "expected_behavior": "direct_answer",
+      "notes": "Seeded from retrieval baseline RB012 after manual routing-intent review."
+    },
+    {
+      "question_id": "RQ013",
+      "question": "What three domains of academic work are considered for promotion?",
+      "expected_intent": "focused",
+      "expected_sufficiency": "sufficient",
+      "expected_behavior": "direct_answer",
+      "notes": "Seeded from retrieval baseline RB013 after manual routing-intent review."
+    },
+    {
+      "question_id": "RQ014",
+      "question": "What qualification is normally required when applying for academic promotion?",
+      "expected_intent": "focused",
+      "expected_sufficiency": "sufficient",
+      "expected_behavior": "direct_answer",
+      "notes": "Seeded from retrieval baseline RB014 after manual routing-intent review."
+    },
+    {
+      "question_id": "RQ015",
+      "question": "What referee and external assessor requirements apply to a Level D promotion application?",
+      "expected_intent": "focused",
+      "expected_sufficiency": "sufficient",
+      "expected_behavior": "direct_answer",
+      "notes": "Seeded from retrieval baseline RB015 after manual routing-intent review."
+    },
+    {
+      "question_id": "RQ016",
+      "question": "How long does an unsuccessful promotion applicant have to request reconsideration?",
+      "expected_intent": "focused",
+      "expected_sufficiency": "sufficient",
+      "expected_behavior": "direct_answer",
+      "notes": "Seeded from retrieval baseline RB016 after manual routing-intent review."
+    },
+    {
+      "question_id": "RQ017",
+      "question": "Who does the Academic Staff Qualifications Policy apply to?",
+      "expected_intent": "focused",
+      "expected_sufficiency": "sufficient",
+      "expected_behavior": "direct_answer",
+      "notes": "Seeded from retrieval baseline RB017 after manual routing-intent review."
+    },
+    {
+      "question_id": "RQ018",
+      "question": "What arrangements are required for teaching staff who do not yet meet Professional Equivalence?",
+      "expected_intent": "focused",
+      "expected_sufficiency": "sufficient",
+      "expected_behavior": "direct_answer",
+      "notes": "Seeded from retrieval baseline RB018 after manual routing-intent review."
+    },
+    {
+      "question_id": "RQ019",
+      "question": "What records must the University maintain about staff qualifications and Professional Equivalence?",
+      "expected_intent": "focused",
+      "expected_sufficiency": "sufficient",
+      "expected_behavior": "direct_answer",
+      "notes": "Seeded from retrieval baseline RB019 after manual routing-intent review."
+    },
+    {
+      "question_id": "RQ020",
+      "question": "What scholarly activities are academic teaching staff expected to engage in?",
+      "expected_intent": "focused",
+      "expected_sufficiency": "sufficient",
+      "expected_behavior": "direct_answer",
+      "notes": "Seeded from retrieval baseline RB020 after manual routing-intent review."
+    },
+    {
+      "question_id": "RQ021",
+      "question": "What does Professional Equivalence mean for academic teaching staff?",
+      "expected_intent": "focused",
+      "expected_sufficiency": "sufficient",
+      "expected_behavior": "direct_answer",
+      "notes": "Seeded from retrieval baseline RB021 after manual routing-intent review."
+    },
+    {
+      "question_id": "RQ022",
+      "question": "Does the Admissions Policy cover applicants for higher degrees by research?",
+      "expected_intent": "focused",
+      "expected_sufficiency": "sufficient",
+      "expected_behavior": "direct_answer",
+      "notes": "Seeded from retrieval baseline RB022 after manual routing-intent review."
+    },
+    {
+      "question_id": "RQ023",
+      "question": "If an applicant meets all course entry requirements, are they guaranteed an offer?",
+      "expected_intent": "focused",
+      "expected_sufficiency": "sufficient",
+      "expected_behavior": "direct_answer",
+      "notes": "Seeded from retrieval baseline RB023 after manual routing-intent review."
+    },
+    {
+      "question_id": "RQ024",
+      "question": "Who has general oversight of the Admissions Policy?",
+      "expected_intent": "focused",
+      "expected_sufficiency": "sufficient",
+      "expected_behavior": "direct_answer",
+      "notes": "Seeded from retrieval baseline RB024 after manual routing-intent review."
+    },
+    {
+      "question_id": "RQ025",
+      "question": "What admissions information should be available to prospective students before they apply or accept an offer?",
+      "expected_intent": "broad",
+      "expected_sufficiency": "sufficient",
+      "expected_behavior": "grounded_overview",
+      "notes": "Seeded from retrieval baseline RB025 after manual routing-intent review."
+    },
+    {
+      "question_id": "RQ026",
+      "question": "How does La Trobe support admission for people who have experienced disadvantage or are underrepresented in higher education?",
+      "expected_intent": "broad",
+      "expected_sufficiency": "sufficient",
+      "expected_behavior": "grounded_overview",
+      "notes": "Seeded from retrieval baseline RB026 after manual routing-intent review."
+    },
+    {
+      "question_id": "RQ027",
+      "question": "Can an international student on a student visa enrol in a Single Subject?",
+      "expected_intent": "focused",
+      "expected_sufficiency": "sufficient",
+      "expected_behavior": "direct_answer",
+      "notes": "Seeded from retrieval baseline RB027 after manual routing-intent review."
+    },
+    {
+      "question_id": "RQ028",
+      "question": "What types of disadvantage can be considered for Special Entry Access Scheme adjustments?",
+      "expected_intent": "focused",
+      "expected_sufficiency": "sufficient",
+      "expected_behavior": "direct_answer",
+      "notes": "Seeded from retrieval baseline RB028 after manual routing-intent review."
+    },
+    {
+      "question_id": "RQ029",
+      "question": "How long can an applicant normally defer an offer to study at La Trobe?",
+      "expected_intent": "focused",
+      "expected_sufficiency": "sufficient",
+      "expected_behavior": "direct_answer",
+      "notes": "Seeded from retrieval baseline RB029 after manual routing-intent review."
+    },
+    {
+      "question_id": "RQ030",
+      "question": "How soon should a student be advised of the outcome of a course transfer application?",
+      "expected_intent": "focused",
+      "expected_sufficiency": "sufficient",
+      "expected_behavior": "direct_answer",
+      "notes": "Seeded from retrieval baseline RB030 after manual routing-intent review."
+    },
+    {
+      "question_id": "RQ031",
+      "question": "What do I need to submit?",
+      "expected_intent": "ambiguous",
+      "expected_sufficiency": null,
+      "expected_behavior": "clarify",
+      "notes": "Could refer to admissions material, an academic progression show-cause response, an academic promotion application, or an academic dress change request."
+    },
+    {
+      "question_id": "RQ032",
+      "question": "How long do I have?",
+      "expected_intent": "ambiguous",
+      "expected_sufficiency": null,
+      "expected_behavior": "clarify",
+      "notes": "Could refer to the Stage Three show-cause timeframe, promotion reconsideration timeframe, offer deferral period, or another policy time limit."
+    },
+    {
+      "question_id": "RQ033",
+      "question": "What support is available?",
+      "expected_intent": "ambiguous",
+      "expected_sufficiency": null,
+      "expected_behavior": "clarify",
+      "notes": "Could refer to academic progression support or admissions support for people experiencing disadvantage or underrepresentation."
+    },
+    {
+      "question_id": "RQ034",
+      "question": "What requirements do I need to meet?",
+      "expected_intent": "ambiguous",
+      "expected_sufficiency": null,
+      "expected_behavior": "clarify",
+      "notes": "Could refer to admissions entry requirements, academic promotion requirements, or staff qualification requirements."
+    },
+    {
+      "question_id": "RQ035",
+      "question": "Does this apply to me?",
+      "expected_intent": "ambiguous",
+      "expected_sufficiency": null,
+      "expected_behavior": "clarify",
+      "notes": "The referenced policy or process is not identified, and several corpus documents define different scopes."
+    },
+    {
+      "question_id": "RQ036",
+      "question": "Who approves it?",
+      "expected_intent": "ambiguous",
+      "expected_sufficiency": null,
+      "expected_behavior": "clarify",
+      "notes": "The decision being approved is not identified. The corpus contains different authorities and oversight responsibilities."
+    },
+    {
+      "question_id": "RQ037",
+      "question": "Can I apply?",
+      "expected_intent": "ambiguous",
+      "expected_sufficiency": null,
+      "expected_behavior": "clarify",
+      "notes": "Could refer to university admission, Single Subject enrolment, academic promotion, or another application process represented in the corpus."
+    },
+    {
+      "question_id": "RQ038",
+      "question": "What happens next?",
+      "expected_intent": "ambiguous",
+      "expected_sufficiency": null,
+      "expected_behavior": "clarify",
+      "notes": "No preceding process or decision is identified. Admissions, progression, and promotion each have materially different next steps."
+    },
+    {
+      "question_id": "RQ039",
+      "question": "What happens if I am unsuccessful?",
+      "expected_intent": "ambiguous",
+      "expected_sufficiency": null,
+      "expected_behavior": "clarify",
+      "notes": "Could refer to an unsuccessful promotion outcome, an admissions outcome, or another unsuccessful decision with different consequences."
+    },
+    {
+      "question_id": "RQ040",
+      "question": "What information should I receive?",
+      "expected_intent": "ambiguous",
+      "expected_sufficiency": null,
+      "expected_behavior": "clarify",
+      "notes": "Could refer to pre-application and offer information in admissions or information communicated during another policy process."
+    },
+    {
+      "question_id": "RQ041",
+      "question": "Does Professional Equivalence permanently replace the need for an academic qualification?",
+      "expected_intent": "focused",
+      "expected_sufficiency": "insufficient",
+      "expected_behavior": "no_grounded_answer",
+      "notes": "Live corpus review found definitions and requirements for Professional Equivalence, but no evidence establishing that it permanently replaces the need for a formal qualification."
+    },
+    {
+      "question_id": "RQ042",
+      "question": "What financial assistance is guaranteed to students who are not making satisfactory academic progress?",
+      "expected_intent": "focused",
+      "expected_sufficiency": "insufficient",
+      "expected_behavior": "no_grounded_answer",
+      "notes": "The Academic Progression Review Policy identifies academic and non-academic support but does not establish guaranteed financial assistance."
+    },
+    {
+      "question_id": "RQ043",
+      "question": "What accommodation and travel support does La Trobe provide to academic staff applying for promotion?",
+      "expected_intent": "focused",
+      "expected_sufficiency": "insufficient",
+      "expected_behavior": "no_grounded_answer",
+      "notes": "The Academic Promotions Policy provides application advice and support but the inspected corpus does not establish accommodation or travel support."
+    },
+    {
+      "question_id": "RQ044",
+      "question": "What scholarships and fee discounts are guaranteed to applicants who experience disadvantage?",
+      "expected_intent": "focused",
+      "expected_sufficiency": "insufficient",
+      "expected_behavior": "no_grounded_answer",
+      "notes": "Admissions evidence establishes SEAS adjustments, alternative entry programs and targeted support, but does not establish guaranteed scholarships or fee discounts."
+    },
+    {
+      "question_id": "RQ045",
+      "question": "What employment benefits are provided to staff who achieve Professional Equivalence?",
+      "expected_intent": "focused",
+      "expected_sufficiency": "insufficient",
+      "expected_behavior": "no_grounded_answer",
+      "notes": "The Academic Staff Qualifications Policy explains Professional Equivalence and teaching-related requirements but does not establish employment benefits resulting from achieving that status."
+    },
+    {
+      "question_id": "RQ046",
+      "question": "What penalties apply when a graduate wears academic dress incorrectly?",
+      "expected_intent": "focused",
+      "expected_sufficiency": "insufficient",
+      "expected_behavior": "no_grounded_answer",
+      "notes": "The Academic Dress Policy defines required dress and how it is worn, but the inspected corpus does not establish penalties for incorrect wear."
+    },
+    {
+      "question_id": "RQ047",
+      "question": "What financial, accommodation and wellbeing support is provided to students at each stage of academic progression?",
+      "expected_intent": "broad",
+      "expected_sufficiency": "insufficient",
+      "expected_behavior": "no_grounded_answer",
+      "notes": "Live corpus review found academic and non-academic support, recovery activities and advocacy support, but did not establish the requested financial, accommodation and wellbeing support across academic progression stages."
+    },
+    {
+      "question_id": "RQ048",
+      "question": "What financial benefits, leave entitlements and salary changes apply when academic staff are promoted?",
+      "expected_intent": "broad",
+      "expected_sufficiency": "insufficient",
+      "expected_behavior": "no_grounded_answer",
+      "notes": "The Academic Promotions Policy establishes effective date and salary-point treatment after promotion, but the inspected corpus does not establish the requested leave entitlements and complete financial-benefits overview."
+    },
+    {
+      "question_id": "RQ049",
+      "question": "What scholarships, fee reductions and living-cost assistance are available to applicants experiencing disadvantage?",
+      "expected_intent": "broad",
+      "expected_sufficiency": "insufficient",
+      "expected_behavior": "no_grounded_answer",
+      "notes": "Admissions evidence establishes SEAS adjustments, alternative-entry and targeted programs and reasonable adjustment opportunities, but does not establish the requested scholarships, fee reductions and living-cost assistance."
+    },
+    {
+      "question_id": "RQ050",
+      "question": "What employment benefits, salary changes and career progression rights result from achieving Professional Equivalence?",
+      "expected_intent": "broad",
+      "expected_sufficiency": "insufficient",
+      "expected_behavior": "no_grounded_answer",
+      "notes": "The Academic Staff Qualifications Policy defines Professional Equivalence and relevant teaching arrangements, but the inspected corpus does not establish the requested employment benefits, salary changes and career progression rights."
+    }
+  ]
+}

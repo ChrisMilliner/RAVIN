@@ -1,0 +1,386 @@
+"""
+Define neutral question parsing, reliability, and parser-service models.
+
+This module represents parsed tokens, spans, dependency structure,
+parser reliability, and the service that can select between configured
+parser providers. It also contains structural checks used to identify
+parses that may require fallback or deterministic recovery.
+
+The data structures are RAVIN interfaces and remain independent of a
+specific NLP library.
+"""
+
+from dataclasses import dataclass
+from enum import Enum
+from typing import Callable, Protocol
+
+@dataclass(frozen=True)
+class ParsedToken:
+    """Represent one parser-neutral token and its linguistic attributes.
+    """
+
+    index: int
+    text: str
+    lemma: str
+    pos: str
+    tag: str
+    dependency: str
+    head_index: int
+    is_stop: bool
+    is_punct: bool
+    is_alpha: bool
+
+@dataclass(frozen=True)
+class ParsedSpan:
+    """Represent one parser-neutral noun-phrase span.
+    """
+
+    text: str
+    start_index: int
+    end_index: int
+    root_index: int
+
+@dataclass(frozen=True)
+class QuestionParse:
+    """Represent parser-neutral token and noun-phrase structure for a question.
+    """
+
+    tokens: tuple[
+        ParsedToken,
+        ...
+    ]
+    noun_phrases: tuple[
+        ParsedSpan,
+        ...
+    ]
+
+    @property
+    def roots(
+        self,
+    ) -> tuple[
+        ParsedToken,
+        ...
+    ]:
+        """Return tokens identified as dependency roots.
+        """
+        return tuple(
+            token
+            for token in self.tokens
+            if token.dependency == "ROOT"
+        )
+
+class QuestionParseReliability(
+    str,
+    Enum,
+):
+    """Represent whether available question structure is resolved or unresolved.
+    """
+
+    RESOLVED = "resolved"
+    UNRESOLVED = "unresolved"
+
+@dataclass(frozen=True)
+class QuestionParseResult:
+    """Record primary and optional fallback question parses.
+    """
+
+    primary: QuestionParse
+    fallback: QuestionParse | None = None
+
+    @property
+    def used_fallback(
+        self,
+    ) -> bool:
+        """Return whether a fallback parse was produced.
+        """
+        return self.fallback is not None
+
+    @property
+    def primary_suspicious(
+        self,
+    ) -> bool:
+        """Return whether the primary parse triggers RAVIN structural checks.
+        """
+        return is_question_parse_suspicious(
+            self.primary
+        )
+
+    @property
+    def fallback_suspicious(
+        self,
+    ) -> bool | None:
+        """Return fallback suspiciousness, or None when no fallback exists.
+        """
+        if self.fallback is None:
+            return None
+
+        return is_question_parse_suspicious(
+            self.fallback
+        )
+
+    @property
+    def reliability(
+        self,
+    ) -> QuestionParseReliability:
+        """Return resolved when a usable primary or fallback parse exists.
+        """
+        if not self.primary_suspicious:
+            return (
+                QuestionParseReliability.RESOLVED
+            )
+
+        if (
+            self.fallback is not None
+            and not self.fallback_suspicious
+        ):
+            return (
+                QuestionParseReliability.RESOLVED
+            )
+
+        return (
+            QuestionParseReliability.UNRESOLVED
+        )
+
+class QuestionParserService(
+    Protocol
+):
+    """Define the service contract for primary and fallback question parsing.
+    """
+
+    def parse(
+        self,
+        question: str,
+    ) -> QuestionParseResult:
+        """Parse a question and return primary and optional fallback analysis.
+        """
+        ...
+
+class QuestionParseProvider(
+    Protocol
+):
+    """Define the neutral contract implemented by concrete NLP parser adapters.
+    """
+
+    def parse(
+        self,
+        question: str,
+    ) -> QuestionParse:
+        """Convert a question into RAVIN's neutral QuestionParse representation.
+        """
+        ...
+
+QuestionParseProviderFactory = Callable[
+    [],
+    QuestionParseProvider,
+]
+
+def _children_of(
+    parse: QuestionParse,
+    head_index: int,
+) -> tuple[ParsedToken, ...]:
+    return tuple(
+        token
+        for token in parse.tokens
+        if (
+            token.index != head_index
+            and token.head_index
+            == head_index
+        )
+    )
+
+def _has_bare_root_object_before_conjoined_verb(
+    parse: QuestionParse,
+    root: ParsedToken,
+) -> bool:
+    if (
+        root.pos != "VERB"
+        or root.tag != "VB"
+    ):
+        return False
+
+    root_children = _children_of(
+        parse,
+        root.index,
+    )
+
+    has_auxiliary = any(
+        child.dependency
+        in {
+            "aux",
+            "auxpass",
+        }
+        for child in root_children
+    )
+
+    if has_auxiliary:
+        return False
+
+    has_object = any(
+        child.dependency
+        in {
+            "dobj",
+            "obj",
+        }
+        for child in root_children
+    )
+
+    has_later_conjoined_verb = any(
+        token.pos == "VERB"
+        and token.dependency == "conj"
+        and token.head_index
+        == root.index
+        and token.index > root.index
+        for token in parse.tokens
+    )
+
+    return (
+        has_object
+        and has_later_conjoined_verb
+    )
+
+def is_question_parse_suspicious(
+    parse: QuestionParse,
+) -> bool:
+    """Detect parser structures that require fallback or deterministic recovery.
+    """
+    roots = parse.roots
+
+    if len(roots) != 1:
+        return True
+
+    root = roots[0]
+
+    verbs = tuple(
+        token
+        for token in parse.tokens
+        if token.pos == "VERB"
+    )
+
+    if root.pos in (
+        "NOUN",
+        "PROPN",
+    ):
+        return True
+
+    if (
+        root.pos == "AUX"
+        and root.tag == "MD"
+        and not verbs
+    ):
+        return True
+
+    if (
+        _has_bare_root_object_before_conjoined_verb(
+            parse,
+            root,
+        )
+    ):
+        return True
+
+    return False
+
+class QuestionParser:
+    """Coordinate primary parsing and lazy fallback parsing.
+
+    Fallback parsing occurs only when RAVIN's structural checks consider the
+    primary parse suspicious.
+    """
+
+    def __init__(
+        self,
+        primary_provider: QuestionParseProvider,
+        fallback_provider_factory: (
+            QuestionParseProviderFactory | None
+        ) = None,
+    ) -> None:
+        self._primary_provider = (
+            primary_provider
+        )
+
+        self._fallback_provider_factory = (
+            fallback_provider_factory
+        )
+
+        self._fallback_provider: (
+            QuestionParseProvider | None
+        ) = None
+
+    def parse(
+        self,
+        question: str,
+    ) -> QuestionParseResult:
+        """Parse a question and invoke fallback parsing only when required.
+        """
+        question = question.strip()
+
+        if not question:
+            raise ValueError(
+                "Question cannot be empty."
+            )
+
+        primary = (
+            self._primary_provider.parse(
+                question
+            )
+        )
+
+        if not isinstance(
+            primary,
+            QuestionParse,
+        ):
+            raise ValueError(
+                "Question parse provider must "
+                "return a QuestionParse."
+            )
+
+        if (
+            not is_question_parse_suspicious(
+                primary
+            )
+            or self._fallback_provider_factory
+            is None
+        ):
+            return QuestionParseResult(
+                primary=primary,
+            )
+
+        fallback_provider = (
+            self._get_fallback_provider()
+        )
+
+        fallback = fallback_provider.parse(
+            question
+        )
+
+        if not isinstance(
+            fallback,
+            QuestionParse,
+        ):
+            raise ValueError(
+                "Question parse provider must "
+                "return a QuestionParse."
+            )
+
+        return QuestionParseResult(
+            primary=primary,
+            fallback=fallback,
+        )
+
+    def _get_fallback_provider(
+        self,
+    ) -> QuestionParseProvider:
+        if self._fallback_provider is None:
+            if (
+                self._fallback_provider_factory
+                is None
+            ):
+                raise RuntimeError(
+                    "Fallback provider factory "
+                    "is not configured."
+                )
+
+            self._fallback_provider = (
+                self._fallback_provider_factory()
+            )
+
+        return self._fallback_provider

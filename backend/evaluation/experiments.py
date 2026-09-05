@@ -1,3 +1,14 @@
+"""
+Compare retrieval evaluation runs and candidate configurations.
+
+This module calculates changes between experiment results so retrieval
+modifications can be assessed against established metrics and
+question-level ranking behaviour.
+
+Comparisons support evidence-based optimisation but do not convert
+development evaluation results into validated production accuracy.
+"""
+
 from backend.evaluation.experiment_models import (
     DatasetValidationStatus,
     ExperimentDirection,
@@ -69,6 +80,11 @@ def compare_retrieval_experiments(
     candidate: EvaluationRunResult,
     config: RetrievalExperimentConfig,
 ) -> RetrievalExperimentComparison:
+    """Compare compatible baseline and candidate retrieval evaluation results.
+
+    The comparison records relative metric changes and applies both the
+    quality threshold and dataset-validation requirement.
+    """
     if baseline.top_k != candidate.top_k:
         raise ValueError(
             "Baseline and candidate must use the same top_k."
