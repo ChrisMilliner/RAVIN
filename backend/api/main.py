@@ -1,25 +1,34 @@
 """
-RAVIN grounded-answer API (COPF-231) - updated to use the real
-RavinAnswerService (merged via PR #9 / COPF-222), replacing the earlier
-fixture-based build_grounded_response wrapper.
+RAVIN grounded-answer API (COPF-231).
 
-Per backend.service.bootstrap's own docstring:
-    "FastAPI should create the service once during application startup.
-    Individual HTTP requests should call: service.answer(question)
-    FastAPI must not rebuild the policy corpus, retrieval index, models,
-    or RavinAnswerService for every request."
+Thin FastAPI adapter around the shared RavinAnswerService, following the
+pattern from Chris's team handoff deck (RAVIN_Backend_Team_Handoff.pptx,
+slides 9-10):
 
-This module follows that exactly: the service is built once in the
-FastAPI lifespan startup hook (real network calls to the current La
-Trobe policy pages happen here, once, not per-request), then reused for
-every /ask request.
+    FastAPI owns:              request validation, calling the shared
+                                service, mapping the result to JSON
+    RAVIN backend owns:        retrieval, evidence assessment, routing,
+                                generation, validation
 
-IMPORTANT: starting this app makes real HTTP requests to
-policies.latrobe.edu.au (see backend.service.bootstrap.CURRENT_POLICY_LINKS).
-Startup will take longer than before and requires real internet access -
-this could not be pre-tested in the development sandbox this file was
-written in, since that environment cannot reach that domain. Test this
-locally before relying on it.
+This module does not import retrieval, embedding, routing, or generation
+components directly - it only ever calls service.answer(question).
+
+Endpoint: POST /api/questions (the agreed Sprint 3 API contract, per
+Chris's review of the earlier version of this PR).
+
+Changes from the previous version of this file, per Chris's requested
+changes on PR #10:
+  1. Endpoint moved from /ask to POST /api/questions.
+  2. service.answer() is synchronous; this route is now a plain `def`
+     (not `async def`), so FastAPI runs it in its worker threadpool
+     automatically rather than blocking the event loop.
+  3. The broad `except ValueError -> 422` handler has been removed.
+     RavinAnswerService.answer() raises ValueError only for
+     whitespace-only input, which Pydantic validation (models.py)
+     already rejects before the service is ever called - so a
+     ValueError escaping from here now indicates a genuine backend
+     fault and is treated as an internal error (500), not invalid user
+     input. See COPF-240 for an example of exactly this kind of bug.
 
 Security controls implemented here map to the team's API rules:
   Rule 3  - all input validated via Pydantic before use (models.py)
@@ -51,14 +60,13 @@ logger = logging.getLogger("ravin_api")
 async def lifespan(app: FastAPI):
     """
     Build the RavinAnswerService once, at startup, and reuse it for the
-    lifetime of the application - per backend.service.bootstrap's
-    explicit usage contract.
+    lifetime of the application (team handoff deck, slide 5: "Build
+    once, reuse for every request").
 
     This performs real acquisition of the current policy corpus (live
     HTTP requests to policies.latrobe.edu.au) and constructs the full
-    retrieval/routing/generation pipeline. It can take noticeably longer
-    than a typical app startup, and requires the local Ollama server to
-    be running (see backend.llm.ollama_provider).
+    retrieval/routing/generation pipeline. Requires a local Ollama
+    server to be running.
     """
     logger.info("Building RavinAnswerService from current policy corpus...")
 
@@ -77,21 +85,14 @@ async def lifespan(app: FastAPI):
 
     yield
 
-    # No explicit teardown required - the service holds no external
-    # connections that need closing beyond the process lifetime.
-
 
 app = FastAPI(
     title="RAVIN Grounded-Answer API",
     description=(
-        "Standalone service for the Policy DB Chatbot. Accepts a policy "
-        "question and returns a grounded answer with sources, or a "
-        "clarify / no-grounded-answer response. Calls the real "
-        "RavinAnswerService (backend.service.answer_service) built once "
-        "at startup from the current policy corpus - no retrieval, "
-        "routing, or generation logic is duplicated here."
+        "Thin FastAPI adapter around the shared RavinAnswerService. "
+        "Does not duplicate retrieval, routing, or generation logic."
     ),
-    version="0.3.0",
+    version="0.4.0",
     lifespan=lifespan,
 )
 
@@ -138,22 +139,11 @@ async def pydantic_validation_exception_handler(request: Request, exc: Validatio
     )
 
 
-@app.exception_handler(ValueError)
-async def value_error_handler(request: Request, exc: ValueError):
-    # RavinAnswerService.answer() raises ValueError for whitespace-only
-    # questions - translate to a controlled 422, not a 500.
-    logger.info("Service rejected input for %s", request.url.path)
-    return JSONResponse(
-        status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
-        content={
-            "error": "invalid_request",
-            "message": "The request could not be processed. Check the question field and try again.",
-        },
-    )
-
-
 @app.exception_handler(Exception)
 async def unhandled_exception_handler(request: Request, exc: Exception):
+    # Deliberately broad and deliberately last-resort: this now includes
+    # ValueError raised by RavinAnswerService itself (e.g. COPF-240-style
+    # bugs), which are genuine backend faults, not invalid user input.
     logger.exception("Unhandled error processing request to %s", request.url.path)
     return JSONResponse(
         status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
@@ -167,21 +157,20 @@ async def unhandled_exception_handler(request: Request, exc: Exception):
 # --- Routes --------------------------------------------------------------
 @app.get("/health", tags=["system"])
 async def health_check(request: Request):
-    """
-    Basic liveness/readiness check. Returns no sensitive information.
-    Reports whether the RavinAnswerService finished initialising.
-    """
+    """Basic liveness/readiness check. Returns no sensitive information."""
     ready = getattr(request.app.state, "ravin_service", None) is not None
     return {"status": "ok", "service_ready": ready}
 
 
-@app.post("/ask", response_model=AnswerResponse, tags=["chatbot"])
-async def ask_question(payload: QuestionRequest, request: Request):
+@app.post("/api/questions", response_model=AnswerResponse, tags=["chatbot"])
+def ask_question(payload: QuestionRequest, request: Request):
     """
     Submit a policy question and receive a routed, grounded answer.
 
-    Delegates entirely to the shared RavinAnswerService built at startup
-    - this endpoint does no retrieval, routing, or generation itself.
+    Note: this is a synchronous `def` route, not `async def`. FastAPI
+    runs sync routes in a worker threadpool automatically, so the
+    blocking call to service.answer() does not stall the event loop for
+    other concurrent requests.
     """
     client_id = request.client.host if request.client else "unknown"
 
