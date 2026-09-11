@@ -338,6 +338,110 @@ def test_strongest_entailment_score_controls_support():
         == 0.91
     )
 
+def test_citations_after_sentence_punctuation_attach_to_preceding_claim():
+    request = GroundedGenerationRequest(
+        question="What requirements apply?",
+        behavior=(
+            AnswerBehavior.DIRECT_ANSWER
+        ),
+        evidence_texts=(
+            "Approved policy evidence",
+        ),
+    )
+
+    provider = FakeEntailmentProvider(
+        scores=(0.95,)
+    )
+
+    validator = (
+        GeneratedClaimGroundingValidator(
+            entailment_provider=provider,
+            support_threshold=0.80,
+        )
+    )
+
+    result = validator.validate(
+        request,
+        _result(
+            "First requirement. [E1] "
+            "Second requirement. [E1]"
+        ),
+    )
+
+    assert result.valid is True
+
+    assert tuple(
+        claim.claim
+        for claim in result.claims
+    ) == (
+        "First requirement.",
+        "Second requirement.",
+    )
+
+    assert tuple(
+        claim.cited_evidence_indexes
+        for claim in result.claims
+    ) == (
+        (1,),
+        (1,),
+    )
+
+    assert len(
+        provider.received_pairs
+    ) == 2
+
+def test_multiple_citations_after_sentence_punctuation_stay_with_claim():
+    request = GroundedGenerationRequest(
+        question="Which policies apply?",
+        behavior=(
+            AnswerBehavior.DIRECT_ANSWER
+        ),
+        evidence_texts=(
+            "First approved evidence.",
+            "Second approved evidence.",
+            "Third approved evidence.",
+        ),
+    )
+
+    provider = FakeEntailmentProvider(
+        scores=(
+            0.95,
+            0.95,
+            0.95,
+        )
+    )
+
+    validator = (
+        GeneratedClaimGroundingValidator(
+            entailment_provider=provider,
+            support_threshold=0.80,
+        )
+    )
+
+    result = validator.validate(
+        request,
+        _result(
+            "Relevant policies apply. "
+            "[E1] [E2] [E3]"
+        ),
+    )
+
+    assert result.valid is True
+
+    assert len(
+        result.claims
+    ) == 1
+
+    assert (
+        result.claims[0].claim
+        == "Relevant policies apply."
+    )
+
+    assert (
+        result.claims[0].cited_evidence_indexes
+        == (1, 2, 3)
+    )
+
 def test_invalid_threshold_is_rejected():
     provider = FakeEntailmentProvider(
         scores=(0.95,)

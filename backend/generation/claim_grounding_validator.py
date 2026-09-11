@@ -29,7 +29,7 @@ _EVIDENCE_MARKER_PATTERN = re.compile(
     r"\[E(\d+)\]"
 )
 _SENTENCE_PATTERN = re.compile(
-    r"[^.!?\n]+(?:[.!?]+|$)"
+    r"[^.!?\n]+(?:[.!?]+(?:\s*\[E\d+\])*(?=\s|$)|$)"
 )
 
 @dataclass(frozen=True)
