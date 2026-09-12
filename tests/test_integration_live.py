@@ -3,19 +3,27 @@ Live integration tests for COPF-231 - run against the REAL
 RavinAnswerService, built from the actual current policy corpus at
 startup.
 
-IMPORTANT: these require real internet access (live policy pages from
+Marked with @pytest.mark.integration: EXCLUDED from the default
+`pytest` run (see pytest.ini). Run explicitly with:
+
+    pytest -m integration tests/test_integration_live.py -v
+
+Requires real internet access (live policy pages from
 policies.latrobe.edu.au) and a local Ollama server running.
 
-For fast, no-network tests safe for every commit, see
+For fast, no-network tests that run by default, see
 tests/test_api_contract.py. Per Chris's team handoff deck (slide 11):
-run targeted tests while developing, but run the full 725+ test repo
+run targeted tests while developing, but run the full production test
 suite before considering integration complete:
     .\\.venv\\Scripts\\python.exe -m pytest -q
 """
 
+import pytest
 from fastapi.testclient import TestClient
 
 from backend.api.main import app
+
+pytestmark = pytest.mark.integration
 
 
 def test_health_check_reports_service_ready():
