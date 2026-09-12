@@ -13,22 +13,21 @@ slides 9-10):
 This module does not import retrieval, embedding, routing, or generation
 components directly - it only ever calls service.answer(question).
 
-Endpoint: POST /api/questions (the agreed Sprint 3 API contract, per
-Chris's review of the earlier version of this PR).
+Endpoint: POST /api/questions (the agreed Sprint 3 API contract).
 
-Changes from the previous version of this file, per Chris's requested
-changes on PR #10:
-  1. Endpoint moved from /ask to POST /api/questions.
-  2. service.answer() is synchronous; this route is now a plain `def`
-     (not `async def`), so FastAPI runs it in its worker threadpool
-     automatically rather than blocking the event loop.
-  3. The broad `except ValueError -> 422` handler has been removed.
-     RavinAnswerService.answer() raises ValueError only for
-     whitespace-only input, which Pydantic validation (models.py)
-     already rejects before the service is ever called - so a
-     ValueError escaping from here now indicates a genuine backend
-     fault and is treated as an internal error (500), not invalid user
-     input. See COPF-240 for an example of exactly this kind of bug.
+Setup: install both dependency sets before running -
+    pip install -r requirements.txt
+    pip install -r requirements-api.txt
+
+Error handling note: RavinAnswerService.answer() can raise ValueError
+both for whitespace-only input (already rejected earlier by Pydantic
+validation in models.py, so this case should not reach here) AND for
+genuine internal generation/validation faults - COPF-240 demonstrated
+this with "Generated claim cannot contain only evidence markers." Any
+ValueError that reaches this module is therefore treated as a backend
+fault (500 internal_error), not invalid user input - there is no
+separate ValueError handler here; it falls through to the generic
+Exception handler below.
 
 Security controls implemented here map to the team's API rules:
   Rule 3  - all input validated via Pydantic before use (models.py)
@@ -92,7 +91,7 @@ app = FastAPI(
         "Thin FastAPI adapter around the shared RavinAnswerService. "
         "Does not duplicate retrieval, routing, or generation logic."
     ),
-    version="0.4.0",
+    version="0.5.0",
     lifespan=lifespan,
 )
 
@@ -141,9 +140,10 @@ async def pydantic_validation_exception_handler(request: Request, exc: Validatio
 
 @app.exception_handler(Exception)
 async def unhandled_exception_handler(request: Request, exc: Exception):
-    # Deliberately broad and deliberately last-resort: this now includes
-    # ValueError raised by RavinAnswerService itself (e.g. COPF-240-style
-    # bugs), which are genuine backend faults, not invalid user input.
+    # Deliberately broad and deliberately last-resort: this includes
+    # ValueError raised by RavinAnswerService itself. COPF-240 confirmed
+    # such errors are genuine backend faults (not invalid user input),
+    # so they are reported as a 500 here rather than a misleading 422.
     logger.exception("Unhandled error processing request to %s", request.url.path)
     return JSONResponse(
         status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
