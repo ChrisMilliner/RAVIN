@@ -1,14 +1,24 @@
 """
 COPF-234: Reproducible RAVIN Security Validation Suite.
 
-Runs against the REAL RavinAnswerService (live policy corpus + local
-Ollama required). Endpoint updated to POST /api/questions per the agreed
-Sprint 3 API contract (Chris's team handoff deck, slide 9).
+Marked with @pytest.mark.integration: EXCLUDED from the default
+`pytest` run (see pytest.ini), because these run against the REAL
+RavinAnswerService (live policy corpus + local Ollama required) and
+repeatedly start the full FastAPI lifespan.
+
+Run explicitly with:
+    pytest -m integration tests/test_security.py -v
+
+Endpoint: POST /api/questions per the agreed Sprint 3 API contract
+(Chris's team handoff deck, slide 9).
 """
 
+import pytest
 from fastapi.testclient import TestClient
 
 from backend.api.main import app
+
+pytestmark = pytest.mark.integration
 
 
 def test_SEC_001_empty_question():
