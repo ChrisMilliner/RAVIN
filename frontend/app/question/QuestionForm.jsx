@@ -2,14 +2,16 @@
 
 import { useRef, useState } from "react";
 import { useRouter } from "next/navigation";
+import { askRavin } from "../../lib/ravinApi";
 
 export default function QuestionForm() {
   const router = useRouter();
   const questionRef = useRef(null);
   const [question, setQuestion] = useState("");
   const [error, setError] = useState("");
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
-  function handleSubmit(event) {
+  async function handleSubmit(event) {
     event.preventDefault();
     const trimmedQuestion = question.trim();
 
@@ -19,8 +21,31 @@ export default function QuestionForm() {
       return;
     }
 
-    window.localStorage.setItem("ravinQuestion", trimmedQuestion);
-    router.push("/result");
+    setError("");
+    setIsSubmitting(true);
+
+    try {
+      const result = await askRavin(trimmedQuestion);
+
+      window.localStorage.setItem(
+        "ravinQuestion",
+        trimmedQuestion,
+      );
+
+      window.localStorage.setItem(
+        "ravinResult",
+        JSON.stringify(result),
+      );
+
+      router.push("/result");
+    } catch (requestError) {
+      setError(
+        requestError.message ||
+          "RAVIN could not process your question. Please try again.",
+      );
+    } finally {
+      setIsSubmitting(false);
+    }
   }
 
   return (
@@ -61,8 +86,12 @@ export default function QuestionForm() {
         >
           Cancel
         </button>
-        <button className="primary-btn" type="submit">
-          Submit
+        <button
+          className="primary-btn"
+          type="submit"
+          disabled={isSubmitting}
+        >
+          {isSubmitting ? "Finding answer..." : "Submit"}
         </button>
       </div>
     </form>
