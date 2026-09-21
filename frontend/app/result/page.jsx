@@ -1,15 +1,15 @@
 import ResultView from "./ResultView";
 
 export const metadata = {
-  title: "Prototype Status",
+  title: "Policy response",
   description:
-    "Review a submitted question in the RAVIN interface prototype. Policy-response integration is pending.",
+    "Review a grounded RAVIN response to a university policy question.",
 };
 
 export default function ResultPage() {
   return (
     <main className="result-page" id="main-content">
-      <span className="eyebrow">UI prototype</span>
+      <span className="eyebrow">RAVIN response</span>
       <h1>Policy response</h1>
       <ResultView />
     </main>

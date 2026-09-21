@@ -1,12 +1,16 @@
 "use client";
 
 import Link from "next/link";
-import { useSyncExternalStore } from "react";
+import { useMemo, useSyncExternalStore } from "react";
 
 const subscribeToQuestion = () => () => {};
 
 function getSavedQuestion() {
   return window.localStorage.getItem("ravinQuestion") || "Your question";
+}
+
+function getSavedResult() {
+  return window.localStorage.getItem("ravinResult") || "";
 }
 
 export default function ResultView() {
@@ -15,6 +19,23 @@ export default function ResultView() {
     getSavedQuestion,
     () => "Your question",
   );
+  const savedResult = useSyncExternalStore(
+    subscribeToQuestion,
+    getSavedResult,
+    () => "",
+  );
+
+  const result = useMemo(() => {
+    if (!savedResult) {
+      return null;
+    }
+
+    try {
+      return JSON.parse(savedResult);
+    } catch {
+      return null;
+    }
+  }, [savedResult]);
 
   return (
     <>
@@ -27,19 +48,42 @@ export default function ResultView() {
 
       <section
         className="answer-box"
-        aria-labelledby="prototype-status-title"
+        aria-labelledby="policy-response-title"
       >
-        <p className="question-label">Prototype status</p>
-        <h2 id="prototype-status-title">Policy-response integration pending</h2>
-        <p className="answer-content">
-          This page currently demonstrates the question-and-result interface
-          only. Policy retrieval and response generation are not connected in
-          this prototype.
-        </p>
-        <p className="field-guidance">
-          The UI, API and backend integration is tracked separately under
-          COPF-235. No policy answer or citation has been generated.
-        </p>
+        <p className="question-label">Policy response</p>
+
+        <h2 id="policy-response-title">
+          {result ? "RAVIN response" : "No response available"}
+        </h2>
+
+        {result ? (
+          <>
+            <p className="answer-content">{result.answer}</p>
+
+            {result.sources?.length ? (
+              <div className="source">
+                <strong>Sources</strong>
+
+                {result.sources.map((source) => (
+                  <p key={`${source.policy_id}-${source.heading}`}>
+                    <a
+                      href={source.url}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                    >
+                      {source.title}
+                      {source.heading ? ` — ${source.heading}` : ""}
+                    </a>
+                  </p>
+                ))}
+              </div>
+            ) : null}
+          </>
+        ) : (
+          <p className="answer-content">
+            Ask a policy question to generate a RAVIN response.
+          </p>
+        )}
       </section>
 
       <div className="result-actions">
