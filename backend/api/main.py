@@ -38,6 +38,7 @@ Security controls implemented here map to the team's API rules:
             content on every request
 """
 
+import os
 import logging
 import time
 from collections import defaultdict, deque
@@ -55,36 +56,99 @@ from backend.service.bootstrap import create_current_policy_ravin_service
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger("ravin_api")
 
+def _environment_flag_enabled(
+    name: str,
+) -> bool:
+    value = os.environ.get(
+        name,
+        "",
+    )
+
+    return (
+        value.strip().casefold()
+        in {
+            "1",
+            "true",
+            "yes",
+            "on",
+        }
+    )
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     """
     Build the RavinAnswerService once, at startup, and reuse it for the
-    lifetime of the application (team handoff deck, slide 5: "Build
-    once, reuse for every request").
+    lifetime of the application.
 
-    This performs real acquisition of the current policy corpus (live
-    HTTP requests to policies.latrobe.edu.au) and constructs the full
-    retrieval/routing/generation pipeline. Requires a local Ollama
-    server to be running.
+    Normal startup uses the validated local retrieval cache when
+    available. RAVIN_REFRESH_POLICY_CACHE requests a deliberate rebuild
+    from the live policy library.
     """
-    logger.info("Building RavinAnswerService from current policy corpus...")
+    logger.info(
+        "Building RavinAnswerService from current policy corpus..."
+    )
 
     def _log_progress(progress):
-        logger.info(
-            "Loaded policy %s (%s): %d chunks",
-            progress.policy_id,
-            progress.title,
-            progress.chunk_count,
+        if progress.status == "current":
+            logger.info(
+                "Loaded current policy %s (%s): %d chunks",
+                progress.policy_id,
+                progress.title,
+                progress.chunk_count,
+            )
+
+        elif progress.status == "restricted":
+            logger.warning(
+                (
+                    "Skipped restricted policy %s (%s): "
+                    "authenticated access required"
+                ),
+                progress.policy_id,
+                progress.title,
+            )
+
+        elif progress.status == "not_current":
+            logger.info(
+                "Skipped non-current policy %s (%s)",
+                progress.policy_id,
+                progress.title,
+            )
+
+        else:
+            logger.warning(
+                "Policy %s (%s) reported unknown status %s",
+                progress.policy_id,
+                progress.title,
+                progress.status,
+            )
+
+    refresh_policy_cache = (
+        _environment_flag_enabled(
+            "RAVIN_REFRESH_POLICY_CACHE"
+        )
+    )
+
+    if refresh_policy_cache:
+        logger.warning(
+            "Full policy retrieval-cache refresh requested."
         )
 
-    app.state.ravin_service = create_current_policy_ravin_service(
-        on_policy_loaded=_log_progress,
+    app.state.ravin_service = (
+        create_current_policy_ravin_service(
+            on_policy_loaded=(
+                _log_progress
+            ),
+            refresh_cache=(
+                refresh_policy_cache
+            ),
+        )
     )
-    logger.info("RavinAnswerService ready.")
+
+    logger.info(
+        "RavinAnswerService ready."
+    )
 
     yield
-
 
 app = FastAPI(
     title="RAVIN Grounded-Answer API",
@@ -92,7 +156,7 @@ app = FastAPI(
         "Thin FastAPI adapter around the shared RavinAnswerService. "
         "Does not duplicate retrieval, routing, or generation logic."
     ),
-    version="0.5.0",
+    version="1.0.0",
     lifespan=lifespan,
 )
 

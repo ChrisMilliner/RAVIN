@@ -84,8 +84,14 @@ def _build_system_prompt(
         == AnswerBehavior.GROUNDED_OVERVIEW
     ):
         behavior_instruction = (
-            "Provide a concise grounded overview "
-            "covering the relevant evidence."
+            "Provide a concise grounded overview of "
+            "only the facts that directly answer the "
+            "question. "
+            "Do not attempt to summarise every supplied "
+            "evidence block. "
+            "Omit secondary or tangential details that "
+            "are not necessary to answer the question. "
+            "Use no more than five factual sentences."
         )
 
     else:
@@ -116,6 +122,23 @@ def _build_system_prompt(
         "If a sentence is supported by more than one "
         "evidence block, cite each applicable marker, "
         "for example [E1] [E3].\n"
+        "Write one factual proposition per sentence.\n"
+        "Do not combine separate policy facts into one "
+        "sentence when they depend on different evidence.\n"
+        "Every sentence must be fully supported by the "
+        "evidence marker or markers attached to it.\n"
+        "If a detail cannot be directly supported by the "
+        "supplied evidence, omit it.\n"
+        "Use an evidence marker only when that specific "
+        "evidence block directly supports the sentence.\n"
+        "Do not cite an evidence block merely because it "
+        "is related to the same policy topic.\n"
+        "Before returning the answer, check every factual "
+        "sentence against its cited evidence and remove "
+        "any sentence that is not fully supported.\n"
+        "Do not add related complaint, appeal, escalation, "
+        "contact, or external-body information unless it "
+        "is directly stated in the cited evidence.\n"
         "An answer containing factual sentences without "
         "evidence markers will be rejected and will not "
         "be shown to the user.\n"
@@ -145,9 +168,22 @@ def _build_user_prompt(
         evidence_sections
     )
 
+    valid_markers = ", ".join(
+        f"[E{index}]"
+        for index in range(
+            1,
+            len(request.evidence_texts) + 1,
+        )
+    )
+
     return (
         "QUESTION:\n"
         f"{request.question.strip()}\n\n"
+        "VALID EVIDENCE MARKERS:\n"
+        f"{valid_markers}\n"
+        "Use only these evidence markers. "
+        "Do not invent or reference any other "
+        "evidence marker.\n\n"
         "APPROVED EVIDENCE:\n"
         f"{evidence}"
     )

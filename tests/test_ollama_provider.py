@@ -148,6 +148,11 @@ def test_provider_sends_expected_request(
         == 0
     )
 
+    assert (
+        payload["options"]["seed"]
+        == 42
+    )
+
     assert payload["messages"] == [
         {
             "role": "system",

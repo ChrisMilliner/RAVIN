@@ -9,8 +9,11 @@ from backend.ingestion.acquisition import (
     extract_policy_id,
     extract_policy_metadata,
     extract_policy_page,
+    PolicyAccessRestrictedError,
+    fetch_html,
 )
 from backend.ingestion.models import PolicyContentUnit
+import backend.ingestion.acquisition as acquisition_module
 
 def test_extract_policy_id_from_document_url():
     policy_id = extract_policy_id(
@@ -102,6 +105,38 @@ def test_discovery_removes_duplicate_policy_ids():
     links = discover_policy_links(html)
 
     assert len(links) == 1
+
+def test_fetch_html_rejects_authenticated_redirect(
+    monkeypatch,
+):
+    class FakeResponse:
+        url = (
+            "https://login.microsoftonline.com/"
+            "tenant/saml2"
+        )
+        text = "<html>Sign in</html>"
+
+        def raise_for_status(
+            self,
+        ) -> None:
+            return None
+
+    monkeypatch.setattr(
+        acquisition_module.requests,
+        "get",
+        lambda url, timeout: FakeResponse(),
+    )
+
+    with pytest.raises(
+        PolicyAccessRestrictedError,
+        match=(
+            "requires authenticated access"
+        ),
+    ):
+        fetch_html(
+            "https://policies.latrobe.edu.au/"
+            "document/view.php?id=268"
+        )
 
 def test_build_status_url():
     url = build_status_url("208")

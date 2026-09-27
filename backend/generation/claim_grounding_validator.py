@@ -10,6 +10,7 @@ Claim grounding is separate from question-level evidence sufficiency.
 A generated answer that fails this validation is not released.
 """
 
+import logging
 import re
 from dataclasses import dataclass
 from backend.generation.grounded_generator import (
@@ -23,6 +24,10 @@ from backend.generation.entailment import (
 )
 from backend.generation.evidence_windows import (
     EvidenceSupportWindowBuilder,
+)
+
+logger = logging.getLogger(
+    "ravin_grounding"
 )
 
 _EVIDENCE_MARKER_PATTERN = re.compile(
@@ -186,6 +191,26 @@ class GeneratedClaimGroundingValidator:
             not claim.supported
             for claim in claims
         ):
+            for claim_index, claim in enumerate(
+                claims,
+                start=1,
+            ):
+                logger.warning(
+                    (
+                        "Claim grounding diagnostic: "
+                        "claim_index=%s, "
+                        "citations=%s, "
+                        "score=%.6f, "
+                        "threshold=%.6f, "
+                        "supported=%s"
+                    ),
+                    claim_index,
+                    claim.cited_evidence_indexes,
+                    claim.score,
+                    self._support_threshold,
+                    claim.supported,
+                )
+
             return ClaimGroundingValidationResult(
                 valid=False,
                 claims=claims,

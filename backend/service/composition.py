@@ -70,6 +70,20 @@ from backend.routing.rule_intent_classifier import (
 from backend.service.answer_service import (
     RavinAnswerService,
 )
+from backend.retrieval.models import (
+    IndexedPolicyChunk,
+)
+from collections.abc import Callable
+
+RetrievalIndexCallback = Callable[
+    [
+        tuple[
+            IndexedPolicyChunk,
+            ...
+        ]
+    ],
+    None,
+]
 
 def create_ravin_answer_service(
     chunks: tuple[
@@ -91,6 +105,16 @@ def create_ravin_answer_service(
     ) = None,
     context_config: (
         ContextAssemblyConfig | None
+    ) = None,
+    indexed_chunks: (
+        tuple[
+            IndexedPolicyChunk,
+            ...
+        ]
+        | None
+    ) = None,
+    on_index_ready: (
+        RetrievalIndexCallback | None
     ) = None,
 ) -> RavinAnswerService:
     """Construct a reusable production RavinAnswerService from policy chunks.
@@ -144,12 +168,34 @@ def create_ravin_answer_service(
         resolved_provider_factories,
     )
 
-    indexed_chunks = (
-        build_production_retrieval_index(
-            chunks,
-            providers.embedding,
+    if indexed_chunks is None:
+        resolved_indexed_chunks = (
+            build_production_retrieval_index(
+                chunks,
+                providers.embedding,
+            )
         )
-    )
+    else:
+        resolved_indexed_chunks = (
+            indexed_chunks
+        )
+
+        indexed_policy_chunks = tuple(
+            indexed_chunk.chunk
+            for indexed_chunk
+            in resolved_indexed_chunks
+        )
+
+        if indexed_policy_chunks != chunks:
+            raise ValueError(
+                "Prebuilt retrieval index does not "
+                "match supplied policy chunks."
+            )
+
+    if on_index_ready is not None:
+        on_index_ready(
+            resolved_indexed_chunks
+        )
 
     recovery_provider = (
         DeterministicQuestionStructureRecoveryProvider()
@@ -233,7 +279,9 @@ def create_ravin_answer_service(
         question: str,
     ) -> GroundedRetrievalResult:
         return retrieve_grounded_context(
-            indexed_chunks=indexed_chunks,
+            indexed_chunks=(
+                resolved_indexed_chunks
+            ),
             query=question,
             embedding_provider=(
                 providers.embedding

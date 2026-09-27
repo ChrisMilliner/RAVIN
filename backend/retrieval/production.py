@@ -26,6 +26,7 @@ from backend.retrieval.hybrid import (
     DEFAULT_LEXICAL_WEIGHT,
     DEFAULT_SEMANTIC_WEIGHT,
     search_hybrid_index,
+    tokenize_lexical_text,
 )
 from backend.retrieval.index import (
     BODY_ONLY_EMBEDDING,
@@ -41,7 +42,190 @@ from backend.retrieval.reranking import (
 )
 
 DEFAULT_PRODUCTION_TOP_K = 5
-DEFAULT_PRODUCTION_RERANK_DEPTH = 11
+DEFAULT_PRODUCTION_RERANK_DEPTH = 50
+_GENERIC_POLICY_TITLE_TOKENS = frozenset(
+    {
+        "policy",
+        "procedure",
+        "procedures",
+        "standard",
+        "standards",
+        "guideline",
+        "guidelines",
+        "charter",
+        "schedule",
+        "student",
+        "students",
+        "staff",
+        "university",
+        "la",
+        "trobe",
+    }
+)
+
+_MIN_RELATED_TOKEN_LENGTH = 6
+_MIN_TITLE_ANCHOR_MATCH_COUNT = 2
+_MIN_SINGLE_TITLE_COVERAGE = 0.75
+
+def _title_tokens_are_related(
+    left: str,
+    right: str,
+) -> bool:
+    if left == right:
+        return True
+
+    shorter_length = min(
+        len(left),
+        len(right),
+    )
+
+    if (
+        shorter_length
+        < _MIN_RELATED_TOKEN_LENGTH
+    ):
+        return False
+
+    return (
+        left.startswith(right)
+        or right.startswith(left)
+    )
+
+def _policy_title_match_signal(
+    query: str,
+    policy_title: str,
+) -> tuple[
+    bool,
+    int,
+    float,
+]:
+    query_tokens = tuple(
+        tokenize_lexical_text(
+            query
+        )
+    )
+
+    title_tokens = tuple(
+        token
+        for token in tokenize_lexical_text(
+            policy_title
+        )
+        if token
+        not in _GENERIC_POLICY_TITLE_TOKENS
+    )
+
+    if not title_tokens:
+        return (
+            False,
+            0,
+            0.0,
+        )
+
+    matched_title_tokens = {
+        title_token
+        for title_token in title_tokens
+        if any(
+            _title_tokens_are_related(
+                query_token,
+                title_token,
+            )
+            for query_token
+            in query_tokens
+        )
+    }
+
+    match_count = len(
+        matched_title_tokens
+    )
+
+    coverage = (
+        match_count
+        / len(title_tokens)
+    )
+
+    anchored = (
+        match_count
+        >= _MIN_TITLE_ANCHOR_MATCH_COUNT
+        or (
+            match_count == 1
+            and coverage
+            >= _MIN_SINGLE_TITLE_COVERAGE
+        )
+    )
+
+    return (
+        anchored,
+        match_count,
+        coverage,
+    )
+
+def prioritize_policy_title_matches(
+    query: str,
+    results: tuple[
+        RetrievalResult,
+        ...
+    ],
+) -> tuple[
+    RetrievalResult,
+    ...
+]:
+    """Prioritize strong policy-title matches without discarding reranker order.
+
+    Strong title matches are promoted ahead of generic cross-encoder matches.
+    Weak or partial title matches do not affect the existing reranker order.
+    """
+    query = query.strip()
+
+    if not query:
+        raise ValueError(
+            "Query cannot be empty."
+        )
+
+    if not results:
+        raise ValueError(
+            "Cannot prioritize an empty result set."
+        )
+
+    def ranking_key(
+        result: RetrievalResult,
+    ) -> tuple[
+        int,
+        int,
+        float,
+        float,
+    ]:
+        (
+            anchored,
+            match_count,
+            coverage,
+        ) = _policy_title_match_signal(
+            query,
+            result.chunk.policy_title,
+        )
+
+        if not anchored:
+            return (
+                0,
+                0,
+                0.0,
+                result.score,
+            )
+
+        return (
+            1,
+            match_count,
+            coverage,
+            result.score,
+        )
+
+    prioritized = sorted(
+        results,
+        key=ranking_key,
+        reverse=True,
+    )
+
+    return tuple(
+        prioritized
+    )
 
 @dataclass(frozen=True)
 class ProductionRetrievalConfig:
@@ -175,7 +359,16 @@ def retrieve_policy_evidence(
         reranker_provider=reranker_provider,
     )
 
-    return reranked_results[:config.top_k]
+    prioritized_results = (
+        prioritize_policy_title_matches(
+            query,
+            reranked_results,
+        )
+    )
+
+    return prioritized_results[
+        :config.top_k
+    ]
 
 def retrieve_grounded_context(
     indexed_chunks: tuple[

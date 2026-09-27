@@ -8,8 +8,12 @@ from backend.retrieval.production import (
     GroundedRetrievalResult,
     ProductionRetrievalConfig,
     build_production_retrieval_index,
+    prioritize_policy_title_matches,
     retrieve_grounded_context,
     retrieve_policy_evidence,
+)
+from backend.retrieval.models import (
+    RetrievalResult,
 )
 
 class CapturingEmbeddingProvider:
@@ -57,15 +61,18 @@ class CapturingRerankerProvider:
 def make_chunk(
     chunk_index: int,
     text: str | None = None,
+    *,
+    policy_id: str = "220",
+    policy_title: str = (
+        "Academic Progression Review Policy"
+    ),
 ) -> PolicyChunk:
     return PolicyChunk(
-        policy_id="220",
-        policy_title=(
-            "Academic Progression Review Policy"
-        ),
+        policy_id=policy_id,
+        policy_title=policy_title,
         source_url=(
             "https://policies.latrobe.edu.au/"
-            "document/view.php?id=220"
+            f"document/view.php?id={policy_id}"
         ),
         status="Current",
         effective_date=None,
@@ -85,7 +92,7 @@ def test_production_config_uses_evaluated_defaults():
     config = ProductionRetrievalConfig()
 
     assert config.top_k == 5
-    assert config.rerank_depth == 11
+    assert config.rerank_depth == 50
     assert config.semantic_weight == pytest.approx(
         0.85
     )
@@ -206,7 +213,7 @@ def test_production_retrieval_uses_rerank_depth_and_returns_top_k():
 
     assert len(
         reranker_provider.documents
-    ) == 11
+    ) == 12
 
     assert len(results) == 5
 
@@ -214,11 +221,11 @@ def test_production_retrieval_uses_rerank_depth_and_returns_top_k():
         result.chunk.chunk_index
         for result in results
     ] == [
+        11,
         10,
         9,
         8,
         7,
-        6,
     ]
 
     assert results[0].chunk.policy_id == "220"
@@ -352,22 +359,22 @@ def test_grounded_retrieval_preserves_ranked_seeds():
         item.chunk.chunk_index
         for item in result.retrieval_results
     ] == [
+        11,
         10,
         9,
         8,
         7,
-        6,
     ]
 
     assert [
         chunk.chunk_index
         for chunk in result.context_chunks[:5]
     ] == [
+        11,
         10,
         9,
         8,
         7,
-        6,
     ]
 
 def test_grounded_retrieval_expands_safe_neighbors():
@@ -415,17 +422,16 @@ def test_grounded_retrieval_expands_safe_neighbors():
     }
 
     assert {
-        6,
         7,
         8,
         9,
         10,
+        11,
     }.issubset(
         selected_indexes
     )
 
-    assert 5 in selected_indexes
-    assert 11 in selected_indexes
+    assert 6 in selected_indexes
 
 def test_grounded_retrieval_renders_citable_evidence():
     embedding_provider = (
@@ -487,4 +493,132 @@ def test_grounded_retrieval_renders_citable_evidence():
         "https://policies.latrobe.edu.au/"
         "document/view.php?id=220"
         in result.rendered_context
+    )
+
+def test_policy_title_priority_promotes_strong_specific_match():
+    results = (
+        RetrievalResult(
+            chunk=make_chunk(
+                0,
+                policy_id="306",
+                policy_title=(
+                    "Graduate Research Progress Policy"
+                ),
+            ),
+            score=1.88,
+        ),
+        RetrievalResult(
+            chunk=make_chunk(
+                1,
+                policy_id="221",
+                policy_title=(
+                    "Student Academic Misconduct Policy"
+                ),
+            ),
+            score=1.50,
+        ),
+        RetrievalResult(
+            chunk=make_chunk(
+                2,
+                policy_id="220",
+                policy_title=(
+                    "Academic Progression Review Policy"
+                ),
+            ),
+            score=-1.63,
+        ),
+    )
+
+    prioritized = (
+        prioritize_policy_title_matches(
+            (
+                "What happens when a student is "
+                "not making satisfactory academic "
+                "progress?"
+            ),
+            results,
+        )
+    )
+
+    assert (
+        prioritized[0].chunk.policy_id
+        == "220"
+    )
+
+def test_policy_title_priority_does_not_promote_weak_single_matches():
+    results = (
+        RetrievalResult(
+            chunk=make_chunk(
+                0,
+                policy_id="221",
+                policy_title=(
+                    "Student Academic Misconduct Policy"
+                ),
+            ),
+            score=3.0,
+        ),
+        RetrievalResult(
+            chunk=make_chunk(
+                1,
+                policy_id="306",
+                policy_title=(
+                    "Graduate Research Progress Policy"
+                ),
+            ),
+            score=2.0,
+        ),
+    )
+
+    prioritized = (
+        prioritize_policy_title_matches(
+            (
+                "What happens with academic "
+                "progress?"
+            ),
+            results,
+        )
+    )
+
+    assert [
+        item.chunk.policy_id
+        for item in prioritized
+    ] == [
+        "221",
+        "306",
+    ]
+
+def test_policy_title_priority_supports_single_specific_title_term():
+    results = (
+        RetrievalResult(
+            chunk=make_chunk(
+                0,
+                policy_id="999",
+                policy_title=(
+                    "Unrelated Procedure"
+                ),
+            ),
+            score=8.0,
+        ),
+        RetrievalResult(
+            chunk=make_chunk(
+                1,
+                policy_id="340",
+                policy_title=(
+                    "Admissions Policy"
+                ),
+            ),
+            score=1.0,
+        ),
+    )
+
+    prioritized = (
+        prioritize_policy_title_matches(
+            "What are the admissions requirements?",
+            results,
+        )
+    )
+
+    assert (
+        prioritized[0].chunk.policy_id
+        == "340"
     )

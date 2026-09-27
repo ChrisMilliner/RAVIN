@@ -135,3 +135,52 @@ def test_classifies_bounded_compound_question_as_focused():
     )
 
     assert result is QuestionIntent.FOCUSED
+
+@pytest.mark.parametrize(
+    "question",
+    (
+        (
+            "What does the Information Security "
+            "Policy require users to do?"
+        ),
+        (
+            "What does the Research Data Management "
+            "Policy require researchers to do?"
+        ),
+        (
+            "What does the Health and Safety "
+            "Procedure say about incidents?"
+        ),
+        (
+            "What does the Responsible AI Adoption "
+            "Policy require?"
+        ),
+    ),
+)
+def test_named_policy_library_documents_are_focused(
+    question,
+):
+    classifier = (
+        RuleBasedQuestionIntentClassifier()
+    )
+
+    result = classifier.classify(
+        question
+    )
+
+    assert result is QuestionIntent.FOCUSED
+
+def test_named_policy_happens_when_question_is_broad():
+    classifier = (
+        RuleBasedQuestionIntentClassifier()
+    )
+
+    result = classifier.classify(
+        (
+            "What does the Student Complaints "
+            "Management Policy say happens when "
+            "a student makes a complaint?"
+        )
+    )
+
+    assert result is QuestionIntent.BROAD

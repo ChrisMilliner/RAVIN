@@ -68,6 +68,13 @@ class PolicyPageContent:
     raw_text: str
     content_units: tuple[PolicyContentUnit, ...]
 
+class PolicyAccessRestrictedError(
+    RuntimeError
+):
+    """Signal that a policy source requires access unavailable to RAVIN."""
+
+    pass
+
 def extract_policy_id(url: str) -> str:
     """Extract the policy identifier from a policy-database URL.
 
@@ -147,6 +154,19 @@ def fetch_html(
         url,
         timeout=timeout_seconds,
     )
+
+    final_host = urlparse(
+        response.url
+    ).hostname
+
+    if (
+        final_host is not None
+        and final_host.casefold()
+        == "login.microsoftonline.com"
+    ):
+        raise PolicyAccessRestrictedError(
+            "Policy source requires authenticated access."
+        )
 
     response.raise_for_status()
 

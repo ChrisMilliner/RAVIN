@@ -21,6 +21,9 @@ from backend.service.answer_service import (
 from backend.service.composition import (
     create_ravin_answer_service,
 )
+from backend.retrieval.models import (
+    IndexedPolicyChunk,
+)
 
 def _quality_config(
 ) -> AnswerQualityConfig:
@@ -151,6 +154,165 @@ def test_service_composition_builds_index_once(
         build_calls[0][1]
         is providers.embedding
     )
+
+def test_service_composition_uses_prebuilt_index(
+    monkeypatch,
+):
+    providers = (
+        _fake_composed_providers()
+    )
+
+    monkeypatch.setattr(
+        composition_module,
+        "compose_runtime_providers",
+        lambda config, factories: (
+            providers
+        ),
+    )
+
+    def fail_if_index_is_built(
+        chunks,
+        embedding_provider,
+    ):
+        raise AssertionError(
+            "Index should not be rebuilt."
+        )
+
+    monkeypatch.setattr(
+        composition_module,
+        "build_production_retrieval_index",
+        fail_if_index_is_built,
+    )
+
+    chunks = _policy_chunks()
+
+    indexed_chunks = (
+        cast(
+            IndexedPolicyChunk,
+            SimpleNamespace(
+                chunk=chunks[0],
+            ),
+        ),
+    )
+
+    service = create_ravin_answer_service(
+        chunks,
+        runtime_config=_runtime_config(),
+        provider_factories=(
+            _provider_factories()
+        ),
+        answer_quality_config=(
+            _quality_config()
+        ),
+        indexed_chunks=indexed_chunks,
+    )
+
+    assert isinstance(
+        service,
+        RavinAnswerService,
+    )
+
+def test_prebuilt_index_must_match_chunks(
+    monkeypatch,
+):
+    providers = (
+        _fake_composed_providers()
+    )
+
+    monkeypatch.setattr(
+        composition_module,
+        "compose_runtime_providers",
+        lambda config, factories: (
+            providers
+        ),
+    )
+
+    chunks = _policy_chunks()
+
+    different_chunk = cast(
+        PolicyChunk,
+        object(),
+    )
+
+    indexed_chunks = (
+        cast(
+            IndexedPolicyChunk,
+            SimpleNamespace(
+                chunk=different_chunk,
+            ),
+        ),
+    )
+
+    with pytest.raises(
+        ValueError,
+        match=(
+            "Prebuilt retrieval index does not "
+            "match supplied policy chunks"
+        ),
+    ):
+        create_ravin_answer_service(
+            chunks,
+            runtime_config=_runtime_config(),
+            provider_factories=(
+                _provider_factories()
+            ),
+            answer_quality_config=(
+                _quality_config()
+            ),
+            indexed_chunks=indexed_chunks,
+        )
+
+def test_service_composition_reports_ready_index(
+    monkeypatch,
+):
+    providers = (
+        _fake_composed_providers()
+    )
+
+    monkeypatch.setattr(
+        composition_module,
+        "compose_runtime_providers",
+        lambda config, factories: (
+            providers
+        ),
+    )
+
+    chunks = _policy_chunks()
+
+    indexed_chunks = (
+        cast(
+            IndexedPolicyChunk,
+            SimpleNamespace(
+                chunk=chunks[0],
+            ),
+        ),
+    )
+
+    monkeypatch.setattr(
+        composition_module,
+        "build_production_retrieval_index",
+        lambda chunks, embedding_provider: (
+            indexed_chunks
+        ),
+    )
+
+    reported = []
+
+    create_ravin_answer_service(
+        chunks,
+        runtime_config=_runtime_config(),
+        provider_factories=(
+            _provider_factories()
+        ),
+        answer_quality_config=(
+            _quality_config()
+        ),
+        on_index_ready=reported.append,
+    )
+
+    assert reported == [
+        indexed_chunks
+    ]
 
 def test_quality_thresholds_are_used_in_composition(
     monkeypatch,

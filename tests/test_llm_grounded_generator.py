@@ -5,6 +5,7 @@ from backend.generation.grounded_generator import (
 )
 from backend.generation.llm_grounded_generator import (
     LlmGroundedAnswerGenerator,
+    _build_user_prompt,
 )
 
 class RecordingLanguageModelProvider:
@@ -93,6 +94,58 @@ def test_direct_answer_prompt_is_constrained():
 
     assert (
         "Answer the focused question directly"
+        in system_prompt
+    )
+
+def test_prompt_requires_atomic_supported_claims():
+    provider = (
+        RecordingLanguageModelProvider()
+    )
+
+    generator = LlmGroundedAnswerGenerator(
+        provider
+    )
+
+    generator.generate(
+        _request()
+    )
+
+    system_prompt = provider.system_prompt
+
+    assert system_prompt is not None
+
+    assert (
+        "one factual proposition per sentence"
+        in system_prompt
+    )
+
+    assert (
+        "fully supported by the evidence marker"
+        in system_prompt
+    )
+
+    assert (
+        "cannot be directly supported"
+        in system_prompt
+    )
+
+    assert (
+        "external-body information"
+        in system_prompt
+    )
+
+    assert (
+        "specific evidence block directly supports"
+        in system_prompt
+    )
+
+    assert (
+        "merely because it is related"
+        in system_prompt
+    )
+
+    assert (
+        "check every factual sentence"
         in system_prompt
     )
 
@@ -219,3 +272,66 @@ def test_empty_language_model_output_is_rejected():
         generator.generate(
             _request()
         )
+
+def test_overview_prompt_limits_tangential_content():
+    provider = (
+        RecordingLanguageModelProvider()
+    )
+
+    generator = LlmGroundedAnswerGenerator(
+        provider
+    )
+
+    generator.generate(
+        _request(
+            behavior=(
+                AnswerBehavior.GROUNDED_OVERVIEW
+            )
+        )
+    )
+
+    system_prompt = provider.system_prompt
+
+    assert system_prompt is not None
+
+    assert (
+        "directly answer the question"
+        in system_prompt
+    )
+
+    assert (
+        "Do not attempt to summarise every"
+        in system_prompt
+    )
+
+    assert (
+        "secondary or tangential details"
+        in system_prompt
+    )
+
+    assert (
+        "no more than five factual sentences"
+        in system_prompt
+    )
+
+def test_prompt_lists_only_available_evidence_markers():
+    request = GroundedGenerationRequest(
+        question="What does the policy require?",
+        behavior=AnswerBehavior.DIRECT_ANSWER,
+        evidence_texts=(
+            "First evidence.",
+            "Second evidence.",
+        ),
+    )
+
+    prompt = _build_user_prompt(
+        request
+    )
+
+    assert (
+        "VALID EVIDENCE MARKERS:\n"
+        "[E1], [E2]"
+        in prompt
+    )
+
+    assert "[E3]" not in prompt

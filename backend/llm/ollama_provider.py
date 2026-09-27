@@ -24,6 +24,7 @@ _DEFAULT_BASE_URL = (
     "http://localhost:11434"
 )
 _DEFAULT_TIMEOUT_SECONDS = 300.0
+_DEFAULT_GENERATION_SEED = 42
 
 class OllamaLanguageModelProvider:
     """Implement the neutral language-model contract using a local Ollama server.
@@ -97,6 +98,7 @@ class OllamaLanguageModelProvider:
             "stream": False,
             "options": {
                 "temperature": 0,
+                "seed": _DEFAULT_GENERATION_SEED,
             },
         }
 

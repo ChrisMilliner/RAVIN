@@ -67,6 +67,32 @@ class RecordingEntailmentProvider:
             for _ in pairs
         )
 
+class SequencedEntailmentProvider:
+    def __init__(
+        self,
+        scores: tuple[float, ...],
+    ) -> None:
+        self._scores = scores
+        self.call_count = 0
+
+    def score_entailment(
+        self,
+        pairs: tuple[
+            EntailmentPair,
+            ...
+        ],
+    ) -> tuple[float, ...]:
+        score = self._scores[
+            self.call_count
+        ]
+
+        self.call_count += 1
+
+        return tuple(
+            score
+            for _ in pairs
+        )
+
 def _request() -> GroundedGenerationRequest:
     return GroundedGenerationRequest(
         question=(
@@ -219,6 +245,89 @@ def test_unsupported_claim_is_rejected():
             generator,
             validator,
         )
+
+    assert provider.call_count == 1
+
+def test_supported_claims_are_released_when_other_claims_fail():
+    generator = FakeGroundedAnswerGenerator(
+        (
+            "Approval is required [E1]. "
+            "Approval must occur within "
+            "14 days [E2]."
+        )
+    )
+
+    provider = SequencedEntailmentProvider(
+        scores=(
+            0.95,
+            0.20,
+        )
+    )
+
+    validator = (
+        GeneratedClaimGroundingValidator(
+            entailment_provider=provider,
+            support_threshold=0.80,
+        )
+    )
+
+    result = (
+        generate_validated_grounded_answer(
+            _request(),
+            generator,
+            validator,
+        )
+    )
+
+    assert (
+        "Approval is required."
+        in result.text
+    )
+
+    assert (
+        "14 days"
+        not in result.text
+    )
+
+    assert (
+        result.cited_evidence_indexes
+        == (1,)
+    )
+
+def test_supported_claims_are_released_when_other_claims_use_unknown_citations():
+    generator = FakeGroundedAnswerGenerator(
+        (
+            "Approval is required [E1]. "
+            "Invented requirement [E3]."
+        )
+    )
+
+    validator, provider = _validator(
+        score=0.95
+    )
+
+    result = (
+        generate_validated_grounded_answer(
+            _request(),
+            generator,
+            validator,
+        )
+    )
+
+    assert (
+        result.text
+        == "Approval is required. [E1]"
+    )
+
+    assert (
+        "Invented requirement"
+        not in result.text
+    )
+
+    assert (
+        result.cited_evidence_indexes
+        == (1,)
+    )
 
     assert provider.call_count == 1
 
