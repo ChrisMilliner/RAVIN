@@ -46,6 +46,16 @@ _TOPIC_ANCHORS = (
     "deferral",
     "transfer",
 )
+_DOCUMENT_TOPIC_ANCHORS = (
+    "policy",
+    "procedure",
+    "standard",
+    "standards",
+    "guideline",
+    "guidelines",
+    "charter",
+    "schedule",
+)
 
 def _normalize_question(
     question: str,
@@ -57,9 +67,19 @@ def _normalize_question(
 def _contains_topic_anchor(
     question: str,
 ) -> bool:
-    return any(
+    if any(
         anchor in question
         for anchor in _TOPIC_ANCHORS
+    ):
+        return True
+
+    return any(
+        re.search(
+            rf"\b{re.escape(anchor)}\b",
+            question,
+        )
+        is not None
+        for anchor in _DOCUMENT_TOPIC_ANCHORS
     )
 
 def _contains_multi_part_request(
@@ -95,7 +115,7 @@ def _contains_broad_signal(
 
     broad_phrases = (
         "at each stage",
-        "what happens when",
+        "happens when",
         "how does ",
         "what are the admission requirements",
         "what are the admissions requirements",

@@ -2,12 +2,13 @@
 Enforce final grounding checks before generated answers are released.
 
 This module combines deterministic citation validation with
-generated-claim grounding validation. Generated output is returned only
-when all required release checks pass.
+generated-claim grounding validation. Fully valid generated output is
+released unchanged. When only some generated claims pass grounding
+validation, unsupported claims are removed and only validated claims
+are released.
 
 Failures are represented explicitly and allow the application service
-to fail closed rather than expose an answer whose evidence support
-cannot be established.
+to fail closed when no generated claims can be safely released.
 """
 
 from dataclasses import dataclass
@@ -15,11 +16,13 @@ from backend.generation.citation_validator import (
     validate_generation_citations,
 )
 from backend.generation.claim_grounding_validator import (
+    ClaimGroundingResult,
     GeneratedClaimGroundingValidator,
 )
 from backend.generation.grounded_generator import (
     GroundedAnswerGenerator,
     GroundedGenerationRequest,
+    GroundedGenerationResult,
     generate_grounded_answer,
 )
 
@@ -33,7 +36,7 @@ class GroundedGenerationRejectedError(
 
 @dataclass(frozen=True)
 class ReleasedGroundedAnswer:
-    """Represent generated answer text that passed all required release checks.
+    """Represent generated answer text that passed required release checks.
     """
 
     text: str
@@ -71,8 +74,10 @@ def generate_validated_grounded_answer(
 ) -> ReleasedGroundedAnswer:
     """Generate an answer and enforce citation and claim-grounding validation.
 
-    Any failed validation raises GroundedGenerationRejectedError so
-    unsupported generated content is not released as grounded output.
+    Fully valid output is released unchanged. If some generated claims fail
+    grounding validation, only supported cited claims are retained and the
+    filtered answer is citation-validated before release. If no supported
+    claims remain, generation is rejected and the caller can fail closed.
     """
     generation_result = (
         generate_grounded_answer(
@@ -81,10 +86,75 @@ def generate_validated_grounded_answer(
         )
     )
 
+    grounding_validation = (
+        claim_grounding_validator.validate(
+            request,
+            generation_result,
+        )
+    )
+
+    if grounding_validation.valid:
+        citation_validation = (
+            validate_generation_citations(
+                request,
+                generation_result,
+            )
+        )
+
+        if not citation_validation.valid:
+            raise GroundedGenerationRejectedError(
+                citation_validation.reason
+            )
+
+        return ReleasedGroundedAnswer(
+            text=generation_result.text,
+            cited_evidence_indexes=(
+                citation_validation
+                .cited_evidence_indexes
+            ),
+        )
+
+    supported_claims = tuple(
+        claim
+        for claim in grounding_validation.claims
+        if (
+            claim.supported
+            and claim.cited_evidence_indexes
+        )
+    )
+
+    if not supported_claims:
+        citation_validation = (
+            validate_generation_citations(
+                request,
+                generation_result,
+            )
+        )
+
+        if not citation_validation.valid:
+            raise GroundedGenerationRejectedError(
+                citation_validation.reason
+            )
+
+        raise GroundedGenerationRejectedError(
+            grounding_validation.reason
+        )
+
+    filtered_text = " ".join(
+        _render_supported_claim(
+            claim
+        )
+        for claim in supported_claims
+    )
+
+    filtered_result = GroundedGenerationResult(
+        text=filtered_text
+    )
+
     citation_validation = (
         validate_generation_citations(
             request,
-            generation_result,
+            filtered_result,
         )
     )
 
@@ -93,22 +163,24 @@ def generate_validated_grounded_answer(
             citation_validation.reason
         )
 
-    grounding_validation = (
-        claim_grounding_validator.validate(
-            request,
-            generation_result,
-        )
-    )
-
-    if not grounding_validation.valid:
-        raise GroundedGenerationRejectedError(
-            grounding_validation.reason
-        )
-
     return ReleasedGroundedAnswer(
-        text=generation_result.text,
+        text=filtered_text,
         cited_evidence_indexes=(
             citation_validation
             .cited_evidence_indexes
         ),
+    )
+
+def _render_supported_claim(
+    claim: ClaimGroundingResult,
+) -> str:
+    evidence_markers = " ".join(
+        f"[E{index}]"
+        for index
+        in claim.cited_evidence_indexes
+    )
+
+    return (
+        f"{claim.claim} "
+        f"{evidence_markers}"
     )

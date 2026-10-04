@@ -60,6 +60,7 @@ def test_cli_builds_service_through_shared_bootstrap(
                     "Review Policy"
                 ),
                 chunk_count=33,
+                status="current",
             )
         )
 

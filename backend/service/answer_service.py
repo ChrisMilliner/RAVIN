@@ -12,6 +12,7 @@ Generated output fails closed when required grounding validation does
 not pass.
 """
 
+import logging
 from dataclasses import dataclass
 from typing import Callable
 from backend.behavior import AnswerBehavior
@@ -42,6 +43,8 @@ from backend.routing.models import (
 from backend.routing.routing_orchestrator import (
     orchestrate_answer_routing,
 )
+
+logger = logging.getLogger("ravin_service")
 
 GroundedRetriever = Callable[
     [str],
@@ -245,6 +248,13 @@ class RavinAnswerService:
             )
         )
 
+        logger.info(
+            "Answer routing completed: intent=%s, sufficiency=%s, behavior=%s",
+            intent.value,
+            routing_result.evidence_assessment.sufficiency.value,
+            routing_result.behavior.value,
+        )
+
         if (
             routing_result.behavior
             == AnswerBehavior.CLARIFY
@@ -294,7 +304,11 @@ class RavinAnswerService:
                     ),
                 )
             )
-        except GroundedGenerationRejectedError:
+        except GroundedGenerationRejectedError as error:
+            logger.warning(
+                "Grounded generation rejected: %s",
+                error,
+            )
             return _no_grounded_answer_result()
 
         sources = _build_answer_sources(
